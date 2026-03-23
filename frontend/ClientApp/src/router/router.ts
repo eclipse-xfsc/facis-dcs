@@ -1,48 +1,138 @@
+import { getUIBasePath } from '@/config'
+import ApproveContractTemplateView from '@/modules/template-repository/views/ApproveContractTemplateView.vue'
+import ReviewContractTemplateView from '@/modules/template-repository/views/ReviewContractTemplateView.vue'
+import ViewContractTemplateView from '@/modules/template-repository/views/ViewContractTemplateView.vue'
+import { authenticationService } from '@/services/authentication-service'
 import { useAuthStore } from '@/stores/auth-store'
 import AuthSuccessView from '@/views/auth/AuthSuccessView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import ContractTemplateListView from '@/views/contract-template-list/ContractTemplateListView.vue'
-import TableView from '@/views/TableView.vue'
-import { AuthenticationService } from '@/services/authentication-service'
-import { DocumentTextIcon } from '@heroicons/vue/20/solid'
+import ContractTemplateTaskView from '@/views/contract-template-list/ContractTemplateTaskView.vue'
+import { DocumentCheckIcon, DocumentMagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/20/solid'
 import NewContractTemplateView from '@template-repository/views/NewContractTemplateView.vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
-import { getUIBasePath } from '@/config'
+
+const ROUTES = {
+  HOME: 'home',
+  TEMPLATES: {
+    LIST: 'templates.list',
+    NEW: 'templates.new',
+    EDIT: 'templates.edit',
+    VIEW: 'templates.view',
+    REVIEW: 'templates.review',
+    APPROVE: 'templates.approve',
+    TASKS: {
+      REVIEW: 'templates.tasks.review',
+      APPROVAL: 'templates.tasks.approve',
+    },
+  },
+  AUTH: {
+    SUCCESS: 'auth.success',
+  },
+} as const
 
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
-    name: 'home',
+    name: ROUTES.HOME,
     meta: { name: 'DCS', hideInSidebar: true, requiresAuth: false, layout: 'blank', title: 'DCS' },
     component: LoginView,
   },
   {
     path: '/templates',
-    name: 'templates.list',
+    name: ROUTES.TEMPLATES.LIST,
     component: ContractTemplateListView,
-    meta: { name: 'Contract Templates', icon: DocumentTextIcon, requiresAuth: true, title: 'DCS - Templates' },
+    meta: {
+      name: 'Contract Templates',
+      icon: DocumentTextIcon,
+      requiresAuth: true,
+      title: 'DCS - Templates',
+      order: 1,
+    },
   },
   {
     path: '/templates/new',
-    name: 'templates.new',
+    name: ROUTES.TEMPLATES.NEW,
     component: NewContractTemplateView,
-    meta: { name: 'New Template', hideInSidebar: true, requiresAuth: true, title: 'DCS - New Template' },
+    meta: {
+      name: 'New Template',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - New Template',
+      roles: ['TEMPLATE_CREATOR'],
+    },
   },
   {
     path: '/templates/edit/:did',
-    name: 'templates.edit',
+    name: ROUTES.TEMPLATES.EDIT,
     component: NewContractTemplateView,
-    meta: { name: 'Edit Template', hideInSidebar: true, requiresAuth: true, title: 'DCS - Edit Template' },
+    meta: {
+      name: 'Edit Template',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - Edit Template',
+      roles: ['TEMPLATE_CREATOR', 'TEMPLATE_REVIEWER'],
+    },
   },
   {
-    path: '/table',
-    name: 'table',
-    component: TableView,
-    meta: { name: 'Table', requiresAuth: false, title: 'DCS - Table' },
+    path: '/templates/view/:did',
+    name: ROUTES.TEMPLATES.VIEW,
+    component: ViewContractTemplateView,
+    meta: { name: 'View Template', hideInSidebar: true, requiresAuth: true, title: 'DCS - View Template' },
+  },
+  {
+    path: '/templates/review/:did',
+    name: ROUTES.TEMPLATES.REVIEW,
+    component: ReviewContractTemplateView,
+    meta: {
+      name: 'Review Template',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - Review Template',
+      roles: ['TEMPLATE_REVIEWER'],
+    },
+  },
+  {
+    path: '/templates/approve/:did',
+    name: ROUTES.TEMPLATES.APPROVE,
+    component: ApproveContractTemplateView,
+    meta: {
+      name: 'Approve Template',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - Approve Template',
+      roles: ['TEMPLATE_APPROVER'],
+    },
+  },
+  {
+    path: '/templates/tasks/review',
+    name: ROUTES.TEMPLATES.TASKS.REVIEW,
+    component: ContractTemplateTaskView,
+    meta: {
+      name: 'Assigned Review Tasks',
+      icon: DocumentMagnifyingGlassIcon,
+      requiresAuth: true,
+      title: 'DCS - Review Tasks',
+      order: 2,
+      roles: ['TEMPLATE_REVIEWER'],
+    },
+  },
+  {
+    path: '/templates/tasks/approve',
+    name: ROUTES.TEMPLATES.TASKS.APPROVAL,
+    component: ContractTemplateTaskView,
+    meta: {
+      name: 'Assigned Approval Tasks',
+      icon: DocumentCheckIcon,
+      requiresAuth: true,
+      title: 'DCS - Approval Tasks',
+      order: 3,
+      roles: ['TEMPLATE_APPROVER'],
+    },
   },
   {
     path: '/auth/success',
-    name: 'auth.success',
+    name: ROUTES.AUTH.SUCCESS,
     meta: { hideInSidebar: true, requiresAuth: false, layout: 'blank', title: 'DCS - Auth Success' },
     component: AuthSuccessView,
   },
@@ -63,18 +153,29 @@ router.beforeEach(async (to) => {
     return true
   }
 
-  await AuthenticationService.refresh()
+  await authenticationService.refresh()
   if (authStore.isAuthenticated) {
     return true
   }
 
-  const loginUrl = await AuthenticationService.getLoginPath()
+  const loginUrl = await authenticationService.loginPath()
   if (loginUrl) {
     window.location.href = loginUrl
     return false
   }
 
-  return { name: 'home' }
+  return { name: ROUTES.HOME }
 })
 
-export { router }
+router.beforeEach((to) => {
+  if (!to.meta.roles) {
+    return true
+  }
+  const authStore = useAuthStore()
+  const hasAuthorizedRole = authStore.user?.roles?.some((role) => to.meta.roles?.includes(role)) ?? false
+  if (!hasAuthorizedRole) {
+    return { name: ROUTES.HOME }
+  }
+})
+
+export { router, ROUTES }

@@ -2,13 +2,15 @@
 import type { PartialContractTemplate } from '@/models/contract-template'
 import { useContractTemplateStateFilterStore } from '@/stores/contract-template-state-filter-store'
 import { storeToRefs } from 'pinia'
-import { computed, ref, type Ref } from 'vue'
+import { computed, onUnmounted, ref, type Ref } from 'vue'
 import ListSearch from '../ListSearch.vue'
 import ListSort from '../ListSort.vue'
 import TemplateListItem from './TemplateListItem.vue'
 
 const props = defineProps<{
   items: PartialContractTemplate[]
+  hasReviewTask: (template: PartialContractTemplate) => boolean
+  hasApprovalTask: (template: PartialContractTemplate) => boolean
 }>()
 
 const sorter = new Map([
@@ -39,8 +41,8 @@ const sortedItems = computed(() => {
     return searchedItems.value
   }
   return searchedItems.value.slice().sort((a, b) => {
-    let aSortValue = a[sortBy.value as keyof PartialContractTemplate]
-    let bSortValue = b[sortBy.value as keyof PartialContractTemplate]
+    const aSortValue = a[sortBy.value as keyof PartialContractTemplate]
+    const bSortValue = b[sortBy.value as keyof PartialContractTemplate]
     const aValue = valueToComparable(aSortValue)
     const bValue = valueToComparable(bSortValue)
     if (!aValue && !bValue) return 0
@@ -58,9 +60,8 @@ const sortedItems = computed(() => {
 })
 
 const filteredItems = computed(() => {
-  const filters = stateFilters.value
-  if (filters.size > 0) {
-    return sortedItems.value.filter((item) => filters.has(item.state))
+  if (stateFilters.value.size > 0) {
+    return sortedItems.value.filter((item) => stateFilters.value.has(item.state))
   }
   return sortedItems.value
 })
@@ -68,18 +69,22 @@ const filteredItems = computed(() => {
 function applySearchResult(searchResult: PartialContractTemplate[]) {
   searchedItems.value = searchResult
 }
+
+onUnmounted(() => stateFilterStore.reset())
 </script>
 
 <template>
   <ul class="list">
-    <li class="tracking-wide px-4 flex justify-between">
+    <li class="tracking-wide px-4 flex justify-between flex-col sm:flex-row">
       <ListSearch :items="items" class="grow" @search-result="applySearchResult" />
       <ListSort :sorter="sorter" v-model:sort-by="sortBy" v-model:sort-order="sortOrder" />
     </li>
     <TemplateListItem
       v-for="item in filteredItems"
-      :key="`${item.did},${item.document_number},${item.version}`"
+      :key="`${item.did}|${item.document_number}|${item.version}`"
       :item="item"
+      :has-review-task="props.hasReviewTask(item)"
+      :has-approval-task="props.hasApprovalTask(item)"
     />
   </ul>
 </template>

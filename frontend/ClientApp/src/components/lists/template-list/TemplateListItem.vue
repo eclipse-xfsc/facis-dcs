@@ -1,38 +1,80 @@
 <script setup lang="ts">
-import type { PartialContractTemplate } from '../../../models/contract-template'
+import type { PartialContractTemplate } from '@/models/contract-template'
+import { ROUTES } from '@/router/router'
+import { useAuthStore } from '@/stores/auth-store'
+import { TemplateState } from '@/types/contract-template-state'
+import { toProperCase } from '@/utils/string'
+import { computed } from 'vue'
 
 const props = defineProps<{
   item: PartialContractTemplate
+  hasReviewTask: boolean
+  hasApprovalTask: boolean
 }>()
+
+const authStore = useAuthStore()
+
+const canEdit = computed(() => {
+  return (
+    ((props.item.state === TemplateState.draft || props.item.state === TemplateState.rejected) &&
+      props.item.created_by === authStore.user?.username) ||
+    (props.item.state === TemplateState.submitted && props.hasReviewTask)
+  )
+})
 </script>
 
 <template>
-  <li class="list-row">
-    <div class="list-col-grow card bg-base-200 card-border hover:bg-base-300">
-      <div class="card-body">
-        <h2 class="card-title justify-between">
-          <div>Name: {{ item.name }}</div>
+  <li class="list-row min-w-0 w-full">
+    <div class="list-col-grow card bg-base-200 card-border hover:bg-base-300 min-w-0 w-full">
+      <div class="card-body min-w-0">
+        <h2 class="card-title flex-wrap sm:justify-between">
+          <div class="flex gap-8 sm:h-full">
+            <div>Name: {{ item.name }}</div>
+            <div class="badge sm:badge-md badge-accent sm:h-full">{{ toProperCase(item.template_type) }}</div>
+          </div>
           <div class="badge badge-secondary">{{ item.state }}</div>
         </h2>
         <div class="flex justify-between">
-          <div>Document number: {{ item.document_number }}</div>
-          <div>Version: {{ item.version }}</div>
+          <div v-if="item.document_number">Document number: {{ item.document_number }}</div>
+          <div v-if="item.version">Version: {{ item.version }}</div>
         </div>
-        <div class="flex justify-between">
+        <div class="flex justify-between min-w-0">
           <div>Creation date: {{ new Date(item.created_at).toLocaleDateString() }}</div>
-        <div class="card-actions justify-end">
-          <button class="btn btn-sm rounded-box btn-primary">View</button>
-          <RouterLink
-            :to="{
-              name: 'templates.edit',
-              params: { did: item.did },
-              query: { document_number: item.document_number, version: item.version },
-            }"
-            class="btn btn-sm rounded-box btn-secondary gap-2"
-          >
-            Edit
-          </RouterLink>
-        </div>
+          <div v-if="item.description" class="px-10 flex-1 min-w-0 truncate hidden sm:block">
+            {{ item.description }}
+          </div>
+          <div class="card-actions justify-end">
+            <RouterLink
+              :to="{ name: ROUTES.TEMPLATES.VIEW, params: { did: item.did } }"
+              class="btn btn-sm btn-primary rounded-box"
+            >
+              View
+            </RouterLink>
+            <RouterLink
+              v-if="canEdit"
+              :to="{
+                name: ROUTES.TEMPLATES.EDIT,
+                params: { did: item.did },
+              }"
+              class="btn btn-sm btn-primary rounded-box gap-2"
+            >
+              Edit
+            </RouterLink>
+            <RouterLink
+              v-if="item.state === TemplateState.submitted && hasReviewTask"
+              :to="{ name: ROUTES.TEMPLATES.REVIEW, params: { did: item.did } }"
+              class="btn btn-sm btn-primary rounded-box gap-2"
+            >
+              Review
+            </RouterLink>
+            <RouterLink
+              v-if="item.state === TemplateState.reviewed && hasApprovalTask"
+              :to="{ name: ROUTES.TEMPLATES.APPROVE, params: { did: item.did } }"
+              class="btn btn-sm btn-primary rounded-box gap-2"
+            >
+              Approve
+            </RouterLink>
+          </div>
         </div>
       </div>
     </div>

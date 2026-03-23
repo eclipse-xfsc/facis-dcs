@@ -1,7 +1,6 @@
-import { AuthenticationService } from '@/services/authentication-service'
+import { authenticationService } from '@/services/authentication-service'
 import { useAuthTokenStore } from '@/stores/auth-token-store'
 import axios from 'axios'
-import { storeToRefs } from 'pinia'
 import { getConfig } from '@/config'
 
 const http = axios.create({
@@ -9,25 +8,17 @@ const http = axios.create({
   headers: { 'Content-Type': 'application/json' },
 })
 
-http.interceptors.request.use(
-  (config) => {
-    const tokenStore = useAuthTokenStore()
-    const { isAuthSet, getAuthenticationHeader } = storeToRefs(tokenStore)
-    if (isAuthSet.value) {
-      config.headers.Authorization = getAuthenticationHeader.value
-    } else {
-      delete config.headers.Authorization
-    }
-    return config
-  },
-  (err) => Promise.reject(err),
-)
+http.interceptors.request.use((config) => {
+  const tokenStore = useAuthTokenStore()
+  config.headers.Authorization = tokenStore.isAuthSet ? tokenStore.getAuthenticationHeader : undefined
+  return config
+})
 
 http.interceptors.response.use(
   (resp) => resp,
   async (err) => {
     if (err.status === 401) {
-      const res = await AuthenticationService.refresh()
+      const res = await authenticationService.refresh()
       if (res) {
         return http(err.config)
       }
