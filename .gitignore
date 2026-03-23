@@ -15,3 +15,5 @@ frontend/.DS_Store
 frontend/.eslintcache
 frontend/.prettiercache
 frontend/.cache
+
+deployment/certs
