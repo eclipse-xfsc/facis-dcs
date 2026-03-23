@@ -1,4 +1,17 @@
 .idea
 .vscode
+.DS_Store
 
 backend/gen
+
+frontend/node_modules
+frontend/dist
+frontend/.env
+frontend/.env.local
+frontend/.env.development
+frontend/.env.production
+frontend/.env.test
+frontend/.DS_Store
+frontend/.eslintcache
+frontend/.prettiercache
+frontend/.cache
