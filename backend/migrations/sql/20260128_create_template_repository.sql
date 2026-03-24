@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS contract_templates
     search_vector   tsvector GENERATED ALWAYS AS (
         to_tsvector('english', template_data::text)
         ) STORED,
+
     CONSTRAINT pk_contract_templates PRIMARY KEY (did),
     CONSTRAINT chk_did_not_empty CHECK (did <> '')
 );
@@ -50,7 +51,7 @@ EXECUTE FUNCTION update_updated_at_column();
 
 ------------------------------------------------------------------------------------------------------------------------
 
-CREATE TYPE review_task_state AS ENUM ('OPEN', 'APPROVED', 'REJECTED', 'VERIFIED');
+CREATE TYPE contract_templates_review_task_state AS ENUM ('OPEN', 'APPROVED', 'REJECTED', 'VERIFIED');
 
 CREATE TABLE IF NOT EXISTS contract_templates_review_task
 (
@@ -58,8 +59,8 @@ CREATE TABLE IF NOT EXISTS contract_templates_review_task
 
     did             VARCHAR(255)      NOT NULL CHECK (did <> ''),
 
-    state           review_task_state NOT NULL,
-    reviewer        VARCHAR(255)      NOT NULL CHECK (reviewer <> ''),
+    state    contract_templates_review_task_state NOT NULL,
+    reviewer VARCHAR(255)      NOT NULL CHECK (reviewer <> ''),
 
     created_by      VARCHAR(255)      NOT NULL,
     created_at      TIMESTAMP         NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -71,7 +72,7 @@ CREATE TABLE IF NOT EXISTS contract_templates_review_task
 
 ------------------------------------------------------------------------------------------------------------------------
 
-CREATE TYPE approval_task_state AS ENUM ('OPEN', 'APPROVED', 'REJECTED', 'RESUBMITTED');
+CREATE TYPE contract_templates_approval_task_state AS ENUM ('OPEN', 'APPROVED', 'REJECTED', 'RESUBMITTED');
 
 
 CREATE TABLE IF NOT EXISTS contract_templates_approval_task
@@ -80,8 +81,8 @@ CREATE TABLE IF NOT EXISTS contract_templates_approval_task
 
     did             VARCHAR(255)        NOT NULL CHECK (did <> ''),
 
-    state           approval_task_state NOT NULL,
-    approver        VARCHAR(255)        NOT NULL CHECK (approver <> ''),
+    state    contract_templates_approval_task_state NOT NULL,
+    approver VARCHAR(255)        NOT NULL CHECK (approver <> ''),
 
     created_by      VARCHAR(255)        NOT NULL,
     created_at      TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
