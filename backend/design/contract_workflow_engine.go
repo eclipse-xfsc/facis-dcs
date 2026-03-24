@@ -145,6 +145,28 @@ var ContractRetrieveByIDResponse = Type("ContractRetrieveByIDResponse", func() {
 	Required("did", "state", "created_at", "updated_at")
 })
 
+var ContractVerifyRequest = Type("ContractVerifyRequest", func() {
+	Description("Contract template verify request")
+
+	Token("token", String, "JWT token")
+
+	Attribute("did", String, "Decentralized Identifier of the contract template")
+
+	Attribute("updated_at", String, "The timestamp when the contract template was updated")
+
+	Required("did", "updated_at")
+})
+
+var ContractVerifyResponse = Type("ContractVerifyResponse", func() {
+	Description("Result for verifying a contract template")
+
+	Attribute("did", String, "Decentralized Identifier of the contract template")
+
+	Attribute("findings", ArrayOf(String), "A list of findings")
+
+	Required("did")
+})
+
 // Contract Workflow Engine Service  (/contract/...)
 var _ = Service("ContractWorkflowEngine", func() {
 	Description("Contract Workflow Engine APIs (/contract/...)")
@@ -322,7 +344,7 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:downstream:sm:component", "Signer Authorization & PoA application")
 		Meta("dcs:ui", "Contract Negotiation", "Contract Review", "Contract Approval", "Contract Management Dashboard")
 		Security(JWTAuth, func() {
-			Scope("Contract Negotiator")
+			Scope("Contract Creator")
 			Scope("Contract Reviewer")
 			Scope("Sys. Contract Reviewer")
 			Scope("Contract Approver")
@@ -341,6 +363,35 @@ var _ = Service("ContractWorkflowEngine", func() {
 			GET("/contract/retrieve/{did}")
 			Param("did")
 
+			Response(StatusOK)
+			Response("bad_request", StatusBadRequest)
+			Response("internal_error", StatusInternalServerError)
+		})
+	})
+
+	// POST /contract/verify
+	Method("verify", func() {
+		Description("run policy, schema, and semantic validations; return findings.")
+		Meta("dcs:ui", "Contract Negotiation", "Contract Review", "Contract Approval", "Contract Management Dashboard")
+
+		Security(JWTAuth, func() {
+			Scope("Contract Creator")
+			Scope("Contract Reviewer")
+			Scope("Sys. Contract Reviewer")
+			Scope("Contract Approver")
+			Scope("Sys. Contract Approver")
+			Scope("Contract Manager")
+			Scope("Sys. Contract Manager")
+		})
+
+		Payload(ContractVerifyRequest)
+		Result(ContractVerifyResponse)
+
+		Error("bad_request", ErrorResult, "Bad request")
+		Error("internal_error", ErrorResult, "Internal server error")
+
+		HTTP(func() {
+			POST("/contract/verify")
 			Response(StatusOK)
 			Response("bad_request", StatusBadRequest)
 			Response("internal_error", StatusInternalServerError)

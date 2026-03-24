@@ -126,7 +126,7 @@ func (h *Submitter) Handle(cmd SubmitCmd) error {
 					return errors.New("invalid user")
 				}
 
-				err = h.RTRepo.Update(tx, processData.DID, cmd.SubmittedBy, contractstate.Approved.String())
+				err = h.RTRepo.UpdateState(tx, processData.DID, cmd.SubmittedBy, contractstate.Approved.String())
 				if err != nil {
 					return fmt.Errorf("could not update approval task: %w", err)
 				}

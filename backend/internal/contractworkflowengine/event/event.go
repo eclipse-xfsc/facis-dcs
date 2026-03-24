@@ -103,3 +103,22 @@ func (e RetrieveAllEvent) EventType() string {
 func (e RetrieveAllEvent) GetDID() string {
 	return "*"
 }
+
+// VerifyEvent is emitted when a template is verified.
+type VerifyEvent struct {
+	DID             string    `json:"did"`
+	ContractVersion *int      `json:"contract_version,omitempty"`
+	Version         *int      `json:"version,omitempty"`
+	VerifiedBy      string    `json:"verified_by"`
+	OccurredAt      time.Time `json:"occurred_at"`
+}
+
+// EventType implements the Event interface.
+func (e VerifyEvent) EventType() string {
+	return eventtype.Verify.String()
+}
+
+// GetDID implements the Event interface.
+func (e VerifyEvent) GetDID() string {
+	return e.DID
+}

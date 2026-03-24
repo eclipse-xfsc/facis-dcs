@@ -10,11 +10,15 @@ type ReviewTaskState string
 
 const (
 	Open     ReviewTaskState = "OPEN"
+	Rejected ReviewTaskState = "REJECTED"
+	Verified ReviewTaskState = "VERIFIED"
 	Approved ReviewTaskState = "APPROVED"
 )
 
 var validState = map[ReviewTaskState]bool{
 	Open:     true,
+	Rejected: true,
+	Verified: true,
 	Approved: true,
 }
 

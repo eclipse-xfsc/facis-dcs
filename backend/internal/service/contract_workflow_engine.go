@@ -161,6 +161,33 @@ func (s *contractWorkflowEnginesrvc) RetrieveByID(ctx context.Context, request *
 	panic("implement me")
 }
 
+func (s *contractWorkflowEnginesrvc) Verify(ctx context.Context, req *contractworkflowengine.ContractVerifyRequest) (res *contractworkflowengine.ContractVerifyResponse, err error) {
+	updatedAt, err := time.Parse(time.RFC3339, req.UpdatedAt)
+	if err != nil {
+		return nil, contractworkflowengine.MakeInternalError(err)
+	}
+
+	cmd := command.VerifyCmd{
+		DID:        req.Did,
+		UpdatedAt:  updatedAt,
+		VerifiedBy: middleware.GetUsername(ctx),
+	}
+	handler := command.Verifier{
+		Ctx:    ctx,
+		DB:     s.DB,
+		CRepo:  s.CRepo,
+		RTRepo: s.RTRepo,
+	}
+	err = handler.Handle(cmd)
+	if err != nil {
+		return nil, contractworkflowengine.MakeInternalError(err)
+	}
+
+	return &contractworkflowengine.ContractVerifyResponse{
+		Did: req.Did,
+	}, nil
+}
+
 func (s *contractWorkflowEnginesrvc) Negotiate(ctx context.Context, req *contractworkflowengine.NegotiatePayload) (res string, err error) {
 	log.Printf(ctx, "contractWorkflowEngine.negotiate")
 	return
