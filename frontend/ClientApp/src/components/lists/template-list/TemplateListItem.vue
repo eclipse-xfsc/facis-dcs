@@ -2,6 +2,7 @@
 import type { PartialContractTemplate } from '@/models/contract-template'
 import { ROUTES } from '@/router/router'
 import { useAuthStore } from '@/stores/auth-store'
+import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import { TemplateState } from '@/types/contract-template-state'
 import { toProperCase } from '@/utils/string'
 import { computed } from 'vue'
@@ -13,13 +14,29 @@ const props = defineProps<{
 }>()
 
 const authStore = useAuthStore()
+const templateStore = useContractTemplatesStore()
 
 const canEdit = computed(() => {
   return (
-    ((props.item.state === TemplateState.draft || props.item.state === TemplateState.rejected) &&
-      props.item.created_by === authStore.user?.username) ||
+    (props.item.created_by === authStore.user?.username &&
+      (props.item.state === TemplateState.draft || props.item.state === TemplateState.rejected)) ||
     (props.item.state === TemplateState.submitted && props.hasReviewTask)
   )
+})
+
+const canReview = computed(() => {
+  const task = templateStore.reviewTasks.find((task) => task.did === props.item.did)
+  return props.item.state === TemplateState.submitted && props.hasReviewTask && !!task && task.state !== 'APPROVED'
+})
+
+const resolveViewRouteName = computed(() => {
+  if (canReview.value) {
+    return ROUTES.TEMPLATES.REVIEW
+  }
+  if (props.item.state === TemplateState.reviewed && props.hasApprovalTask) {
+    return ROUTES.TEMPLATES.APPROVE
+  }
+  return ROUTES.TEMPLATES.VIEW
 })
 </script>
 
@@ -45,7 +62,7 @@ const canEdit = computed(() => {
           </div>
           <div class="card-actions justify-end">
             <RouterLink
-              :to="{ name: ROUTES.TEMPLATES.VIEW, params: { did: item.did } }"
+              :to="{ name: resolveViewRouteName, params: { did: item.did } }"
               class="btn btn-sm btn-primary rounded-box"
             >
               View
@@ -59,20 +76,6 @@ const canEdit = computed(() => {
               class="btn btn-sm btn-primary rounded-box gap-2"
             >
               Edit
-            </RouterLink>
-            <RouterLink
-              v-if="item.state === TemplateState.submitted && hasReviewTask"
-              :to="{ name: ROUTES.TEMPLATES.REVIEW, params: { did: item.did } }"
-              class="btn btn-sm btn-primary rounded-box gap-2"
-            >
-              Review
-            </RouterLink>
-            <RouterLink
-              v-if="item.state === TemplateState.reviewed && hasApprovalTask"
-              :to="{ name: ROUTES.TEMPLATES.APPROVE, params: { did: item.did } }"
-              class="btn btn-sm btn-primary rounded-box gap-2"
-            >
-              Approve
             </RouterLink>
           </div>
         </div>

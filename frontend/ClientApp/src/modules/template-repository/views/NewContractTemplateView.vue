@@ -19,7 +19,7 @@
                         <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
                         {{ isEditMode ? 'Update Template' : 'Create' }}
                     </button>
-                    <SubmitContractTemplateUserSelectionDialog
+                    <SubmitContractTemplateDialog
                         v-if="isEditMode && (state === TemplateState.draft || state === TemplateState.rejected)"
                         @submit="submitTemplate"
                         class="btn btn-primary flex-1"
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-import SubmitContractTemplateUserSelectionDialog from '@/components/SubmitContractTemplateUserSelectionDialog.vue'
+import SubmitContractTemplateDialog from '@/components/SubmitContractTemplateDialog.vue'
 import type { ContractTemplateSubmitRequest } from '@/models/requests/template-request'
 import type { SelectedUserRole } from '@/models/user'
 import { ROUTES } from '@/router/router'

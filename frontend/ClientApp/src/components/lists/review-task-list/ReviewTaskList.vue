@@ -39,7 +39,7 @@ const canEdit = (item: ContractTemplateReviewTask) => {
     <li v-for="item in sortedItems" class="list-row">
       <div class="list-col-grow card bg-base-200 card-border hover:bg-base-300">
         <div class="card-body">
-          <h2 class="card-title justify-between">
+          <h2 class="card-title flex-wrap justify-between">
             <div>Review Task for Contract Template: {{ getTemplateName(item) }}</div>
             <div class="badge badge-secondary">{{ item.state }}</div>
           </h2>

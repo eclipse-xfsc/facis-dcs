@@ -24,6 +24,10 @@ const getTemplateName = (item: ContractTemplateApprovalTask) => {
 const getTemplateState = (item: ContractTemplateApprovalTask) => {
   return templatesStore.contractTemplates.find((template) => template.did === item.did)?.state
 }
+
+const canApprove = (item: ContractTemplateApprovalTask) => {
+  return item.state === 'OPEN' && getTemplateState(item) === TemplateState.reviewed
+}
 </script>
 
 <template>
@@ -31,7 +35,7 @@ const getTemplateState = (item: ContractTemplateApprovalTask) => {
     <li v-for="item in sortedItems" class="list-row">
       <div class="list-col-grow card bg-base-200 card-border hover:bg-base-300">
         <div class="card-body">
-          <h2 class="card-title justify-between">
+          <h2 class="card-title flex-wrap justify-between">
             <div>Approval Task for Contract Template: {{ getTemplateName(item) }}</div>
             <div class="badge badge-secondary">{{ item.state }}</div>
           </h2>
@@ -52,12 +56,15 @@ const getTemplateState = (item: ContractTemplateApprovalTask) => {
                 View
               </RouterLink>
               <RouterLink
-                v-if="item.state === 'OPEN' && getTemplateState(item) === TemplateState.reviewed"
+                v-if="canApprove(item)"
                 :to="{ name: ROUTES.TEMPLATES.APPROVE, params: { did: item.did } }"
                 class="btn btn-sm btn-primary rounded-box gap-2"
               >
                 Approve
               </RouterLink>
+              <div v-else class="tooltip tooltip-left tooltip-accent" data-tip="All review tasks must be verified">
+                <button class="btn btn-sm btn-primary rounded-box gap-2 btn-disabled">Approve</button>
+              </div>
             </div>
           </div>
         </div>
