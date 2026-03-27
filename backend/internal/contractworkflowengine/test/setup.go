@@ -22,6 +22,7 @@ type TestRepo struct {
 	CRepo  db.ContractRepo
 	RTRepo db.ReviewTaskRepo
 	ATRepo db.ApprovalTaskRepo
+	NRepo  db.NegotiationRepo
 }
 
 func setupTestDB(t *testing.T) *sqlx.DB {
@@ -45,6 +46,7 @@ func NewTestRepo(ctx context.Context) *TestRepo {
 		CRepo:  &pg.PostgresContractRepo{Ctx: ctx},
 		RTRepo: &pg.PostgresReviewTaskRepo{Ctx: ctx},
 		ATRepo: &pg.PostgresApprovalTaskRepo{Ctx: ctx},
+		NRepo:  &pg.PostgresNegotiationRepo{Ctx: ctx},
 	}
 }
 
@@ -63,6 +65,15 @@ func cleanupContractTable(t *testing.T, db *sqlx.DB) {
 	DELETE FROM contract_review_task;
 `
 	_, err = db.Exec(cleanReviewTasksStatement)
+	if err != nil {
+		t.Fatalf("Failed to clean table: %v", err)
+	}
+
+	cleanNegotiationsStatement := `
+	-- noinspection SqlWithoutWhere
+	DELETE FROM contract_negotiations;
+`
+	_, err = db.Exec(cleanNegotiationsStatement)
 	if err != nil {
 		t.Fatalf("Failed to clean table: %v", err)
 	}

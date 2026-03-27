@@ -16,11 +16,11 @@ import (
 )
 
 type RejectNegotiationCmd struct {
-	ID              int
+	ID              string
 	DID             string
 	ContractVersion *int
 	RejectedBy      string
-	RejectReason    *string
+	RejectionReason *string
 }
 
 type NegotiationRejector struct {
@@ -51,16 +51,16 @@ func (h *NegotiationRejector) Handle(cmd RejectNegotiationCmd) error {
 		return errors.New("current contract state is invalid")
 	}
 
-	isValidNegotiator, err := h.NRepo.IsValidNegotiator(tx, cmd.DID, cmd.ContractVersion, cmd.RejectedBy)
+	isValidCounterpart, err := h.NRepo.IsValidCounterpart(tx, cmd.DID, cmd.ContractVersion, cmd.RejectedBy)
 	if err != nil {
 		return fmt.Errorf("could not validate negotiator: %w", err)
 	}
 
-	if cmd.RejectedBy != processData.CreatedBy && !isValidNegotiator {
+	if cmd.RejectedBy != processData.CreatedBy && isValidCounterpart == false {
 		return errors.New("invalid user")
 	}
 
-	err = h.NRepo.Reject(tx, cmd.ID, cmd.RejectedBy, cmd.RejectReason)
+	err = h.NRepo.Reject(tx, cmd.ID, cmd.RejectedBy, cmd.RejectionReason)
 	if err != nil {
 		return fmt.Errorf("could not reject negotiation %w", err)
 	}
@@ -69,7 +69,7 @@ func (h *NegotiationRejector) Handle(cmd RejectNegotiationCmd) error {
 		DID:             cmd.DID,
 		ContractVersion: cmd.ContractVersion,
 		RejectedBy:      cmd.RejectedBy,
-		RejectionReason: cmd.RejectReason,
+		RejectionReason: cmd.RejectionReason,
 		OccurredAt:      time.Now(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)

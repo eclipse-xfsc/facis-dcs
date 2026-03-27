@@ -56,29 +56,27 @@ func (h *Negotiator) Handle(cmd NegotiationCmd) error {
 		return fmt.Errorf("could not validate negotiator as reviewer: %w", err)
 	}
 
-	if cmd.NegotiatedBy != processData.CreatedBy && !isValidReviewer {
+	if cmd.NegotiatedBy != processData.CreatedBy && isValidReviewer == false {
 		return errors.New("invalid user")
 	}
 
-	reviewers, err := h.RTRepo.ReadReviewersForDID(tx, cmd.DID)
-	for _, reviewer := range reviewers {
+	counterparts, err := h.RTRepo.ReadReviewersForDID(tx, cmd.DID)
+	for idx, _ := range counterparts {
+		if counterparts[idx] == cmd.NegotiatedBy {
+			counterparts[idx] = processData.CreatedBy
+			break
+		}
+	}
 
-		assignedTo := reviewer
-		if assignedTo == cmd.NegotiatedBy {
-			assignedTo = processData.CreatedBy
-		}
-
-		data := db.NegotiationData{
-			DID:             cmd.DID,
-			ContractVersion: cmd.ContractVersion,
-			ChangeRequest:   cmd.ChangeRequest,
-			AssignedTo:      assignedTo,
-			CreatedBy:       cmd.NegotiatedBy,
-		}
-		_, err := h.NTRepo.Create(tx, data)
-		if err != nil {
-			return fmt.Errorf("could not create negotiation: %w", err)
-		}
+	data := db.NegotiationCreateData{
+		DID:             cmd.DID,
+		ContractVersion: cmd.ContractVersion,
+		ChangeRequest:   cmd.ChangeRequest,
+		CreatedBy:       cmd.NegotiatedBy,
+	}
+	_, err = h.NTRepo.Create(tx, data, counterparts)
+	if err != nil {
+		return fmt.Errorf("could not create negotiation: %w", err)
 	}
 
 	evt := contractevents.NegotiationEvent{
@@ -86,7 +84,7 @@ func (h *Negotiator) Handle(cmd NegotiationCmd) error {
 		ContractVersion: cmd.ContractVersion,
 		ChangeRequest:   cmd.ChangeRequest,
 		NegotiatedBy:    cmd.NegotiatedBy,
-		Reviewers:       reviewers,
+		Counterparts:    counterparts,
 		OccurredAt:      time.Now(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)

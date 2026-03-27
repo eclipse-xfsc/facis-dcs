@@ -46,7 +46,7 @@ CREATE TYPE contract_review_task_state AS ENUM ('OPEN', 'APPROVED', 'REJECTED', 
 
 CREATE TABLE IF NOT EXISTS contract_review_task
 (
-    id              uuid PRIMARY KEY,
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
     did             VARCHAR(255) NOT NULL CHECK (did <> ''),
 
@@ -67,7 +67,7 @@ CREATE TYPE contract_approval_task_state AS ENUM ('OPEN', 'APPROVED', 'REJECTED'
 
 CREATE TABLE IF NOT EXISTS contract_approval_task
 (
-    id              uuid PRIMARY KEY,
+    id              uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
     did             VARCHAR(255) NOT NULL CHECK (did <> ''),
 
@@ -88,7 +88,7 @@ CREATE TYPE contract_negotiation_decision AS ENUM ('ACCEPTED', 'REJECTED', 'CLOS
 
 CREATE TABLE IF NOT EXISTS contract_negotiations
 (
-    id                  uuid PRIMARY KEY,
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
     did                 VARCHAR(255) NOT NULL CHECK (did <> ''),
     contract_version    INT,
@@ -104,7 +104,7 @@ CREATE TABLE IF NOT EXISTS contract_negotiations
 
 CREATE TABLE IF NOT EXISTS contract_negotiation_decisions
 (
-    id                  uuid PRIMARY KEY,
+    id                  uuid PRIMARY KEY DEFAULT gen_random_uuid(),
 
     negotiation_id      uuid,
 

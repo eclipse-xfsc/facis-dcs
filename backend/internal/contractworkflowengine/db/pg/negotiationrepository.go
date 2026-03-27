@@ -13,11 +13,11 @@ type PostgresNegotiationRepo struct {
 	Ctx context.Context
 }
 
-func (r PostgresNegotiationRepo) Create(tx *sqlx.Tx, data db.NegotiationData, counterparts []string) (*time.Time, error) {
+func (r PostgresNegotiationRepo) Create(tx *sqlx.Tx, data db.NegotiationCreateData, counterparts []string) (*time.Time, error) {
 	statement := `
         INSERT INTO contract_negotiations (
             did, contract_version, change_request, created_by
-        ) VALUES ($1, $2, $3, $4, $5)
+        ) VALUES ($1, $2, $3, $4)
         RETURNING id, created_at
     `
 
@@ -79,8 +79,8 @@ func (r PostgresNegotiationRepo) Reject(tx *sqlx.Tx, id string, rejectedBy strin
         UPDATE contract_negotiation_decisions cnd
         SET
             decision = CASE
-                WHEN counterpart = $2 THEN 'REJECTED'
-                ELSE 'CLOSED'
+                WHEN counterpart = $2 THEN 'REJECTED'::contract_negotiation_decision
+        		ELSE 'CLOSED'::contract_negotiation_decision
             END,
             rejection_reason = CASE
                 WHEN counterpart = $2 THEN $3
@@ -88,8 +88,7 @@ func (r PostgresNegotiationRepo) Reject(tx *sqlx.Tx, id string, rejectedBy strin
         FROM contract_negotiations cn
         WHERE cn.id = cnd.negotiation_id 
           AND cn.id = $1
-          AND decision IS NULL
-          AND counterpart = $2
+          AND cnd.decision IS NULL
     `
 	result, err := tx.ExecContext(r.Ctx, statement, id, rejectedBy, rejectionReason)
 	if err != nil {
@@ -115,7 +114,7 @@ func (r PostgresNegotiationRepo) IsValidCounterpart(tx *sqlx.Tx, did string, con
             FROM contract_negotiations cn
             JOIN contract_negotiation_decisions cnd ON cnd.negotiation_id = cn.id
             WHERE cn.did = $1
-              AND contract_version = $2
+              AND (contract_version = $2 OR ($2 IS NULL AND contract_version IS NULL))
               AND counterpart = $3
         )
     `
@@ -134,8 +133,6 @@ func (r PostgresNegotiationRepo) ReadAllByContractDID(tx *sqlx.Tx, did string) (
         FROM contract_negotiations cn
             JOIN contract_negotiation_decisions cnd ON cnd.negotiation_id = cn.id
             WHERE cn.did = $1
-              AND contract_version = $2
-              AND counterpart = $3
     `
 	var negotiations []db.NegotiationData
 	err := tx.SelectContext(r.Ctx, &negotiations, query, did)
@@ -145,14 +142,14 @@ func (r PostgresNegotiationRepo) ReadAllByContractDID(tx *sqlx.Tx, did string) (
 	return negotiations, nil
 }
 
-func (r PostgresNegotiationRepo) HasOpenNegotiations(tx *sqlx.Tx, did string, contractVersion *int) (bool, error) {
+func (r PostgresNegotiationRepo) HasOpenNegotiationDecisions(tx *sqlx.Tx, did string, contractVersion *int) (bool, error) {
 	query := `
         SELECT EXISTS (
             SELECT 1
             FROM contract_negotiations cn
             JOIN contract_negotiation_decisions cnd ON cnd.negotiation_id = cn.id
             WHERE cn.did = $1
-              AND cn.contract_version = $2
+              AND (contract_version = $2 OR ($2 IS NULL AND contract_version IS NULL))
               AND cnd.decision IS NULL
         )
     `
@@ -171,7 +168,7 @@ func (r PostgresNegotiationRepo) AllNegotiationsAccepted(tx *sqlx.Tx, did string
             FROM contract_negotiations cn
             JOIN contract_negotiation_decisions cnd ON cnd.negotiation_id = cn.id
             WHERE cn.did = $1
-              AND cn.contract_version = $2
+              AND (contract_version = $2 OR ($2 IS NULL AND contract_version IS NULL))
               AND cnd.decision != 'ACCEPTED'
         )
     `

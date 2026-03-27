@@ -107,16 +107,16 @@ func (h *Submitter) Handle(cmd SubmitCmd) error {
 
 	} else if processData.State == contractstate.Negotiation.String() {
 
-		isValidNegotiator, err := h.NRepo.IsValidNegotiator(tx, processData.DID, processData.ContractVersion, cmd.SubmittedBy)
+		isValidCounterpart, err := h.NRepo.IsValidCounterpart(tx, processData.DID, processData.ContractVersion, cmd.SubmittedBy)
 		if err != nil {
-			return fmt.Errorf("could not validate negotiator: %w", err)
+			return fmt.Errorf("could not validate counterpart: %w", err)
 		}
 
-		if cmd.SubmittedBy != processData.CreatedBy && !isValidNegotiator {
+		if cmd.SubmittedBy != processData.CreatedBy && isValidCounterpart == false {
 			return errors.New("invalid user")
 		}
 
-		hasOpenNegotiations, err := h.NRepo.HasOpenNegotiations(tx, cmd.DID, processData.ContractVersion)
+		hasOpenNegotiations, err := h.NRepo.HasOpenNegotiationDecisions(tx, cmd.DID, processData.ContractVersion)
 		if err != nil {
 			return fmt.Errorf("could not check open negotiations: %w", err)
 		}

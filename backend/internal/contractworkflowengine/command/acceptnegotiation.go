@@ -16,7 +16,7 @@ import (
 )
 
 type AcceptNegotiationCmd struct {
-	ID              int
+	ID              string
 	DID             string
 	ContractVersion *int
 	AcceptedBy      string
@@ -50,12 +50,12 @@ func (h *NegotiationAcceptor) Handle(cmd AcceptNegotiationCmd) error {
 		return errors.New("current contract state is invalid")
 	}
 
-	isValidNegotiator, err := h.NRepo.IsValidNegotiator(tx, cmd.DID, cmd.ContractVersion, cmd.AcceptedBy)
+	isValidCounterpart, err := h.NRepo.IsValidCounterpart(tx, cmd.DID, cmd.ContractVersion, cmd.AcceptedBy)
 	if err != nil {
-		return fmt.Errorf("could not validate negotiator: %w", err)
+		return fmt.Errorf("could not validate counterpart: %w", err)
 	}
 
-	if cmd.AcceptedBy != processData.CreatedBy && !isValidNegotiator {
+	if cmd.AcceptedBy != processData.CreatedBy && isValidCounterpart == false {
 		return errors.New("invalid user")
 	}
 

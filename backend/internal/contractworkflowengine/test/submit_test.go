@@ -247,17 +247,6 @@ func TestSubmit_ApproveContractInSubmittedStateWithInvalidUser(t *testing.T) {
 
 	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, reviewers)
 
-	tx, err := db.BeginTxx(ctx, nil)
-	defer tx.Rollback()
-	if err != nil {
-		t.Fatalf("Failed to begin transaction: %v", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		t.Fatalf("Failed to commit transaction: %v", err)
-	}
-
 	actionFlag := actionflag.Approval
 
 	cmd := command.SubmitCmd{
@@ -306,17 +295,6 @@ func TestSubmit_RejectContractInSubmittedStateWithInvalidUser(t *testing.T) {
 	}
 
 	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, reviewers)
-
-	tx, err := db.BeginTxx(ctx, nil)
-	defer tx.Rollback()
-	if err != nil {
-		t.Fatalf("Failed to begin transaction: %v", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		t.Fatalf("Failed to commit transaction: %v", err)
-	}
 
 	actionFlag := actionflag.Reject
 

@@ -9,13 +9,13 @@ import (
 type NegotiationDecision string
 
 const (
-	Accept   NegotiationDecision = "OPEN"
+	Accepted NegotiationDecision = "ACCEPTED"
 	Rejected NegotiationDecision = "REJECTED"
 	Closed   NegotiationDecision = "CLOSED"
 )
 
 var validState = map[NegotiationDecision]bool{
-	Accept:   true,
+	Accepted: true,
 	Rejected: true,
 	Closed:   true,
 }

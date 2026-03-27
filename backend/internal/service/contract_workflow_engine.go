@@ -145,6 +145,7 @@ func (s *contractWorkflowEnginesrvc) Submit(ctx context.Context, req *contractwo
 		CRepo:  s.CRepo,
 		RTRepo: s.RTRepo,
 		ATRepo: s.ATRepo,
+		NRepo:  s.NRepo,
 	}
 	err = handler.Handle(cmd)
 	if err != nil {
