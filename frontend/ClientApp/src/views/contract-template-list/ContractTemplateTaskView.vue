@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import ApprovalTaskList from '@/components/lists/approval-task-list/ApprovalTaskList.vue'
-import ReviewTaskList from '@/components/lists/review-task-list/ReviewTaskList.vue'
+import ApprovalTaskList from '@/components/lists/template/approval-task-list/ApprovalTaskList.vue';
+import ReviewTaskList from '@/components/lists/template/review-task-list/ReviewTaskList.vue';
 import { ROUTES } from '@/router/router';
 import { useContractTemplatesStore } from '@/stores/contract-templates-store';
 import { storeToRefs } from 'pinia';

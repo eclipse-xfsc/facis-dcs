@@ -1,21 +1,19 @@
 <script setup lang="ts">
 import type { PartialContractTemplate } from '@/models/contract-template'
-import type { ContractTemplateReviewTask } from '@/models/contract-template-review-task'
+import type { ContractTemplateApprovalTask } from '@/models/contract-template-approval-task'
 import { ROUTES } from '@/router/router'
-import { useAuthStore } from '@/stores/auth-store'
 import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import { TemplateState } from '@/types/contract-template-state'
 import { toComparableValue } from '@/utils/comparison'
 import { computed, ref, type Ref } from 'vue'
-import ListSort from '../ListSort.vue'
-import ListSearch from '../template-list/ListSearch.vue'
+import ListSort from '../../ListSort.vue'
+import TemplateListSearch from '../TemplateListSearch.vue'
 
 const props = defineProps<{
-  items: ContractTemplateReviewTask[]
+  items: ContractTemplateApprovalTask[]
 }>()
 
 const templatesStore = useContractTemplatesStore()
-const authStore = useAuthStore()
 
 const sorter = new Map([
   ['created_at', 'Creation date'],
@@ -25,15 +23,15 @@ const defaultSort = sorter.keys().next().value!
 const sortBy = ref(defaultSort)
 const sortOrder = ref(1)
 
-const searchedItems: Ref<ContractTemplateReviewTask[]> = ref(props.items)
+const searchedItems: Ref<ContractTemplateApprovalTask[]> = ref(props.items)
 
 const sortedItems = computed(() => {
   if (!sorter.has(sortBy.value)) {
     return searchedItems.value
   }
   return searchedItems.value.slice().sort((taskA, taskB) => {
-    const aSortValue = taskA[sortBy.value as keyof ContractTemplateReviewTask]
-    const bSortValue = taskB[sortBy.value as keyof ContractTemplateReviewTask]
+    const aSortValue = taskA[sortBy.value as keyof ContractTemplateApprovalTask]
+    const bSortValue = taskB[sortBy.value as keyof ContractTemplateApprovalTask]
     const aValue = toComparableValue(aSortValue)
     const bValue = toComparableValue(bSortValue)
     if (!aValue && !bValue) return 0
@@ -56,23 +54,21 @@ const templates = computed(() => {
   )
 })
 
-const getTemplateName = (item: ContractTemplateReviewTask) => {
+const getTemplateName = (item: ContractTemplateApprovalTask) => {
   return templatesStore.contractTemplates.find((template) => template.did === item.did)?.name ?? 'Nameless Template'
 }
 
-const canEdit = (item: ContractTemplateReviewTask) => {
-  const template = templatesStore.contractTemplates.find((template) => template.did === item.did)
-  const state = template?.state
-  return (
-    (template?.created_by === authStore.user?.username &&
-      (state === TemplateState.draft || state === TemplateState.rejected)) ||
-    state === TemplateState.submitted
-  )
+const getTemplateState = (item: ContractTemplateApprovalTask) => {
+  return templatesStore.contractTemplates.find((template) => template.did === item.did)?.state
 }
 
-const resolveViewRouteName = (item: ContractTemplateReviewTask) => {
-  if (item.state === 'OPEN') {
-    return ROUTES.TEMPLATES.REVIEW
+const canApprove = (item: ContractTemplateApprovalTask) => {
+  return item.state === 'OPEN' && getTemplateState(item) === TemplateState.reviewed
+}
+
+const resolveViewRouteName = (item: ContractTemplateApprovalTask) => {
+  if (canApprove(item)) {
+    return ROUTES.TEMPLATES.APPROVE
   }
   return ROUTES.TEMPLATES.VIEW
 }
@@ -84,15 +80,15 @@ const applySearchResult = (searchResult: PartialContractTemplate[]) => {
 
 <template>
   <ul class="list">
-    <li class="tracking-wide w-full px-4 flex justify-end flex-col sm:flex-row">
-      <ListSearch class="flex-1" :items="templates" @search-result="applySearchResult" />
+    <li class="tracking-wide px-4 flex justify-end flex-col sm:flex-row">
+      <TemplateListSearch class="flex-1" :items="templates" @search-result="applySearchResult" />
       <ListSort :sorter="sorter" v-model:sort-by="sortBy" v-model:sort-order="sortOrder" />
     </li>
     <li v-for="item in sortedItems" class="list-row">
       <div class="list-col-grow card bg-base-200 card-border hover:bg-base-300">
         <div class="card-body">
           <h2 class="card-title flex-wrap justify-between">
-            <div>Review Task for Contract Template: {{ getTemplateName(item) }}</div>
+            <div>Approval Task for Contract Template: {{ getTemplateName(item) }}</div>
             <div class="badge badge-secondary">{{ item.state }}</div>
           </h2>
           <div class="flex justify-between">
@@ -110,16 +106,6 @@ const applySearchResult = (searchResult: PartialContractTemplate[]) => {
                 class="btn btn-sm btn-primary rounded-box"
               >
                 View
-              </RouterLink>
-              <RouterLink
-                v-if="canEdit(item)"
-                :to="{
-                  name: ROUTES.TEMPLATES.EDIT,
-                  params: { did: item.did },
-                }"
-                class="btn btn-sm btn-secondary rounded-box gap-2"
-              >
-                Edit
               </RouterLink>
             </div>
           </div>

@@ -4,8 +4,8 @@ import { useContractTemplateStateFilterStore } from '@/stores/contract-template-
 import { toComparableValue } from '@/utils/comparison'
 import { storeToRefs } from 'pinia'
 import { computed, onUnmounted, ref, type Ref } from 'vue'
-import ListSort from '../ListSort.vue'
-import ListSearch from './ListSearch.vue'
+import ListSort from '../../ListSort.vue'
+import TemplateListSearch from '../TemplateListSearch.vue'
 import TemplateListItem from './TemplateListItem.vue'
 import TemplateListStateFilter from './TemplateListStateFilter.vue'
 
@@ -72,7 +72,7 @@ onUnmounted(() => stateFilterStore.reset())
   <ul class="list">
     <li class="tracking-wide px-4 flex justify-between flex-col sm:flex-row">
       <TemplateListStateFilter />
-      <ListSearch :items="items" class="flex-1" @search-result="applySearchResult" />
+      <TemplateListSearch :items="items" class="flex-1" @search-result="applySearchResult" />
       <ListSort :sorter="sorter" v-model:sort-by="sortBy" v-model:sort-order="sortOrder" />
     </li>
     <TemplateListItem
