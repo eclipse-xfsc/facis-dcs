@@ -182,3 +182,40 @@ func (e RejectNegotiationEvent) EventType() string {
 func (e RejectNegotiationEvent) GetDID() string {
 	return e.DID
 }
+
+// ApproveEvent is emitted when a contract is approved.
+type ApproveEvent struct {
+	DID             string    `json:"did"`
+	ContractVersion *int      `json:"contract_version,omitempty"`
+	ApprovedBy      string    `json:"approved_by"`
+	OccurredAt      time.Time `json:"occurred_at"`
+}
+
+// EventType implements the Event interface.
+func (e ApproveEvent) EventType() string {
+	return eventtype.Approve.String()
+}
+
+// GetDID implements the Event interface.
+func (e ApproveEvent) GetDID() string {
+	return e.DID
+}
+
+// RejectEvent is emitted when a contract is rejected.
+type RejectEvent struct {
+	DID             string    `json:"did"`
+	ContractVersion *int      `json:"contract_version,omitempty"`
+	RejectedBy      string    `json:"rejected_by"`
+	Reason          string    `json:"reason"`
+	OccurredAt      time.Time `json:"occurred_at"`
+}
+
+// EventType implements the Event interface.
+func (e RejectEvent) EventType() string {
+	return eventtype.Reject.String()
+}
+
+// GetDID implements the Event interface.
+func (e RejectEvent) GetDID() string {
+	return e.DID
+}
