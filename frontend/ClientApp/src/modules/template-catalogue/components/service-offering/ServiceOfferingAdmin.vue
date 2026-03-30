@@ -118,12 +118,10 @@ const keywordInput = ref('')
 const submitting = computed(() => loading.value)
 
 const defaultForm = (): TemplateCatalogueCreateServiceOfferingRequest => ({
-  "keywords": [
-    "dcs"
-  ],
-  "description": "dcs description",
-  "end_point_url": "https://argo.asd-stack.eu/facis/digital-contracting-service/api",
-  "terms_and_conditions": "http://argo.asd-stack.eu/tac"
+  'keywords': [],
+  'description': '',
+  'end_point_url': '',
+  'terms_and_conditions': ''
 })
 
 const form = ref<TemplateCatalogueCreateServiceOfferingRequest>(defaultForm())
