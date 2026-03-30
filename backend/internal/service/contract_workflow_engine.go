@@ -340,7 +340,7 @@ func (s *contractWorkflowEnginesrvc) Respond(ctx context.Context, req *contractw
 
 	actionFlag, err := negotiationactionflag.NewNegotiationActionFlag(req.ActionFlag)
 	if err != nil {
-		return nil, contractworkflowengine.MakeInternalError(fmt.Errorf("unknown action flag: %d", req.ActionFlag))
+		return nil, contractworkflowengine.MakeInternalError(fmt.Errorf("unknown action flag: %s", req.ActionFlag))
 	}
 
 	if actionFlag == negotiationactionflag.Accepting {
@@ -434,14 +434,62 @@ func (s *contractWorkflowEnginesrvc) Search(ctx context.Context, req *contractwo
 	return contracts, nil
 }
 
-func (s *contractWorkflowEnginesrvc) Approve(ctx context.Context, req *contractworkflowengine.ApprovePayload) (res int, err error) {
-	log.Printf(ctx, "contractWorkflowEngine.approve")
-	return
+func (s *contractWorkflowEnginesrvc) Approve(ctx context.Context, req *contractworkflowengine.ContractApproveRequest) (res *contractworkflowengine.ContractApproveResponse, err error) {
+
+	updatedAt, err := time.Parse(time.RFC3339, req.UpdatedAt)
+	if err != nil {
+		return nil, contractworkflowengine.MakeInternalError(err)
+	}
+
+	cmd := command.ApproveCmd{
+		DID:        req.Did,
+		UpdatedAt:  updatedAt,
+		ApprovedBy: middleware.GetUsername(ctx),
+	}
+	handler := command.Approver{
+		Ctx:    ctx,
+		DB:     s.DB,
+		CRepo:  s.CRepo,
+		ATRepo: s.ATRepo,
+	}
+	err = handler.Handle(cmd)
+	if err != nil {
+		return nil, contractworkflowengine.MakeInternalError(err)
+	}
+
+	return &contractworkflowengine.ContractApproveResponse{
+		Did: req.Did,
+	}, nil
 }
 
-func (s *contractWorkflowEnginesrvc) Reject(ctx context.Context, req *contractworkflowengine.RejectPayload) (res int, err error) {
-	log.Printf(ctx, "contractWorkflowEngine.reject")
-	return
+func (s *contractWorkflowEnginesrvc) Reject(ctx context.Context, req *contractworkflowengine.ContractRejectRequest) (res *contractworkflowengine.ContractRejectResponse, err error) {
+
+	updatedAt, err := time.Parse(time.RFC3339, req.UpdatedAt)
+	if err != nil {
+		return nil, templaterepository.MakeInternalError(err)
+	}
+
+	cmd := command.RejectCmd{
+		DID:        req.Did,
+		UpdatedAt:  updatedAt,
+		RejectedBy: middleware.GetUsername(ctx),
+		Reason:     req.Reason,
+	}
+	handler := command.Rejecter{
+		Ctx:    ctx,
+		DB:     s.DB,
+		CRepo:  s.CRepo,
+		RTRepo: s.RTRepo,
+		ATRepo: s.ATRepo,
+	}
+	err = handler.Handle(cmd)
+	if err != nil {
+		return nil, contractworkflowengine.MakeInternalError(err)
+	}
+
+	return &contractworkflowengine.ContractRejectResponse{
+		Did: req.Did,
+	}, nil
 }
 
 func (s *contractWorkflowEnginesrvc) Store(ctx context.Context, req *contractworkflowengine.StorePayload) (res int, err error) {

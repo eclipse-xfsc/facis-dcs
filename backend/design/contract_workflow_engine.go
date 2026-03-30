@@ -268,6 +268,48 @@ var ContractNegotiationRespondResponse = Type("ContractNegotiationRespondRespons
 	Required("id")
 })
 
+var ContractApproveRequest = Type("ContractApproveRequest", func() {
+	Description("Contract approve request")
+
+	Token("token", String, "JWT token")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Attribute("updated_at", String, "The timestamp when the contract was updated")
+
+	Required("did", "updated_at")
+})
+
+var ContractApproveResponse = Type("ContractApproveResponse", func() {
+	Description("Result for approving a contract")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
+var ContractRejectRequest = Type("ContractRejectRequest", func() {
+	Description("Contract retrieve by id request")
+
+	Token("token", String, "JWT token")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Attribute("updated_at", String, "The timestamp when the contract was updated")
+
+	Attribute("reason", String, "Reason for rejecting the contract")
+
+	Required("did", "updated_at", "reason")
+})
+
+var ContractRejectResponse = Type("ContractRejectResponse", func() {
+	Description("Result for rejecting a contract")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
 // Contract Workflow Engine Service  (/contract/...)
 var _ = Service("ContractWorkflowEngine", func() {
 	Description("Contract Workflow Engine APIs (/contract/...)")
@@ -550,18 +592,24 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:cwe:components", "Contract Deployment for Service Provisioning")
 		Meta("dcs:downstream:sm:component", "Signer Authorization & PoA application")
 		Meta("dcs:ui", "Contract Approval")
+
 		Security(JWTAuth, func() {
 			Scope("Contract Approver")
 			Scope("Sys. Contract Approver")
 		})
-		Payload(func() {
-			Token("token", String, "JWT token")
-		})
+
+		Payload(ContractApproveRequest)
+		Result(ContractApproveResponse)
+
+		Error("bad_request", ErrorResult, "Bad request")
+		Error("internal_error", ErrorResult, "Internal server error")
+
 		HTTP(func() {
 			POST("/contract/approve")
 			Response(StatusOK)
+			Response("bad_request", StatusBadRequest)
+			Response("internal_error", StatusInternalServerError)
 		})
-		Result(Int)
 	})
 
 	Method("reject", func() {
@@ -570,18 +618,24 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:cwe:components", "")
 		Meta("dcs:downstream:sm:component", "Signer Authorization & PoA application")
 		Meta("dcs:ui", "Contract Approval")
+
 		Security(JWTAuth, func() {
 			Scope("Contract Approver")
 			Scope("Sys. Contract Approver")
 		})
-		Payload(func() {
-			Token("token", String, "JWT token")
-		})
+
+		Payload(ContractRejectRequest)
+		Result(ContractRejectResponse)
+
+		Error("bad_request", ErrorResult, "Bad request")
+		Error("internal_error", ErrorResult, "Internal server error")
+
 		HTTP(func() {
 			POST("/contract/reject")
 			Response(StatusOK)
+			Response("bad_request", StatusBadRequest)
+			Response("internal_error", StatusInternalServerError)
 		})
-		Result(Int)
 	})
 
 	Method("store", func() {

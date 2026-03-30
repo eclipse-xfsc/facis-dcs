@@ -131,6 +131,6 @@ func (r *PostgresApprovalTaskRepo) Delete(tx *sqlx.Tx, did string) error {
         DELETE FROM contract_approval_task
         WHERE did = $1
     `
-	_, err := tx.ExecContext(r.Ctx, statement)
+	_, err := tx.ExecContext(r.Ctx, statement, did)
 	return err
 }
