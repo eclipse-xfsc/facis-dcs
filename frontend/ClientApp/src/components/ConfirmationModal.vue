@@ -1,15 +1,32 @@
 <script setup lang="ts">
 import { useConfirmDialog } from '@vueuse/core'
-import { ref, useTemplateRef, watch, type Ref } from 'vue'
+import { computed, ref, useTemplateRef, watch, type Ref } from 'vue'
 
 interface ModalData {
   message: string
+  requiredText?: boolean
 }
+
+interface ConfirmData {
+  isCanceled: boolean
+  data?: string
+}
+
+const props = defineProps<{
+  showEditor?: boolean
+  editorPlaceholder?: 'Comment' | 'Decision Note'
+}>()
 
 const actionModal = useTemplateRef('action-modal')
 const modalData: Ref<ModalData> = ref({ message: 'Confirm selection' })
 
-const { isRevealed, reveal, confirm, cancel, onReveal } = useConfirmDialog<ModalData>()
+const inputText = ref('')
+
+const hasEditor = computed(() => !!props.showEditor)
+
+const inputRequired = computed(() => !!modalData.value.requiredText && !inputText.value.trim())
+
+const { isRevealed, reveal, confirm, cancel, onReveal } = useConfirmDialog<ModalData, string | undefined>()
 
 onReveal((data) => {
   if (data) {
@@ -18,10 +35,24 @@ onReveal((data) => {
 })
 
 watch(isRevealed, (value) => {
-  value ? actionModal.value?.showModal() : actionModal.value?.close()
+  if (value) {
+    inputText.value = ''
+    actionModal.value?.showModal()
+  } else {
+    actionModal.value?.close()
+  }
 })
 
-defineExpose({ reveal })
+const handleConfirm = () => {
+  if (hasEditor) {
+    if (inputRequired.value) return
+    confirm(inputText.value)
+  } else {
+    confirm()
+  }
+}
+
+defineExpose({ reveal: reveal as (data: ModalData) => Promise<ConfirmData> })
 </script>
 
 <template>
@@ -29,11 +60,25 @@ defineExpose({ reveal })
     <div class="modal-box">
       <h3 class="text-lg font-bold">Confirmation</h3>
       <p class="text-md py-4">{{ modalData.message }}</p>
-      <div class="modal-action flex-col">
-        <button class="btn btn-soft btn-sm btn-primary" @click="confirm">Confirm</button>
+      <div v-if="showEditor" class="max-w-4xl mx-auto px-6 py-3 flex flex-col md:flex-row gap-3">
+        <textarea
+          v-model="inputText"
+          class="textarea textarea-ghost textarea-sm w-full mt-0.5 text-sm min-h-10 resize-y border border-base-300/50 rounded-lg"
+          :placeholder="editorPlaceholder ?? 'Comment'"
+          rows="4"
+        />
+      </div>
+      <div class="modal-action flex-col" :class="{ 'flex-row-reverse justify-start': hasEditor }">
+        <button
+          class="btn btn-soft btn-sm btn-primary"
+          :class="{ 'btn-disabled': inputRequired }"
+          @click="handleConfirm"
+        >
+          {{ hasEditor ? 'Submit' : 'Confirm' }}
+        </button>
         <button class="btn btn-soft btn-sm btn-error" @click="cancel">Cancel</button>
       </div>
     </div>
-    <div class="modal-backdrop" @click="cancel"></div>
+    <div v-if="!hasEditor" class="modal-backdrop" @click="cancel"></div>
   </dialog>
 </template>

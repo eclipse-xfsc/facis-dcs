@@ -68,12 +68,12 @@ const resolveViewRouteName = computed(() => {
               View
             </RouterLink>
             <RouterLink
-              v-if="canEdit"
-              :to="{
+              :to="canEdit ? {
                 name: ROUTES.TEMPLATES.EDIT,
                 params: { did: item.did },
-              }"
+              } : '#'"
               class="btn btn-sm btn-primary rounded-box gap-2"
+              :class="{'btn-disabled': !canEdit}"
             >
               Edit
             </RouterLink>
