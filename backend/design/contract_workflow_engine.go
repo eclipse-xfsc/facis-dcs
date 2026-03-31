@@ -171,6 +171,24 @@ var ContractRetrieveByIDResponse = Type("ContractRetrieveByIDResponse", func() {
 	Required("did", "state", "created_by", "created_at", "updated_at", "contract_data", "negotiations")
 })
 
+var ContractReviewRequest = Type("ContractReviewRequest", func() {
+	Description("Contract review request")
+
+	Token("token", String, "JWT token")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
+var ContractReviewResponse = Type("ContractReviewResponse", func() {
+	Description("Result for reviewing contract")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
 var ContractVerifyRequest = Type("ContractVerifyRequest", func() {
 	Description("Contract verify request")
 
@@ -304,6 +322,60 @@ var ContractRejectRequest = Type("ContractRejectRequest", func() {
 
 var ContractRejectResponse = Type("ContractRejectResponse", func() {
 	Description("Result for rejecting a contract")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
+var ContractStoreRequest = Type("ContractStoreRequest", func() {
+	Description("Contract store evidence request")
+
+	Token("token", String, "JWT token")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
+var ContractStoreResponse = Type("ContractStoreResponse", func() {
+	Description("Result for store evidence")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
+var ContractTerminateRequest = Type("ContractTerminateRequest", func() {
+	Description("Contract terminate request")
+
+	Token("token", String, "JWT token")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
+var ContractTerminateResponse = Type("ContractTerminateResponse", func() {
+	Description("Result for terminating a contract")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
+var ContractAuditRequest = Type("ContractAuditRequest", func() {
+	Description("Contract audit request")
+
+	Token("token", String, "JWT token")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
+	Required("did")
+})
+
+var ContractAuditResponse = Type("ContractAuditResponse", func() {
+	Description("Result for auditing a contract")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
 
@@ -450,17 +522,23 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:requirements", "DCS-IR-CWE-04")
 		Meta("dcs:cwe:components", "Contract Versioning")
 		Meta("dcs:ui", "Contract Negotiation", "Contract Review")
+
 		Security(JWTAuth, func() {
 			Scope("Contract Negotiator")
 		})
-		Payload(func() {
-			Token("token", String, "JWT token")
-		})
+
+		Payload(ContractReviewRequest)
+		Result(ContractReviewResponse)
+
+		Error("bad_request", ErrorResult, "Bad request")
+		Error("internal_error", ErrorResult, "Internal server error")
+
 		HTTP(func() {
 			GET("/contract/review")
 			Response(StatusOK)
+			Response("bad_request", StatusBadRequest)
+			Response("internal_error", StatusInternalServerError)
 		})
-		Result(Any)
 	})
 
 	// GET /contract/retrieve
@@ -498,6 +576,7 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:cwe:components", "")
 		Meta("dcs:downstream:sm:component", "Signer Authorization & PoA application")
 		Meta("dcs:ui", "Contract Negotiation", "Contract Review", "Contract Approval", "Contract Management Dashboard")
+
 		Security(JWTAuth, func() {
 			Scope("Contract Creator")
 			Scope("Contract Reviewer")
@@ -643,18 +722,24 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:requirements", "DCS-IR-CWE-12")
 		Meta("dcs:cwe:components", "Contract Performance Tracking")
 		Meta("dcs:ui", "Contract Management Dashboard")
+
 		Security(JWTAuth, func() {
 			Scope("Contract Manager")
 			Scope("Sys. Contract Manager")
 		})
-		Payload(func() {
-			Token("token", String, "JWT token")
-		})
+
+		Payload(ContractStoreRequest)
+		Result(ContractStoreResponse)
+
+		Error("bad_request", ErrorResult, "Bad request")
+		Error("internal_error", ErrorResult, "Internal server error")
+
 		HTTP(func() {
 			POST("/contract/store")
 			Response(StatusOK)
+			Response("bad_request", StatusBadRequest)
+			Response("internal_error", StatusInternalServerError)
 		})
-		Result(Int)
 	})
 
 	Method("terminate", func() {
@@ -662,18 +747,24 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:requirements", "DCS-IR-CWE-12")
 		Meta("dcs:cwe:components", "")
 		Meta("dcs:ui", "Contract Management Dashboard")
+
 		Security(JWTAuth, func() {
 			Scope("Contract Manager")
 			Scope("Sys. Contract Manager")
 		})
-		Payload(func() {
-			Token("token", String, "JWT token")
-		})
+
+		Payload(ContractTerminateRequest)
+		Result(ContractTerminateResponse)
+
+		Error("bad_request", ErrorResult, "Bad request")
+		Error("internal_error", ErrorResult, "Internal server error")
+
 		HTTP(func() {
 			POST("/contract/terminate")
 			Response(StatusOK)
+			Response("bad_request", StatusBadRequest)
+			Response("internal_error", StatusInternalServerError)
 		})
-		Result(Int)
 	})
 
 	Method("audit", func() {
@@ -681,17 +772,23 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:requirements", "DCS-IR-CWE-12", "DCS-IR-CWE-13")
 		Meta("dcs:cwe:components", "")
 		Meta("dcs:ui", "Contract Management Dashboard")
+
 		Security(JWTAuth, func() {
 			Scope("Contract Manager")
 			Scope("Sys. Contract Manager")
 		})
-		Payload(func() {
-			Token("token", String, "JWT token")
-		})
+
+		Payload(ContractAuditRequest)
+		Result(ContractAuditResponse)
+
+		Error("bad_request", ErrorResult, "Bad request")
+		Error("internal_error", ErrorResult, "Internal server error")
+
 		HTTP(func() {
 			POST("/contract/audit")
 			Response(StatusOK)
+			Response("bad_request", StatusBadRequest)
+			Response("internal_error", StatusInternalServerError)
 		})
-		Result(ArrayOf(String))
 	})
 })

@@ -219,3 +219,57 @@ func (e RejectEvent) EventType() string {
 func (e RejectEvent) GetDID() string {
 	return e.DID
 }
+
+// TerminateEvent is emitted when a contract is terminated.
+type TerminateEvent struct {
+	DID             string    `json:"did"`
+	ContractVersion *int      `json:"contract_version,omitempty"`
+	TerminatedBy    string    `json:"terminated_by"`
+	OccurredAt      time.Time `json:"occurred_at"`
+}
+
+// EventType implements the Event interface.
+func (e TerminateEvent) EventType() string {
+	return eventtype.Terminate.String()
+}
+
+// GetDID implements the Event interface.
+func (e TerminateEvent) GetDID() string {
+	return e.DID
+}
+
+// RecordEvidenceEvent is emitted when an evidence is recorded
+type RecordEvidenceEvent struct {
+	DID             string    `json:"did"`
+	ContractVersion *int      `json:"contract_version,omitempty"`
+	RecordedBy      string    `json:"recorded_by"`
+	OccurredAt      time.Time `json:"occurred_at"`
+}
+
+// EventType implements the Event interface.
+func (e RecordEvidenceEvent) EventType() string {
+	return eventtype.RecordEvidence.String()
+}
+
+// GetDID implements the Event interface.
+func (e RecordEvidenceEvent) GetDID() string {
+	return e.DID
+}
+
+// AuditEvent is emitted when the contract is audited
+type AuditEvent struct {
+	DID             string    `json:"did"`
+	ContractVersion *int      `json:"contract_version,omitempty"`
+	RecordedBy      string    `json:"recorded_by"`
+	OccurredAt      time.Time `json:"occurred_at"`
+}
+
+// EventType implements the Event interface.
+func (e AuditEvent) EventType() string {
+	return eventtype.Audit.String()
+}
+
+// GetDID implements the Event interface.
+func (e AuditEvent) GetDID() string {
+	return e.DID
+}

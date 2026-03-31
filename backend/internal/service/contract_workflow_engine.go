@@ -383,7 +383,7 @@ func (s *contractWorkflowEnginesrvc) Respond(ctx context.Context, req *contractw
 	}, nil
 }
 
-func (s *contractWorkflowEnginesrvc) Review(ctx context.Context, req *contractworkflowengine.ReviewPayload) (res any, err error) {
+func (s *contractWorkflowEnginesrvc) Review(ctx context.Context, req *contractworkflowengine.ContractReviewRequest) (res *contractworkflowengine.ContractReviewResponse, err error) {
 	log.Printf(ctx, "contractWorkflowEngine.review")
 	return
 }
@@ -492,17 +492,49 @@ func (s *contractWorkflowEnginesrvc) Reject(ctx context.Context, req *contractwo
 	}, nil
 }
 
-func (s *contractWorkflowEnginesrvc) Store(ctx context.Context, req *contractworkflowengine.StorePayload) (res int, err error) {
-	log.Printf(ctx, "contractWorkflowEngine.store")
-	return
+func (s *contractWorkflowEnginesrvc) Store(ctx context.Context, req *contractworkflowengine.ContractStoreRequest) (res *contractworkflowengine.ContractStoreResponse, err error) {
+
+	cmd := command.RecordEvidenceCmd{
+		DID:        req.Did,
+		RecordedBy: middleware.GetUsername(ctx),
+	}
+	handler := command.EvidenceRecorder{
+		Ctx:   ctx,
+		DB:    s.DB,
+		CRepo: s.CRepo,
+	}
+	err = handler.Handle(cmd)
+	if err != nil {
+		return nil, contractworkflowengine.MakeInternalError(err)
+	}
+
+	return &contractworkflowengine.ContractStoreResponse{
+		Did: req.Did,
+	}, nil
 }
 
-func (s *contractWorkflowEnginesrvc) Terminate(ctx context.Context, req *contractworkflowengine.TerminatePayload) (res int, err error) {
-	log.Printf(ctx, "contractWorkflowEngine.terminate")
-	return
+func (s *contractWorkflowEnginesrvc) Terminate(ctx context.Context, req *contractworkflowengine.ContractTerminateRequest) (res *contractworkflowengine.ContractTerminateResponse, err error) {
+
+	cmd := command.TerminateCmd{
+		DID:          req.Did,
+		TerminatedBy: middleware.GetUsername(ctx),
+	}
+	handler := command.Terminator{
+		Ctx:   ctx,
+		DB:    s.DB,
+		CRepo: s.CRepo,
+	}
+	err = handler.Handle(cmd)
+	if err != nil {
+		return nil, contractworkflowengine.MakeInternalError(err)
+	}
+
+	return &contractworkflowengine.ContractTerminateResponse{
+		Did: req.Did,
+	}, nil
 }
 
-func (s *contractWorkflowEnginesrvc) Audit(ctx context.Context, req *contractworkflowengine.AuditPayload) (res []string, err error) {
+func (s *contractWorkflowEnginesrvc) Audit(ctx context.Context, req *contractworkflowengine.ContractAuditRequest) (res *contractworkflowengine.ContractAuditResponse, err error) {
 	log.Printf(ctx, "contractWorkflowEngine.audit")
 	return
 }
