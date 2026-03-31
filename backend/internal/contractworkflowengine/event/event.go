@@ -260,7 +260,7 @@ func (e RecordEvidenceEvent) GetDID() string {
 type AuditEvent struct {
 	DID             string    `json:"did"`
 	ContractVersion *int      `json:"contract_version,omitempty"`
-	RecordedBy      string    `json:"recorded_by"`
+	AuditedBy       string    `json:"audited_by"`
 	OccurredAt      time.Time `json:"occurred_at"`
 }
 

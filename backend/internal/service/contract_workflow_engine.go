@@ -282,12 +282,12 @@ func (s *contractWorkflowEnginesrvc) Verify(ctx context.Context, req *contractwo
 		return nil, contractworkflowengine.MakeInternalError(err)
 	}
 
-	cmd := command.VerifyCmd{
+	cmd := contract.VerifyCmd{
 		DID:        req.Did,
 		UpdatedAt:  updatedAt,
 		VerifiedBy: middleware.GetUsername(ctx),
 	}
-	handler := command.Verifier{
+	handler := contract.Verifier{
 		Ctx:    ctx,
 		DB:     s.DB,
 		CRepo:  s.CRepo,
