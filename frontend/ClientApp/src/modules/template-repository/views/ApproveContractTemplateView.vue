@@ -6,11 +6,7 @@
     <!-- Pinned Footer -->
     <div v-if="hasDid" class="sticky bottom-0 shrink-0 border-t border-base-300 bg-base-100">
       <!-- Decision notes container -->
-      <div class="max-w-4xl mx-auto px-6 py-3 flex flex-col md:flex-row gap-3">
-        <textarea v-model="decisionNote" :disabled="isSubmitting"
-          class="textarea textarea-ghost textarea-sm w-full mt-0.5 text-sm min-h-10 resize-y border border-base-300/50 rounded-lg"
-          placeholder="Decision Note" rows="4" />
-      </div>
+      <ConfirmationModal ref="decision-note-dialog" show-editor editor-placeholder="Decision Note" />
       <div class="max-w-4xl mx-auto px-6 py-3 flex flex-col md:flex-row gap-3">
         <button class="btn btn-ghost md:w-32" @click="router.back()">Cancel</button>
         <button @click="returnToDraft" class="btn btn-primary flex-1" :disabled="isSubmitting">
@@ -33,8 +29,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, type Ref } from 'vue'
+import { ref, computed, watch, type Ref, useTemplateRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import ConfirmationModal from '@/components/ConfirmationModal.vue'
 import TemplateManagerActions from '@/components/lists/template/template-list/TemplateManagerActions.vue'
 import type { PartialContractTemplate } from '@/models/contract-template'
 import { ROUTES } from '@/router/router'
@@ -53,6 +50,8 @@ const authStore = useAuthStore()
 const templateEditorUiStore = useTemplateEditorUiStore()
 const approvedSubTemplateStore = useApprovedSubTemplateStore()
 const draftStore = useTemplateDraftStore()
+
+const decisionNoteDialog = useTemplateRef<InstanceType<typeof ConfirmationModal>>('decision-note-dialog')
 
 const hasDid = computed(() => !!route.params.did)
 const hasChosenType = ref(false)
@@ -121,6 +120,12 @@ async function approve() {
   }
   isSubmitting.value = true
   try {
+    const decisionNoteResult = await decisionNoteDialog.value?.reveal({ message: 'Add decision note?' })
+    if (decisionNoteResult?.isCanceled) {
+      return
+    } else if (decisionNoteResult?.data) {
+      decisionNote.value = decisionNoteResult.data
+    }
     await contractTemplateService.approve({
       did,
       updated_at: updatedAt,
@@ -143,6 +148,12 @@ async function reopenReviews() {
   }
   isSubmitting.value = true
   try {
+    const decisionNoteResult = await decisionNoteDialog.value?.reveal({ message: 'Add decision note?' })
+    if (decisionNoteResult?.isCanceled) {
+      return
+    } else if (decisionNoteResult?.data) {
+      decisionNote.value = decisionNoteResult.data
+    }
     await contractTemplateService.submit({
       did,
       updated_at: updatedAt,
@@ -162,6 +173,12 @@ async function returnToDraft() {
   if (!did || !updatedAt) {
     console.error('Missing did or updated_at for rejection')
     return
+  }
+  const decisionNoteResult = await decisionNoteDialog.value?.reveal({ message: 'Add reason:', requiredText: true })
+  if (decisionNoteResult?.isCanceled) {
+    return
+  } else if (decisionNoteResult?.data) {
+    decisionNote.value = decisionNoteResult.data
   }
   if (!decisionNote.value?.trim()) {
     console.error('Reason is required for rejection')

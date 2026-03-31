@@ -1,7 +1,8 @@
 import { authenticationService } from '@/services/authentication-service'
 import { useAuthTokenStore } from '@/stores/auth-token-store'
-import axios from 'axios'
+import axios, { AxiosError } from 'axios'
 import { getConfig } from '@/config'
+import { useErrorStore } from '@/stores/error-store'
 
 const http = axios.create({
   baseURL: getConfig().API_BASE_URL,
@@ -16,13 +17,18 @@ http.interceptors.request.use((config) => {
 
 http.interceptors.response.use(
   (resp) => resp,
-  async (err) => {
-    if (err.status === 401) {
-      const res = await authenticationService.refresh()
-      if (res) {
-        return http(err.config)
+  async (err: Error | AxiosError) => {
+    const errorStore = useErrorStore()
+    if (axios.isAxiosError(err)) {
+      if (err.status === 401 && err.config) {
+        const isRefreshed = await authenticationService.refresh()
+        if (isRefreshed) {
+          return http(err.config)
+        }
       }
     }
+    const message = axios.isAxiosError(err) ? err.response?.data?.message || err.message : err.message
+    errorStore.add(String(message))
     return Promise.reject(err)
   },
 )

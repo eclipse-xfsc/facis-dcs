@@ -6,11 +6,7 @@
     <!-- Pinned Footer -->
     <div v-if="hasDid" class="sticky bottom-0 shrink-0 border-t border-base-300 bg-base-100">
       <!-- Comments container -->
-      <div class="max-w-4xl mx-auto px-6 py-3 flex flex-col md:flex-row gap-3">
-        <textarea v-model="comment" :disabled="isSubmitting"
-          class="textarea textarea-ghost textarea-sm w-full mt-0.5 text-sm min-h-10 resize-y border border-base-300/50 rounded-lg"
-          placeholder="Comment" rows="4" />
-      </div>
+      <ConfirmationModal ref="comment-dialog" show-editor />
       <div class="max-w-4xl mx-auto px-6 py-3 flex flex-col md:flex-row gap-3">
         <button class="btn btn-ghost md:w-32" @click="router.back()">Cancel</button>
         <!-- Return to draft / request changes -->
@@ -31,8 +27,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, type Ref } from 'vue'
+import { ref, computed, watch, type Ref, useTemplateRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import ConfirmationModal from '@/components/ConfirmationModal.vue'
 import TemplateManagerActions from '@/components/lists/template/template-list/TemplateManagerActions.vue'
 import type { PartialContractTemplate } from '@/models/contract-template'
 import { ROUTES } from '@/router/router'
@@ -51,6 +48,8 @@ const authStore = useAuthStore()
 const templateEditorUiStore = useTemplateEditorUiStore()
 const approvedSubTemplateStore = useApprovedSubTemplateStore()
 const draftStore = useTemplateDraftStore()
+
+const commentDialog = useTemplateRef<InstanceType<typeof ConfirmationModal>>('comment-dialog')
 
 const hasDid = computed(() => !!route.params.did)
 const hasChosenType = ref(false)
@@ -119,6 +118,12 @@ const forwardToApproval = async () => {
   }
   isSubmitting.value = true
   try {
+    const commentResult = await commentDialog.value?.reveal({ message: 'Add comment?' })
+    if (commentResult?.isCanceled) {
+      return
+    } else if (commentResult?.data) {
+      comment.value = commentResult.data
+    }
     await contractTemplateService.verify({
       did,
       updated_at: updatedAt,
@@ -149,6 +154,12 @@ const returnToDraft = async () => {
   }
   isSubmitting.value = true
   try {
+    const commentResult = await commentDialog.value?.reveal({ message: 'Add comment?' })
+    if (commentResult?.isCanceled) {
+      return
+    } else if (commentResult?.data) {
+      comment.value = commentResult.data
+    }
     await contractTemplateService.submit({
       did,
       updated_at: updatedAt,
