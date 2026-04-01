@@ -33,7 +33,7 @@ export const contractWorkflowService: ContractWorkflowService = {
 
   async retrieveById(request: ContractRetrieveByIdRequest) {
     return http
-      .get<ContractRetrieveByIdResponse>(`/contract/${request.did}`)
+      .get<ContractRetrieveByIdResponse>(`/contract/retrieve/${request.did}`)
       .then((res) => ({ ...res.data }))
       .catch((err) => {
         console.error('Retrieve ID Error:', err)

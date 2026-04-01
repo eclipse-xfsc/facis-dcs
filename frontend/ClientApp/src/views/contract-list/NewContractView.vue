@@ -33,7 +33,12 @@ const submit = async () => {
       did.value = response.did
       errorStore.add('Contract created.', 'info')
     } else if (contract.value) {
-      await contractWorkflowService.update(contract.value)
+      await contractWorkflowService.update({
+          did: contract.value.did,
+          updated_at: contract.value.updated_at,
+          name: contract.value.name,
+          description: contract.value.description
+        })
       router.push({ name: ROUTES.CONTRACTS.LIST })
     }
   } catch (error) {
@@ -48,9 +53,9 @@ watch(
   async (value) => {
     if (value) {
       try {
-        const did = route.params.did
-        if (did && !Array.isArray(did)) {
-          contract.value = await contractWorkflowService.retrieveById({ did })
+        const id = did.value || route.params.did
+        if (id && !Array.isArray(id)) {
+          contract.value = await contractWorkflowService.retrieveById({ did: id })
           console.log(contract.value)
         }
       } catch (err: any) {
@@ -70,7 +75,7 @@ watch(
         <option v-for="template in approvedTemplates" :key="template.did" :value="template">{{ template.name }}</option>
       </select>
     </div>
-    <div v-else-if="!!contract">
+    <div v-else-if="!!contract" class="max-w-4xl mx-auto px-6 py-12">
       <fieldset class="fieldset p-0 border-none">
         <legend class="fieldset-legend">Global Name</legend>
         <input v-model="contract.name" class="input input-bordered w-full" type="text" required />
