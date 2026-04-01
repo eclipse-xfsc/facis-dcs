@@ -254,6 +254,7 @@ func TestSubmit_SubmitContractInNegotiationStateWithOpenNegotiations(t *testing.
 		DID:           *did,
 		NegotiatedBy:  "Test User",
 		ChangeRequest: &jsonChangeRequest,
+		UpdatedAt:     time.Now(),
 	}
 	handler := command.Negotiator{
 		Ctx:    ctx,
@@ -320,6 +321,7 @@ func TestSubmit_SubmitContractInNegotiationStateWithRejectedNegotiations(t *test
 		DID:           *did,
 		NegotiatedBy:  "Test User",
 		ChangeRequest: &jsonChangeRequest,
+		UpdatedAt:     time.Now(),
 	}
 	handler := command.Negotiator{
 		Ctx:    ctx,
