@@ -9,9 +9,6 @@ import AuthSuccessView from '@/views/auth/AuthSuccessView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import ContractTemplateListView from '@/views/contract-template-list/ContractTemplateListView.vue'
 import ContractTemplateTaskView from '@/views/contract-template-list/ContractTemplateTaskView.vue'
-import CreateNegotiationView from '@/views/template-repository/CreateNegotiationView.vue'
-import TemplateCatalogueListView from '@/views/template-repository/TemplateCatalogueListView.vue'
-import TemplateCatalogueView from '@/views/template-repository/TemplateCatalogueView.vue'
 import TemplateCatalogueAdminView from '@/views/template-repository/TemplateCatalogueAdminView.vue'
 import { DocumentCheckIcon, DocumentMagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/20/solid'
 import NewContractTemplateView from '@template-repository/views/NewContractTemplateView.vue'
@@ -156,41 +153,6 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/catalogues',
-    name: ROUTES.TEMPLATE_CATALOGUES.LIST,
-    component: TemplateCatalogueListView,
-    meta: {
-      name: 'Template Catalogues',
-      icon: DocumentTextIcon,
-      requiresAuth: true,
-      title: 'DCS - Template Catalogues',
-      order: 4,
-    },
-  },
-  {
-    path: '/catalogues/:did',
-    name: ROUTES.TEMPLATE_CATALOGUES.VIEW,
-    component: TemplateCatalogueView,
-    meta: {
-      name: 'Template Catalogue',
-      hideInSidebar: true,
-      requiresAuth: true,
-      title: 'DCS - Template Catalogue',
-    },
-  },
-  {
-    path: '/catalogues/:did/negotiation/create',
-    name: ROUTES.TEMPLATE_CATALOGUES.NEGOTIATION_CREATE,
-    component: CreateNegotiationView,
-    meta: {
-      name: 'Create Negotiation',
-      hideInSidebar: true,
-      requiresAuth: true,
-      title: 'DCS - Create Negotiation',
-      roles: ['CONTRACT_CREATOR'],
-    },
-  },
-  {
     path: '/catalogues/admin',
     name: ROUTES.TEMPLATE_CATALOGUES.ADMIN,
     component: TemplateCatalogueAdminView,
@@ -199,7 +161,7 @@ const routes: RouteRecordRaw[] = [
       icon: DocumentTextIcon,
       requiresAuth: true,
       title: 'DCS - Template Catalogue Admin',
-      order: 5,
+      order: 4,
       roles: ['SYSTEM_ADMINISTRATOR'],
     },
   },
