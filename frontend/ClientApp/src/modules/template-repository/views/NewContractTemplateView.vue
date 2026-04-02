@@ -40,8 +40,6 @@ import { contractTemplateService } from '@/services/contract-template-service'
 import { TemplateState } from '@/types/contract-template-state'
 import TemplateEditors from '@template-repository/components/TemplateEditors.vue'
 import TemplateTypeSelect from '@template-repository/components/TemplateTypeSelect.vue'
-import { isApprovedTemplateBlock } from '@template-repository/models/contract-templace'
-import { useApprovedSubTemplateStore } from '@template-repository/store/approvedSubTemplateStore'
 import { useTemplateDraftStore } from '@template-repository/store/templateDraftStore'
 import { useTemplateEditorUiStore } from '@template-repository/store/templateEditorUiStore.ts'
 import { storeToRefs } from 'pinia'
@@ -52,7 +50,6 @@ const router = useRouter()
 const route = useRoute()
 
 const templateEditorUiStore = useTemplateEditorUiStore()
-const approvedSubTemplateStore = useApprovedSubTemplateStore()
 const draftStore = useTemplateDraftStore()
 const { state, templateType } = storeToRefs(draftStore)
 
@@ -67,7 +64,6 @@ function onTemplateTypeChosen(value: typeof templateType.value) {
 }
 
 watch(isEditMode, (isEdit) => {
-    approvedSubTemplateStore.resetTemplates()
     templateEditorUiStore.reset()
     if (isEdit) {
         hasChosenType.value = true
@@ -90,23 +86,13 @@ watch(isEditMode, (isEdit) => {
                     documentBlocks: template.template_data?.documentBlocks ?? [],
                     semanticConditions: template.template_data?.semanticConditions ?? [],
                     customMetaData: template.template_data?.customMetaData ?? [],
+                    subTemplateSnapshots: template.template_data?.subTemplateSnapshots ?? [],
                     templateType: template.template_type,
                     state: template.state,
                     version: template.version ?? null,
                     document_number: template.document_number ?? null,
                     updated_at: template.updated_at ?? null,
                 })
-
-                const approvedBlocks = draftStore.documentBlocks.filter((b) => isApprovedTemplateBlock(b))
-
-                for (const block of approvedBlocks) {
-                    const template = await contractTemplateService.retrieveById({
-                        did: block.templateId,
-                    })
-                    if (template) {
-                        approvedSubTemplateStore.addTemplate(template)
-                    }
-                }
             })
             .catch(error => {
                 console.error('Failed to load template for editing', error)
