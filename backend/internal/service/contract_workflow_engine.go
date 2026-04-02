@@ -7,8 +7,6 @@ import (
 	"digital-contracting-service/internal/auth"
 	"digital-contracting-service/internal/base"
 	"digital-contracting-service/internal/base/datatype"
-	"digital-contracting-service/internal/base/eventbus"
-	"digital-contracting-service/internal/base/eventbus/eventbuschannel"
 	"digital-contracting-service/internal/contractworkflowengine/command"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/actionflag"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/contractstate"
@@ -25,37 +23,26 @@ import (
 )
 
 type contractWorkflowEnginesrvc struct {
-	DB       *sqlx.DB
-	EventBus eventbus.EventBus
-	CRepo    db.ContractRepo
-	RTRepo   db.ReviewTaskRepo
-	ATRepo   db.ApprovalTaskRepo
-	NRepo    db.NegotiationRepo
+	DB     *sqlx.DB
+	CRepo  db.ContractRepo
+	RTRepo db.ReviewTaskRepo
+	ATRepo db.ApprovalTaskRepo
+	NRepo  db.NegotiationRepo
 	auth.JWTAuthenticator
 }
 
-func messageHandler(data []byte) {
-
-}
-
-func NewContractWorkflowEngine(db *sqlx.DB, jwtAuth auth.JWTAuthenticator, eb eventbus.EventBus,
+func NewContractWorkflowEngine(db *sqlx.DB, jwtAuth auth.JWTAuthenticator,
 	cRepo db.ContractRepo, rtRepo db.ReviewTaskRepo, atRepo db.ApprovalTaskRepo,
-	nRepo db.NegotiationRepo) (contractworkflowengine.Service, error) {
-
-	err := eb.SubscribeAsync(eventbuschannel.ContractWorkflowEngine.String(), messageHandler)
-	if err != nil {
-		return nil, err
-	}
+	nRepo db.NegotiationRepo) contractworkflowengine.Service {
 
 	return &contractWorkflowEnginesrvc{
 		JWTAuthenticator: jwtAuth,
 		DB:               db,
-		EventBus:         eb,
 		CRepo:            cRepo,
 		RTRepo:           rtRepo,
 		ATRepo:           atRepo,
 		NRepo:            nRepo,
-	}, nil
+	}
 }
 
 func (s *contractWorkflowEnginesrvc) Create(ctx context.Context, req *contractworkflowengine.ContractCreateRequest) (res *contractworkflowengine.ContractCreateResponse, err error) {
