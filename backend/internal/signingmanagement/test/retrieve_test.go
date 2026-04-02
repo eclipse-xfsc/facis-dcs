@@ -169,7 +169,7 @@ func TestRetrieve_RetrieveAllContracts(t *testing.T) {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
 
-	assert.Equal(t, len(dids), 5)
+	assert.Equal(t, 5, len(result.Contracts))
 
 	for _, ct := range result.Contracts {
 		assert.Equal(t, contractstate.Approved, ct.State)

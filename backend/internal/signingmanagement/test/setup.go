@@ -47,12 +47,38 @@ func NewTestRepo(ctx context.Context) *TestRepo {
 }
 
 func cleanupContractTable(t *testing.T, db *sqlx.DB) {
+	cleanApprovalTasksStatement := `
+	-- noinspection SqlWithoutWhere
+	DELETE FROM contract_approval_task;
+`
+	_, err := db.Exec(cleanApprovalTasksStatement)
+	if err != nil {
+		t.Fatalf("Failed to clean table: %v", err)
+	}
+
+	cleanReviewTasksStatement := `
+	-- noinspection SqlWithoutWhere
+	DELETE FROM contract_review_task;
+`
+	_, err = db.Exec(cleanReviewTasksStatement)
+	if err != nil {
+		t.Fatalf("Failed to clean table: %v", err)
+	}
+
+	cleanNegotiationsStatement := `
+	-- noinspection SqlWithoutWhere
+	DELETE FROM contract_negotiations;
+`
+	_, err = db.Exec(cleanNegotiationsStatement)
+	if err != nil {
+		t.Fatalf("Failed to clean table: %v", err)
+	}
 
 	cleanTableStatement := `
 	-- noinspection SqlWithoutWhere
 	DELETE FROM contracts;
 `
-	_, err := db.Exec(cleanTableStatement)
+	_, err = db.Exec(cleanTableStatement)
 	if err != nil {
 		t.Fatalf("Failed to clean table: %v", err)
 	}
