@@ -9,7 +9,7 @@ const app = createApp(App).use(createPinia()).use(router)
 
 const errorStore = useErrorStore()
 
-app.config.errorHandler = (err, instance, info) => {
+app.config.errorHandler = (err, _instance, _info) => {
     const message = err instanceof Error ? err.message : `Error: ${err ? String(err) : 'unknown'}`
     errorStore.add(message)
 }
