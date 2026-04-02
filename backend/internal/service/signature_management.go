@@ -4,7 +4,7 @@ import (
 	"context"
 	signaturemanagement "digital-contracting-service/gen/signature_management"
 	"digital-contracting-service/internal/auth"
-	cwedb "digital-contracting-service/internal/contractworkflowengine/db"
+	db "digital-contracting-service/internal/signingmanagement/db"
 
 	"github.com/jmoiron/sqlx"
 	"goa.design/clue/log"
@@ -12,11 +12,11 @@ import (
 
 type signatureManagementsrvc struct {
 	DB    *sqlx.DB
-	CRepo cwedb.ContractRepo
+	CRepo db.ContractRepo
 	auth.JWTAuthenticator
 }
 
-func NewSignatureManagement(db *sqlx.DB, jwtAuth auth.JWTAuthenticator, cRepo cwedb.ContractRepo) signaturemanagement.Service {
+func NewSignatureManagement(db *sqlx.DB, jwtAuth auth.JWTAuthenticator, cRepo db.ContractRepo) signaturemanagement.Service {
 
 	return &signatureManagementsrvc{
 		JWTAuthenticator: jwtAuth,

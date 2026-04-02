@@ -16,6 +16,7 @@ import (
 	cwerepo "digital-contracting-service/internal/contractworkflowengine/db/pg"
 	"digital-contracting-service/internal/middleware"
 	"digital-contracting-service/internal/service"
+	smrepo "digital-contracting-service/internal/signingmanagement/db/pg"
 	tplrepo "digital-contracting-service/internal/templaterepository/db/pg"
 	"digital-contracting-service/migrations"
 	"flag"
@@ -107,6 +108,8 @@ func main() {
 	cweATRepo := cwerepo.PostgresApprovalTaskRepo{Ctx: ctx}
 	cweNRepo := cwerepo.PostgresNegotiationRepo{Ctx: ctx}
 
+	smCRepo := smrepo.PostgresContractRepo{Ctx: ctx}
+
 	// Initialize the service.
 	var (
 		authSvc                         genauth.Service
@@ -128,7 +131,7 @@ func main() {
 		externalTargetSystemAPISvc = service.NewExternalTargetSystemAPI(jwtAuth)
 		orchestrationWebhooksSvc = service.NewOrchestrationWebhooks(jwtAuth)
 		processAuditAndComplianceSvc = service.NewProcessAuditAndCompliance(jwtAuth)
-		signatureManagementSvc = service.NewSignatureManagement(db, jwtAuth, &cweRepo)
+		signatureManagementSvc = service.NewSignatureManagement(db, jwtAuth, &smCRepo)
 		templateCatalogueIntegrationSvc = service.NewTemplateCatalogueIntegration(jwtAuth)
 		templateRepositorySvc = service.NewTemplateRepository(db, jwtAuth, &ctRepo, &ctRTRepo, &ctATRepo)
 	}
