@@ -33,7 +33,7 @@ type contractWorkflowEnginesrvc struct {
 
 func NewContractWorkflowEngine(db *sqlx.DB, jwtAuth auth.JWTAuthenticator,
 	cRepo db.ContractRepo, rtRepo db.ReviewTaskRepo, atRepo db.ApprovalTaskRepo,
-	nRepo db.NegotiationRepo) (contractworkflowengine.Service, error) {
+	nRepo db.NegotiationRepo) contractworkflowengine.Service {
 
 	return &contractWorkflowEnginesrvc{
 		JWTAuthenticator: jwtAuth,
@@ -42,7 +42,7 @@ func NewContractWorkflowEngine(db *sqlx.DB, jwtAuth auth.JWTAuthenticator,
 		RTRepo:           rtRepo,
 		ATRepo:           atRepo,
 		NRepo:            nRepo,
-	}, nil
+	}
 }
 
 func (s *contractWorkflowEnginesrvc) Create(ctx context.Context, req *contractworkflowengine.ContractCreateRequest) (res *contractworkflowengine.ContractCreateResponse, err error) {

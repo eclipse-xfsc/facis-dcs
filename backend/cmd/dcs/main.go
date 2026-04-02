@@ -107,11 +107,6 @@ func main() {
 	cweATRepo := cwerepo.PostgresApprovalTaskRepo{Ctx: ctx}
 	cweNRepo := cwerepo.PostgresNegotiationRepo{Ctx: ctx}
 
-	cweSvc, err := service.NewContractWorkflowEngine(db, jwtAuth, &cweRepo, &cweRTRepo, &cweATRepo, &cweNRepo)
-	if err != nil {
-		log.Fatalf(ctx, err, "failed to create contract workflow engine")
-	}
-
 	// Initialize the service.
 	var (
 		authSvc                         genauth.Service
@@ -128,7 +123,7 @@ func main() {
 	{
 		authSvc = service.NewAuth()
 		contractStorageArchiveSvc = service.NewContractStorageArchive(jwtAuth)
-		contractWorkflowEngineSvc = cweSvc
+		contractWorkflowEngineSvc = service.NewContractWorkflowEngine(db, jwtAuth, &cweRepo, &cweRTRepo, &cweATRepo, &cweNRepo)
 		dcsToDcsSvc = service.NewDcsToDcs(jwtAuth)
 		externalTargetSystemAPISvc = service.NewExternalTargetSystemAPI(jwtAuth)
 		orchestrationWebhooksSvc = service.NewOrchestrationWebhooks(jwtAuth)
