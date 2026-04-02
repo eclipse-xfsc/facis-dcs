@@ -128,7 +128,7 @@ func main() {
 		externalTargetSystemAPISvc = service.NewExternalTargetSystemAPI(jwtAuth)
 		orchestrationWebhooksSvc = service.NewOrchestrationWebhooks(jwtAuth)
 		processAuditAndComplianceSvc = service.NewProcessAuditAndCompliance(jwtAuth)
-		signatureManagementSvc = service.NewSignatureManagement(jwtAuth)
+		signatureManagementSvc = service.NewSignatureManagement(db, jwtAuth, &cweRepo)
 		templateCatalogueIntegrationSvc = service.NewTemplateCatalogueIntegration(jwtAuth)
 		templateRepositorySvc = service.NewTemplateRepository(db, jwtAuth, &ctRepo, &ctRTRepo, &ctATRepo)
 	}
