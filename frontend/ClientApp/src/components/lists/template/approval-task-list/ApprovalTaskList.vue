@@ -1,22 +1,26 @@
 <script setup lang="ts">
 import type { PartialContractTemplate } from '@/models/contract-template'
 import type { ContractTemplateApprovalTask } from '@/models/contract-template-approval-task'
+import type { ContractApprovalTask } from '@/models/contract/contract-approval-task'
 import { ROUTES } from '@/router/router'
 import { useContractTemplateApprovalTaskStateFilterStore } from '@/stores/contract-template-approval-task-state-filter-store'
 import { useContractTemplatesStore } from '@/stores/contract-templates-store'
-import { approvalTaskStates, ContractTemplateApprovalTaskState } from '@/types/approval-task-state'
+import { useContractsStore } from '@/stores/contracts-store'
+import { approvalTaskStates, ApprovalTaskState } from '@/types/approval-task-state'
 import { TemplateState } from '@/types/contract-template-state'
 import { toComparableValue } from '@/utils/comparison'
 import { computed, onUnmounted, ref, type Ref } from 'vue'
 import ListSort from '../../ListSort.vue'
 import TemplateListSearch from '../TemplateListSearch.vue'
 import TemplateListStateFilter from '../TemplateListStateFilter.vue'
+import { toProperCase } from '@/utils/string'
 
 const props = defineProps<{
-  items: ContractTemplateApprovalTask[]
+  items: (ContractTemplateApprovalTask | ContractApprovalTask)[]
 }>()
 
 const templatesStore = useContractTemplatesStore()
+const contractsStore = useContractsStore()
 const stateFilterStore = useContractTemplateApprovalTaskStateFilterStore()
 
 const sorter = new Map([
@@ -27,15 +31,19 @@ const defaultSort = sorter.keys().next().value!
 const sortBy = ref(defaultSort)
 const sortOrder = ref(1)
 
-const searchedItems: Ref<ContractTemplateApprovalTask[]> = ref(props.items)
+const searchFilteredItems: Ref<(ContractTemplateApprovalTask | ContractApprovalTask)[]> = ref(props.items)
+
+const searchedItems = computed(() => {
+  return searchFilteredItems.value.length > 0 ? searchFilteredItems.value : props.items
+})
 
 const sortedItems = computed(() => {
   if (!sorter.has(sortBy.value)) {
     return searchedItems.value
   }
   return searchedItems.value.slice().sort((taskA, taskB) => {
-    const aSortValue = taskA[sortBy.value as keyof ContractTemplateApprovalTask]
-    const bSortValue = taskB[sortBy.value as keyof ContractTemplateApprovalTask]
+    const aSortValue = taskA[sortBy.value as keyof (ContractTemplateApprovalTask | ContractApprovalTask)]
+    const bSortValue = taskB[sortBy.value as keyof (ContractTemplateApprovalTask | ContractApprovalTask)]
     const aValue = toComparableValue(aSortValue)
     const bValue = toComparableValue(bSortValue)
     if (!aValue && !bValue) return 0
@@ -69,23 +77,33 @@ const getTemplateName = (item: ContractTemplateApprovalTask) => {
   return templatesStore.contractTemplates.find((template) => template.did === item.did)?.name ?? 'Nameless Template'
 }
 
+const getContractName = (item: ContractApprovalTask) => {
+  return contractsStore.contracts.find((contract) => contract.did === item.did)?.name ?? 'Nameless Contract'
+}
+
 const getTemplateState = (item: ContractTemplateApprovalTask) => {
   return templatesStore.contractTemplates.find((template) => template.did === item.did)?.state
 }
 
 const canApprove = (item: ContractTemplateApprovalTask) => {
-  return item.state === ContractTemplateApprovalTaskState.open && getTemplateState(item) === TemplateState.reviewed
+  return item.state === ApprovalTaskState.open && getTemplateState(item) === TemplateState.reviewed
 }
 
-const resolveViewRouteName = (item: ContractTemplateApprovalTask) => {
-  if (canApprove(item)) {
-    return ROUTES.TEMPLATES.APPROVE
+const resolveViewRouteName = (item: ContractTemplateApprovalTask | ContractApprovalTask) => {
+  if (item.type === 'template') {
+    if (canApprove(item)) {
+      return ROUTES.TEMPLATES.APPROVE
+    }
+    return ROUTES.TEMPLATES.VIEW
+  } else {
+    // TODO:
   }
-  return ROUTES.TEMPLATES.VIEW
 }
 
 const applySearchResult = (searchResult: PartialContractTemplate[]) => {
-  searchedItems.value = props.items.filter((task) => searchResult.map((template) => template.did).includes(task.did))
+  searchFilteredItems.value = props.items.filter((task) =>
+    searchResult.map((template) => template.did).includes(task.did),
+  )
 }
 
 onUnmounted(() => stateFilterStore.reset())
@@ -102,12 +120,16 @@ onUnmounted(() => stateFilterStore.reset())
       <div class="list-col-grow card bg-base-200 card-border hover:bg-base-300">
         <div class="card-body">
           <h2 class="card-title flex-wrap justify-between">
-            <div>Approval Task for Contract Template: {{ getTemplateName(item) }}</div>
+            <div v-if="item.type === 'template'">Approval Task for Contract Template: {{ getTemplateName(item) }}</div>
+            <div v-else>Approval Task for Contract: {{ getContractName(item) }}</div>
+            <div class="flex-1"></div>
+            <div class="badge badge-accent">{{ toProperCase(item.type) }} Task</div>
             <div class="badge badge-secondary">{{ item.state }}</div>
           </h2>
           <div class="flex justify-between">
-            <div v-if="item.document_number">Document number: {{ item.document_number }}</div>
-            <div v-if="item.version">Version: {{ item.version }}</div>
+            <div v-if="item.type === 'template' && item.document_number">Document number: {{ item.document_number }}</div>
+            <div v-if="item.type === 'template' && item.version">Version: {{ item.version }}</div>
+            <div v-else-if="item.type === 'contract' && item.contract_version">Version: {{ item.contract_version }}</div>
           </div>
           <div class="flex justify-between">
             <div>Creation date: {{ new Date(item.created_at).toLocaleDateString() }}</div>

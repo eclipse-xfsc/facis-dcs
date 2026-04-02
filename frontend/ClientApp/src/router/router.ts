@@ -4,13 +4,12 @@ import ReviewContractTemplateView from '@/modules/template-repository/views/Revi
 import ViewContractTemplateView from '@/modules/template-repository/views/ViewContractTemplateView.vue'
 import { authenticationService } from '@/services/authentication-service'
 import { useAuthStore } from '@/stores/auth-store'
-import { useDataRouteStore } from '@/stores/data-route-store'
 import AuthSuccessView from '@/views/auth/AuthSuccessView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import ContractListView from '@/views/contract/ContractListView.vue'
 import NewContractView from '@/views/contract/NewContractView.vue'
 import ContractTemplateListView from '@/views/contract-template-list/ContractTemplateListView.vue'
-import ContractTemplateTaskView from '@/views/task/ContractTemplateTaskView.vue'
+import TaskListView from '@/views/task/TaskListView.vue'
 import TemplateCatalogueListView from '@/views/template-repository/TemplateCatalogueListView.vue'
 import TemplateCatalogueView from '@/views/template-repository/TemplateCatalogueView.vue'
 import TemplateCatalogueAdminView from '@/views/template-repository/TemplateCatalogueAdminView.vue'
@@ -123,7 +122,7 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/tasks/reviews',
     name: ROUTES.TASKS.REVIEWS,
-    component: ContractTemplateTaskView,
+    component: TaskListView,
     meta: {
       name: 'Assigned Review Tasks',
       icon: DocumentMagnifyingGlassIcon,
@@ -131,19 +130,12 @@ const routes: RouteRecordRaw[] = [
       title: 'DCS - Review Tasks',
       order: 3.1,
       roles: ['TEMPLATE_REVIEWER'],
-      requiresData: true,
-    },
-    beforeEnter: (to) => {
-      const dataRouteStore = useDataRouteStore()
-      if (!dataRouteStore.isRouteDataLoaded(to.name)) {
-        return { name: ROUTES.TEMPLATES.LIST }
-      }
     },
   },
   {
     path: '/tasks/approvals',
     name: ROUTES.TASKS.APPROVALS,
-    component: ContractTemplateTaskView,
+    component: TaskListView,
     meta: {
       name: 'Assigned Approval Tasks',
       icon: DocumentCheckIcon,
@@ -151,13 +143,6 @@ const routes: RouteRecordRaw[] = [
       title: 'DCS - Approval Tasks',
       order: 3.2,
       roles: ['TEMPLATE_APPROVER'],
-      requiresData: true,
-    },
-    beforeEnter: (to) => {
-      const dataRouteStore = useDataRouteStore()
-      if (!dataRouteStore.isRouteDataLoaded(to.name)) {
-        return { name: ROUTES.TEMPLATES.LIST }
-      }
     },
   },
   {
