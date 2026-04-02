@@ -1,4 +1,3 @@
-import http from '@/api/http'
 import type { UserAllRequest, UserRolesByUserIdRequest } from '@/models/requests/user-request'
 import type { UserAllResponse, UserRolesByUserIdResponse } from '@/models/responses/user-response'
 import type { UserService } from '@/models/services/user-service'
@@ -7,10 +6,8 @@ import type { UserRole } from '@/types/user-role'
 import type { AxiosRequestHeaders, AxiosResponse } from 'axios'
 import { ref, type Ref } from 'vue'
 
-const USER_BASE_URL = http.defaults.baseURL + '/users'
-
 export const userService: UserService = {
-  async getAllUsers(request?: UserAllRequest) {
+  async getAllUsers(_request?: UserAllRequest) {
     return Promise.resolve<AxiosResponse<UserAllResponse>>({
       data: { totalCount: users.value.length, items: users.value } as UserAllResponse,
       status: 200,
@@ -76,7 +73,16 @@ const mockUsers: UserProfile[] = [
     firstName: 'Test',
     lastName: 'User',
     email: 'test@example.com',
-    roleIds: ['TEMPLATE_APPROVER', 'TEMPLATE_CREATOR', 'TEMPLATE_MANAGER', 'TEMPLATE_REVIEWER'],
+    roleIds: [
+      'TEMPLATE_APPROVER',
+      'TEMPLATE_CREATOR',
+      'TEMPLATE_MANAGER',
+      'TEMPLATE_REVIEWER',
+      'CONTRACT_CREATOR',
+      'CONTRACT_REVIEWER',
+      'CONTRACT_APPROVER',
+      'CONTRACT_MANAGER',
+    ],
     id: 'user-000',
     username: 'test',
   },
@@ -85,7 +91,7 @@ const mockUsers: UserProfile[] = [
     firstName: 'John',
     lastName: 'Doe',
     email: 'john.doe@example.com',
-    roleIds: ['TEMPLATE_APPROVER', 'TEMPLATE_CREATOR', 'TEMPLATE_MANAGER', 'TEMPLATE_REVIEWER'],
+    roleIds: ['TEMPLATE_APPROVER', 'TEMPLATE_CREATOR', 'TEMPLATE_MANAGER', 'TEMPLATE_REVIEWER', 'CONTRACT_APPROVER'],
     id: 'user-001',
     username: 'johndoe',
   },
@@ -130,7 +136,7 @@ const mockUsers: UserProfile[] = [
     firstName: 'Saoirse',
     lastName: 'Conrad',
     email: 'saoirse.conrad@example.com',
-    roleIds: ['TEMPLATE_APPROVER', 'TEMPLATE_MANAGER'],
+    roleIds: ['TEMPLATE_APPROVER', 'TEMPLATE_MANAGER', 'CONTRACT_REVIEWER'],
     id: 'user-006',
     username: 'saoirseconrad',
   },

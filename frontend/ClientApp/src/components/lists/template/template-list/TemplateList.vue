@@ -81,5 +81,6 @@ onUnmounted(() => stateFilterStore.reset())
       :has-review-task="props.hasReviewTask(item)"
       :has-approval-task="props.hasApprovalTask(item)"
     />
+    <li v-if="filteredItems.length < 1" class="px-4">No templates found</li>
   </ul>
 </template>

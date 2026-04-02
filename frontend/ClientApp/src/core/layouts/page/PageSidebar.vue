@@ -43,7 +43,6 @@
 <script setup lang="ts">
 import { ROUTES } from '@/router/router'
 import { useAuthStore } from '@/stores/auth-store'
-import { useDataRouteStore } from '@/stores/data-route-store'
 import { usePageStore } from '@core/store/page'
 import { storeToRefs } from 'pinia'
 import { computed } from 'vue'
@@ -56,8 +55,6 @@ const { isSidebarCollapsed } = storeToRefs(pageStore)
 
 const authStore = useAuthStore()
 const { user } = storeToRefs(authStore)
-
-const dataRouteStore = useDataRouteStore()
 
 const closeMobileDrawer = () => {
   const drawerToggle = document.getElementById(pageStore.pageSidebarId) as HTMLInputElement | null
@@ -72,7 +69,6 @@ const navigationRoutes = computed(() => {
         !route.path.includes(':') &&
         route.meta?.name &&
         route.meta?.hideInSidebar !== true &&
-        (!route.meta.requiresData || dataRouteStore.isRouteDataLoaded(route.name)) &&
         (!route.meta.roles || user.value?.roles?.some(role => route.meta.roles?.includes(role)))
       )
       .sort((routeA, routeB) => (routeA.meta.order || 999) - (routeB.meta.order || 999))

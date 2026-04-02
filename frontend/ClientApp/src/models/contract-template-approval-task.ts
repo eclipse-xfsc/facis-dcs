@@ -1,6 +1,7 @@
 import type { ApprovalTaskState } from "@/types/approval-task-state"
 
 export interface ContractTemplateApprovalTask {
+    type: 'template'
     did: string
     document_number?: string
     version?: number

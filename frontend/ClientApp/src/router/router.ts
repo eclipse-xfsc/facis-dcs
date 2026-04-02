@@ -4,13 +4,14 @@ import ReviewContractTemplateView from '@/modules/template-repository/views/Revi
 import ViewContractTemplateView from '@/modules/template-repository/views/ViewContractTemplateView.vue'
 import { authenticationService } from '@/services/authentication-service'
 import { useAuthStore } from '@/stores/auth-store'
-import { useDataRouteStore } from '@/stores/data-route-store'
 import AuthSuccessView from '@/views/auth/AuthSuccessView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
+import ContractListView from '@/views/contract/ContractListView.vue'
+import NewContractView from '@/views/contract/NewContractView.vue'
 import ContractTemplateListView from '@/views/contract-template-list/ContractTemplateListView.vue'
-import ContractTemplateTaskView from '@/views/contract-template-list/ContractTemplateTaskView.vue'
+import TaskListView from '@/views/task/TaskListView.vue'
 import TemplateCatalogueAdminView from '@/views/template-repository/TemplateCatalogueAdminView.vue'
-import { DocumentCheckIcon, DocumentMagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/20/solid'
+import { DocumentCheckIcon, DocumentDuplicateIcon, DocumentMagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/20/solid'
 import NewContractTemplateView from '@template-repository/views/NewContractTemplateView.vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
@@ -23,16 +24,21 @@ const ROUTES = {
     VIEW: 'templates.view',
     REVIEW: 'templates.review',
     APPROVE: 'templates.approve',
-    TASKS: {
-      REVIEW: 'templates.tasks.review',
-      APPROVAL: 'templates.tasks.approve',
-    },
+  },
+  TASKS: {
+    REVIEWS: 'tasks.reviews',
+    APPROVALS: 'tasks.approvals',
   },
   TEMPLATE_CATALOGUES: {
     ADMIN: 'template.catalogues.admin',
   },
   AUTH: {
     SUCCESS: 'auth.success',
+  },
+  CONTRACTS: {
+    LIST: 'contracts.list',
+    NEW: 'contracts.new',
+    EDIT: 'contracts.edit',
   },
 } as const
 
@@ -110,43 +116,29 @@ const routes: RouteRecordRaw[] = [
     },
   },
   {
-    path: '/templates/tasks/review',
-    name: ROUTES.TEMPLATES.TASKS.REVIEW,
-    component: ContractTemplateTaskView,
+    path: '/tasks/reviews',
+    name: ROUTES.TASKS.REVIEWS,
+    component: TaskListView,
     meta: {
       name: 'Assigned Review Tasks',
       icon: DocumentMagnifyingGlassIcon,
       requiresAuth: true,
       title: 'DCS - Review Tasks',
-      order: 2,
+      order: 3.1,
       roles: ['TEMPLATE_REVIEWER'],
-      requiresData: true,
-    },
-    beforeEnter: (to) => {
-      const dataRouteStore = useDataRouteStore()
-      if (!dataRouteStore.isRouteDataLoaded(to.name)) {
-        return { name: ROUTES.TEMPLATES.LIST }
-      }
     },
   },
   {
-    path: '/templates/tasks/approve',
-    name: ROUTES.TEMPLATES.TASKS.APPROVAL,
-    component: ContractTemplateTaskView,
+    path: '/tasks/approvals',
+    name: ROUTES.TASKS.APPROVALS,
+    component: TaskListView,
     meta: {
       name: 'Assigned Approval Tasks',
       icon: DocumentCheckIcon,
       requiresAuth: true,
       title: 'DCS - Approval Tasks',
-      order: 3,
+      order: 3.2,
       roles: ['TEMPLATE_APPROVER'],
-      requiresData: true,
-    },
-    beforeEnter: (to) => {
-      const dataRouteStore = useDataRouteStore()
-      if (!dataRouteStore.isRouteDataLoaded(to.name)) {
-        return { name: ROUTES.TEMPLATES.LIST }
-      }
     },
   },
   {
@@ -160,6 +152,43 @@ const routes: RouteRecordRaw[] = [
       title: 'DCS - Template Catalogue Admin',
       order: 4,
       roles: ['SYSTEM_ADMINISTRATOR'],
+    },
+  },
+  {
+    path: '/contracts',
+    name: ROUTES.CONTRACTS.LIST,
+    component: ContractListView,
+    meta: {
+      name: 'Contracts',
+      icon: DocumentDuplicateIcon,
+      requiresAuth: true,
+      title: 'DCS - Contracts',
+      order: 2,
+      roles: ['CONTRACT_CREATOR', 'CONTRACT_REVIEWER', 'CONTRACT_APPROVER', 'CONTRACT_MANAGER']
+    },
+  },
+  {
+    path: '/contracts/new',
+    name: ROUTES.CONTRACTS.NEW,
+    component: NewContractView,
+    meta: {
+      name: 'New Contract',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - New Contract',
+      roles: ['CONTRACT_CREATOR'],
+    },
+  },
+  {
+    path: '/contracts/edit/:did',
+    name: ROUTES.CONTRACTS.EDIT,
+    component: NewContractView,
+    meta: {
+      name: 'Edit Contract',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - Edit Contract',
+      roles: ['CONTRACT_CREATOR'],
     },
   },
   {
