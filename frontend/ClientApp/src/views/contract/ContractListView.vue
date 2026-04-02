@@ -1,33 +1,25 @@
 <script setup lang="ts">
 import ContractList from '@/components/lists/contract/ContractList.vue'
-import type { Contract } from '@/models/contract/contract'
 import { ROUTES } from '@/router/router'
-import { contractWorkflowService } from '@/services/contract-workflow-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { useContractTemplatesStore } from '@/stores/contract-templates-store'
+import { useContractsStore } from '@/stores/contracts-store'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, ref, type Ref } from 'vue'
 
-const loading = ref(true)
-const error = ref<string | null>(null)
+const contractsStore = useContractsStore()
 
-const contracts: Ref<Contract[]> = ref([])
+const loading = computed(() => contractsStore.loading)
+const error = computed(() => contractsStore.error)
+
+const contracts = computed(() => contractsStore.contracts)
 
 const authStore = useAuthStore()
 const templatesStore = useContractTemplatesStore()
 const { hasApprovedTemplates } = storeToRefs(templatesStore)
 
 async function loadContracts() {
-  loading.value = true
-  error.value = null
-  try {
-    const result = await contractWorkflowService.retrieve()
-    contracts.value = result.contracts
-  } catch (err: any) {
-    error.value = err.message || 'Error loading contracts'
-  } finally {
-    loading.value = false
-  }
+  await contractsStore.loadContracts()
 }
 
 const isContractCreator = computed(() => authStore.user?.roles?.some((role) => ['CONTRACT_CREATOR'].includes(role)))

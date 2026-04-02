@@ -1,48 +1,23 @@
 import type { PartialContractTemplate } from '@/models/contract-template'
-import type { ContractTemplateApprovalTask } from '@/models/contract-template-approval-task'
-import type { ContractTemplateReviewTask } from '@/models/contract-template-review-task'
-import { ROUTES } from '@/router/router'
 import { contractTemplateService } from '@/services/contract-template-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { useContractTemplatesStore } from '@/stores/contract-templates-store'
-import { useDataRouteStore } from '@/stores/data-route-store'
 import type { UserRole } from '@/types/user-role'
-import { onMounted, ref, type Ref } from 'vue'
+import { computed, onMounted, ref, type Ref } from 'vue'
 
 export function useTemplateTable() {
     const templatesStore = useContractTemplatesStore()
-    const templates: Ref<PartialContractTemplate[]> = ref([])
-    const reviewTasks: Ref<ContractTemplateReviewTask[]> = ref([])
-    const approvalTasks: Ref<ContractTemplateApprovalTask[]> = ref([])
+    const templates = computed(() => templatesStore.contractTemplates)
+    const reviewTasks = computed(() => templatesStore.reviewTasks)
+    const approvalTasks = computed(() => templatesStore.approvalTasks)
     const roles: Ref<UserRole[]> = ref([])
-    const loading = ref(true)
-    const error = ref('')
+    const loading = computed(() => templatesStore.loading)
+    const error = computed(() => templatesStore.error)
     const authStore = useAuthStore()
-    const dataRouteStore = useDataRouteStore()
 
     const loadTemplates = async () => {
-        loading.value = true
-        error.value = ''
-        try {
-            const data = await contractTemplateService.retrieve()
-            templates.value = data.contract_templates
-            templatesStore.contractTemplates = templates.value
-            reviewTasks.value = data.review_tasks
-            templatesStore.reviewTasks = reviewTasks.value
-            approvalTasks.value = data.approval_tasks
-            templatesStore.approvalTasks = approvalTasks.value
-            roles.value = authStore.user?.roles ?? []
-            if (reviewTasks.value.length > 0) {
-                dataRouteStore.addDataRouteLoaded(ROUTES.TASKS.REVIEWS)
-            }
-            if (approvalTasks.value.length > 0) {
-                dataRouteStore.addDataRouteLoaded(ROUTES.TASKS.APPROVALS)
-            }
-        } catch (err: any) {
-            error.value = err.message || 'Fehler beim Laden der Templates'
-        } finally {
-            loading.value = false
-        }
+        await templatesStore.loadTemplates()
+        roles.value = authStore.user?.roles ?? []
     }
 
     const refresh = () => loadTemplates()  // Für manuelles Refresh
