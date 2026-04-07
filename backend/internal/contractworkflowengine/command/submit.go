@@ -107,6 +107,24 @@ func (h *Submitter) Handle(cmd SubmitCmd) error {
 
 		nextState = contractstate.Negotiation
 
+	} else if processData.State == contractstate.Rejected.String() {
+
+		if processData.CreatedBy != cmd.SubmittedBy {
+			return errors.New("invalid user")
+		}
+
+		err := h.RTRepo.ReopenTasks(tx, cmd.DID)
+		if err != nil {
+			return errors.New("could not reopen review tasks")
+		}
+
+		err = h.ATRepo.ReopenTasks(tx, cmd.DID)
+		if err != nil {
+			return errors.New("could not reopen approval tasks")
+		}
+
+		nextState = contractstate.Negotiation
+
 	} else if processData.State == contractstate.Negotiation.String() {
 
 		if cmd.SubmittedBy != processData.CreatedBy {
