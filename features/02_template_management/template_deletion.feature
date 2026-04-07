@@ -3,6 +3,7 @@ Feature: Delete Contract Template
   Template Managers delete deprecated templates
   that are no longer needed.
 
+  @executable
   Scenario: Delete deprecated template
     Given I am authenticated with role "Template Manager"
     And template "Old NDA" is in "Deprecated" status
@@ -10,6 +11,7 @@ Feature: Delete Contract Template
     Then the template is removed from the system
     And the deletion is recorded in audit log
 
+  @executable
   Scenario: Cannot delete non-deprecated template
     Given I am authenticated with role "Template Manager"
     And template "Standard NDA" is in "Approved" status
@@ -17,6 +19,7 @@ Feature: Delete Contract Template
     Then the request is denied
     And I receive error "Only deprecated templates can be deleted"
 
+  @executable
   Scenario: Unauthorized role cannot delete template
     Given I am authenticated with role "Template Reviewer"
     And template "Old NDA" is in "Deprecated" status

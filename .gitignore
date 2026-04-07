@@ -17,3 +17,7 @@ frontend/.prettiercache
 frontend/.cache
 
 deployment/certs
+
+tests/bdd/.venv
+tests/bdd/.tmp
+tests/bdd/.reports

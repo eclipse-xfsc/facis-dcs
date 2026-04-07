@@ -4,6 +4,7 @@ Feature: Contract Term Adjustment
   without regenerating the entire contract. The system maintains document
   integrity and full audit history.
 
+  @executable
   Scenario: Adjust specific contract clause
     Given I am authenticated with role "Contract Manager"
     And contract "Service Agreement" is in "Draft" status
@@ -59,6 +60,7 @@ Feature: Contract Term Adjustment
     And the rollback is logged in audit history
     And the rolled-back version becomes the current version
 
+  @executable
   Scenario: Unauthorized role cannot adjust contracts
     Given I am authenticated with role "Contract Observer"
     And contract "Service Agreement" is in "Draft" status

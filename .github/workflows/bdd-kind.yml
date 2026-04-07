@@ -1,0 +1,63 @@
+name: BDD on kind
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  bdd-kind:
+    permissions:
+      contents: read
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    concurrency:
+      group: bdd-kind-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install kind
+        uses: helm/kind-action@v1.10.0
+        with:
+          version: v0.23.0
+
+      - name: Run kind-backed executable BDD suite
+        run: |
+          set -euo pipefail
+          make -C tests/bdd run_bdd_kind_ci \
+            KIND_CLUSTER_NAME=dcs-bdd \
+            DOCKER_IMAGE_REPOSITORY=digital-contracting-service \
+            DOCKER_IMAGE_TAG=bdd \
+            TAGS=@executable
+
+      - name: Dump namespace info on failure
+        if: failure()
+        run: |
+          set -euo pipefail
+          kubectl get pods -n dcs-bdd -o wide || true
+          kubectl get events -n dcs-bdd --sort-by=.lastTimestamp || true
+          kubectl logs deployment/dcs-digital-contracting-service -n dcs-bdd --tail=200 || true
+          kubectl logs deployment/dcs-keycloak -n dcs-bdd --tail=200 || true
+
+      - name: Upload BDD reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: bdd-reports
+          path: tests/bdd/.reports/
+
+      - name: Teardown kind cluster
+        if: always()
+        run: |
+          set -euo pipefail
+          make -C tests/bdd kind_delete KIND_CLUSTER_NAME=dcs-bdd || true

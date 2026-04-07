@@ -3,6 +3,7 @@ Feature: Verify Template and Provenance
   Template Managers verify template correctness
   including metadata, semantics, and authenticity.
 
+  @executable
   Scenario: Verify template with valid provenance
     Given I am authenticated with role "Template Manager"
     And template "Standard NDA" has provenance metadata
@@ -11,6 +12,7 @@ Feature: Verify Template and Provenance
     And the SHACL constraints are validated
     And the digital signatures are verified
 
+  @executable
   Scenario: Unauthorized role cannot verify template
     Given I am authenticated with role "Template Approver"
     And template "Standard NDA" has provenance metadata

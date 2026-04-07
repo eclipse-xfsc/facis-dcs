@@ -3,6 +3,7 @@ Feature: Update Contract Template
   Template Creators update existing templates
   with full version history preserved.
 
+  @executable
   Scenario: Update an existing template
     Given I am authenticated with role "Template Creator"
     And template "Standard NDA" version "1.0" exists
@@ -10,6 +11,7 @@ Feature: Update Contract Template
     Then a new version "1.1" is created
     And the previous version remains accessible
 
+  @executable
   Scenario: Unauthorized role cannot update template
     Given I am authenticated with role "Template Reviewer"
     And template "Standard NDA" version "1.0" exists

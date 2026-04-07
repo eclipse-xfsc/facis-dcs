@@ -3,6 +3,7 @@ Feature: Deprecate Contract Template
   Template Reviewers mark outdated templates as deprecated
   to prevent new contract generation.
 
+  @executable
   Scenario: Deprecate an active template
     Given I am authenticated with role "Template Reviewer"
     And template "Old NDA" is in "Approved" status
@@ -10,6 +11,7 @@ Feature: Deprecate Contract Template
     Then the template status is "Deprecated"
     And new contracts cannot be generated from this template
 
+  @executable
   Scenario: Unauthorized role cannot deprecate template
     Given I am authenticated with role "Template Creator"
     And template "Old NDA" is in "Approved" status

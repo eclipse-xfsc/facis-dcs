@@ -20,6 +20,7 @@ Feature: Create Contract via API
     And validation ensures required fields are present
     And the contract status is set to "Draft"
 
+  @executable
   Scenario: Unauthorized API request denied
     Given a system service provides an invalid API key
     When the system attempts to create contract via API

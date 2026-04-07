@@ -4,6 +4,7 @@ Feature: Contract Creation
   auto-filled metadata. The system supports dynamic contract assembling
   from reusable clauses and contract package bundling.
 
+  @executable
   Scenario: Create contract from template
     Given I am authenticated with role "Contract Creator"
     And template "Service Agreement Template" is approved and available
@@ -60,6 +61,7 @@ Feature: Contract Creation
     Then the contract inherits metadata from the template
     And I can override specific metadata values
 
+  @executable
   Scenario: Unauthorized role cannot create contracts
     Given I am authenticated with role "Contract Observer"
     When I attempt to create a contract from template "Service Agreement Template"
