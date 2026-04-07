@@ -168,9 +168,9 @@ func (s *contractWorkflowEnginesrvc) Retrieve(ctx context.Context, req *contract
 		return nil, contractworkflowengine.MakeInternalError(err)
 	}
 
-	var contractTemplates []*contractworkflowengine.ContractItem
+	var contracts []*contractworkflowengine.ContractItem
 	for _, item := range result.Contracts {
-		contractTemplates = append(contractTemplates, &contractworkflowengine.ContractItem{
+		contracts = append(contracts, &contractworkflowengine.ContractItem{
 			Did:             item.DID,
 			ContractVersion: item.ContractVersion,
 			State:           item.State.String(),
@@ -204,7 +204,7 @@ func (s *contractWorkflowEnginesrvc) Retrieve(ctx context.Context, req *contract
 	}
 
 	return &contractworkflowengine.ContractRetrieveResponse{
-		Contracts:     contractTemplates,
+		Contracts:     contracts,
 		ReviewTasks:   reviewTasks,
 		ApprovalTasks: approvalTasks,
 	}, nil
