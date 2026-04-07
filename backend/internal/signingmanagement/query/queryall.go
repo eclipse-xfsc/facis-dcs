@@ -8,7 +8,7 @@ import (
 	"digital-contracting-service/internal/base/event"
 	"digital-contracting-service/internal/signingmanagement/datatype/contractstate"
 	"digital-contracting-service/internal/signingmanagement/db"
-	events "digital-contracting-service/internal/signingmanagement/event"
+	signingmanagementevents "digital-contracting-service/internal/signingmanagement/event"
 	"fmt"
 	"time"
 
@@ -56,7 +56,7 @@ func (h *GetAllMetadataHandler) Handle(query GetAllMetadataQry) (*GetAllMetadata
 		return nil, fmt.Errorf("could not read all contracts: %w", err)
 	}
 
-	evt := events.RetrieveAllEvent{
+	evt := signingmanagementevents.RetrieveAllEvent{
 		RetrievedBy: query.RetrievedBy,
 		OccurredAt:  time.Now(),
 	}

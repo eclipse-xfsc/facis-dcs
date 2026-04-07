@@ -8,7 +8,7 @@ import (
 	"digital-contracting-service/internal/base/event"
 	"digital-contracting-service/internal/signingmanagement/datatype/contractstate"
 	"digital-contracting-service/internal/signingmanagement/db"
-	events "digital-contracting-service/internal/signingmanagement/event"
+	signingmanagementevents "digital-contracting-service/internal/signingmanagement/event"
 	"fmt"
 	"time"
 
@@ -54,7 +54,7 @@ func (h *GetByIDHandler) Handle(query GetByIDQry) (*GetByIDResult, error) {
 		return nil, fmt.Errorf("could not get contract data: %w", err)
 	}
 
-	evt := events.RetrieveByIDEvent{
+	evt := signingmanagementevents.RetrieveByIDEvent{
 		DID:         query.DID,
 		RetrievedBy: query.RetrievedBy,
 		OccurredAt:  time.Now(),
