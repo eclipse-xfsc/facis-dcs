@@ -209,7 +209,7 @@ var ContractVerifyRequest = Type("ContractVerifyRequest", func() {
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
 
-	Required("did", "updated_at")
+	Required("did")
 })
 
 var ContractVerifyResponse = Type("ContractVerifyResponse", func() {
