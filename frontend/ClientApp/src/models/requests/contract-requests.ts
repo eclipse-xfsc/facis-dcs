@@ -23,6 +23,7 @@ export interface ContractSubmitRequest {
   comments?: string[]
   reviewers?: string[]
   approver?: string
+  negotiators?: string[]
 }
 
 export interface ContractRetrieveRequest {}
