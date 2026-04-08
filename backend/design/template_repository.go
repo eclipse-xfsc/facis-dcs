@@ -281,11 +281,7 @@ var ContractTemplateVerifyRequest = Type("ContractTemplateVerifyRequest", func()
 
 	Attribute("did", String, "Decentralized Identifier of the contract template")
 
-	Attribute("updated_at", String, "The timestamp when the contract template was updated")
-
-	Attribute("decision_notes", ArrayOf(String), "A list of decision notes")
-
-	Required("did", "updated_at")
+	Required("did")
 })
 
 var ContractTemplateVerifyResponse = Type("ContractTemplateVerifyResponse", func() {
@@ -556,7 +552,7 @@ var _ = Service("TemplateRepository", func() {
 		})
 	})
 
-	// POST /template/verify
+	// POST /template/verify/{did}
 	Method("verify", func() {
 		Description("run policy, schema, and semantic validations; return findings.")
 		Meta("dcs:requirements", "DCS-IR-TR-03")
@@ -574,7 +570,8 @@ var _ = Service("TemplateRepository", func() {
 		Error("internal_error", ErrorResult, "Internal server error")
 
 		HTTP(func() {
-			POST("/template/verify")
+			POST("/template/verify/{did}")
+			Param("did")
 			Response(StatusOK)
 			Response("bad_request", StatusBadRequest)
 			Response("internal_error", StatusInternalServerError)
