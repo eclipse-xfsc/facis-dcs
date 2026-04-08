@@ -16,6 +16,7 @@ import (
 	cwerepo "digital-contracting-service/internal/contractworkflowengine/db/pg"
 	"digital-contracting-service/internal/middleware"
 	"digital-contracting-service/internal/service"
+	fcclient "digital-contracting-service/internal/templatecatalogueintegration/client"
 	tplrepo "digital-contracting-service/internal/templaterepository/db/pg"
 	"digital-contracting-service/migrations"
 	"flag"
@@ -108,6 +109,10 @@ func main() {
 	cweNTRepo := cwerepo.PostgresNegotiationTaskRepo{Ctx: ctx}
 	cweNRepo := cwerepo.PostgresNegotiationRepo{Ctx: ctx}
 	cweCTRepo := cwerepo.PostgresContractTemplateRepo{Ctx: ctx}
+
+	// Initialize the Federated Catalogue client.
+	fcURL := os.Getenv("FEDERATED_CATALOGUE_API_URL")
+	templateCatalogueClient := fcclient.NewFederatedCatalogueClient(fcURL)
 
 	// Initialize the service.
 	var (
