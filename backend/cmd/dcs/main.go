@@ -106,7 +106,7 @@ func main() {
 	cweRepo := cwerepo.PostgresContractRepo{Ctx: ctx}
 	cweRTRepo := cwerepo.PostgresReviewTaskRepo{Ctx: ctx}
 	cweATRepo := cwerepo.PostgresApprovalTaskRepo{Ctx: ctx}
-	cweNTRepo := cwerepo.PostgresNegotiationTaskRepo{}
+	cweNTRepo := cwerepo.PostgresNegotiationTaskRepo{Ctx: ctx}
 	cweNRepo := cwerepo.PostgresNegotiationRepo{Ctx: ctx}
 	cweCTRepo := cwerepo.PostgresContractTemplateRepo{Ctx: ctx}
 

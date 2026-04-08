@@ -11,7 +11,7 @@ import (
 	templateevents "digital-contracting-service/internal/templaterepository/event"
 	"digital-contracting-service/internal/templaterepository/selfdescription"
 	"encoding/json"
-	"errors"
+
 	"fmt"
 	"net/http"
 	"net/url"
@@ -22,7 +22,6 @@ import (
 
 type VerifyCmd struct {
 	DID           string
-	UpdatedAt     time.Time
 	VerifiedBy    string
 	ParticipantID string
 	Token         string
@@ -50,10 +49,6 @@ func (h *Verifier) Handle(cmd VerifyCmd) error {
 	processData, err := h.CTRepo.ReadProcessData(tx, cmd.DID)
 	if err != nil {
 		return fmt.Errorf("could not read process data: %w", err)
-	}
-
-	if cmd.UpdatedAt.Unix() < processData.UpdatedAt.Unix() {
-		return errors.New("contract template was updated elsewhere, please reload")
 	}
 
 	fullTemplate, err := h.CTRepo.ReadDataByID(tx, cmd.DID)
