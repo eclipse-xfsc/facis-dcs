@@ -19,9 +19,15 @@ const errorStore = useErrorStore()
 
 const templatesStore = useContractTemplatesStore()
 const contractsStore = useContractsStore()
-const reviewTasks = computed(() => [...templatesStore.reviewTasks, ...contractsStore.reviewTasks])
-const approvalTasks = computed(() => [...templatesStore.approvalTasks, ...contractsStore.approvalTasks])
-const negotiationTasks = computed(() => contractsStore.negotiationTasks)
+const reviewTasks = computed(() => {
+  return route.name === ROUTES.TASKS.REVIEWS ? [...templatesStore.reviewTasks, ...contractsStore.reviewTasks] : []
+})
+const approvalTasks = computed(() => {
+  return route.name === ROUTES.TASKS.APPROVALS ? [...templatesStore.approvalTasks, ...contractsStore.approvalTasks] : []
+})
+const negotiationTasks = computed(() => {
+  return route.name === ROUTES.TASKS.NEGOTIATIONS ? contractsStore.negotiationTasks : []
+})
 
 const hasTemplateRole = computed(() => {
   return (
