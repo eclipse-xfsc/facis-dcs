@@ -61,7 +61,7 @@ const routes: RouteRecordRaw[] = [
     name: ROUTES.TEMPLATES.LIST,
     component: ContractTemplateListView,
     meta: {
-      name: 'Contract Templates',
+      name: 'Templates',
       icon: DocumentTextIcon,
       requiresAuth: true,
       title: 'DCS - Templates',
@@ -127,7 +127,7 @@ const routes: RouteRecordRaw[] = [
     name: ROUTES.TASKS.REVIEWS,
     component: TaskListView,
     meta: {
-      name: 'Assigned Review Tasks',
+      name: 'Review Tasks',
       icon: DocumentMagnifyingGlassIcon,
       requiresAuth: true,
       title: 'DCS - Review Tasks',
@@ -140,7 +140,7 @@ const routes: RouteRecordRaw[] = [
     name: ROUTES.TASKS.APPROVALS,
     component: TaskListView,
     meta: {
-      name: 'Assigned Approval Tasks',
+      name: 'Approval Tasks',
       icon: DocumentCheckIcon,
       requiresAuth: true,
       title: 'DCS - Approval Tasks',
@@ -153,7 +153,7 @@ const routes: RouteRecordRaw[] = [
     name: ROUTES.TASKS.NEGOTIATIONS,
     component: TaskListView,
     meta: {
-      name: 'Assigned Negotiation Tasks',
+      name: 'Negotiation Tasks',
       icon: ChatBubbleLeftRightIcon,
       requiresAuth: true,
       title: 'DCS - Negotiation Tasks',

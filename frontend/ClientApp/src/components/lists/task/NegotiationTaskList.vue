@@ -4,7 +4,6 @@ import { useContractNeogtiationTaskStateFilterStore } from '@/stores/contract-ne
 import { useContractsStore } from '@/stores/contracts-store'
 import { negotiationTaskStates } from '@/types/negotiation-task-state'
 import { toComparableValue } from '@/utils/comparison'
-import { toProperCase } from '@/utils/string'
 import { computed, onUnmounted, ref, type Ref } from 'vue'
 import ListSort from '../ListSort.vue'
 import ListStateFilter from '../ListStateFilter.vue'
@@ -78,7 +77,7 @@ onUnmounted(() => stateFilterStore.reset())
   <ul class="list">
     <li class="tracking-wide w-full px-4 flex justify-end flex-col sm:flex-row">
       <ListStateFilter label="Negotiation Task" :filters="negotiationTaskStates" store-type="negotiationTasks" />
-      <TaskListSearch class="flex-1" :items="items" @search-result="applySearchResult" />
+      <TaskListSearch class="flex-1" :items="items" placeholder="Search contracts" @search-result="applySearchResult" />
       <ListSort :sorter="sorter" v-model:sort-by="sortBy" v-model:sort-order="sortOrder" />
     </li>
     <li v-for="item in filteredItems" class="list-row">
@@ -87,7 +86,6 @@ onUnmounted(() => stateFilterStore.reset())
           <h2 class="card-title flex-wrap justify-between">
             <div>Negotiation Task for Contract: {{ getContractName(item) }}</div>
             <div class="flex-1"></div>
-            <div class="badge badge-accent">{{ toProperCase(item.type) }} Task</div>
             <div class="badge badge-secondary">{{ item.state }}</div>
           </h2>
           <div class="flex justify-between">
@@ -96,12 +94,7 @@ onUnmounted(() => stateFilterStore.reset())
           <div class="flex justify-between">
             <div>Creation date: {{ new Date(item.created_at).toLocaleDateString() }}</div>
             <div class="card-actions justify-end">
-              <RouterLink
-                to="#"
-                class="btn btn-sm btn-primary rounded-box"
-              >
-                View
-              </RouterLink>
+              <RouterLink to="#" class="btn btn-sm btn-primary rounded-box"> View </RouterLink>
             </div>
           </div>
         </div>
