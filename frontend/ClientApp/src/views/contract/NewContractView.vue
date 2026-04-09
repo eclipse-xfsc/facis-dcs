@@ -169,7 +169,7 @@ function applyContractDataToDraft(contractData?: unknown) {
   <div class="flex flex-col min-h-full -mx-4 md:-mx-8 -my-4 md:-my-8">
     <div v-if="!isEditMode" class="max-w-4xl mx-auto px-6 py-12">
       <select v-model="selectedTemplate" class="select">
-        <option :value="null" disabled selected>Pick a contract template</option>
+        <option :value="null" disabled selected>Pick a template</option>
         <option v-for="template in approvedTemplates" :key="template.did" :value="template">{{ template.name }}</option>
       </select>
     </div>

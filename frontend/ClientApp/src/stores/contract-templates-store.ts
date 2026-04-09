@@ -31,7 +31,7 @@ export const useContractTemplatesStore = defineStore('contractTemplates', () => 
       reviewTasks.value = data.review_tasks.map((task) => ({ ...task, type: 'template' }))
       approvalTasks.value = data.approval_tasks.map((task) => ({ ...task, type: 'template' }))
     } catch (err: any) {
-      error.value = err.message || 'Error loading the contract templates'
+      error.value = err.message || 'Error loading the templates'
     } finally {
       loading.value = false
     }

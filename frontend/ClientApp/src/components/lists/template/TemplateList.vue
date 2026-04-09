@@ -70,7 +70,7 @@ onUnmounted(() => stateFilterStore.reset())
 <template>
   <ul class="list">
     <li class="tracking-wide px-4 flex justify-between flex-col sm:flex-row">
-      <ListStateFilter label="Contract Template" :filters="contractTemplateStates" store-type="templates" />
+      <ListStateFilter label="Template" :filters="contractTemplateStates" store-type="templates" />
       <TemplateListSearch :items="items" class="flex-1" @search-result="applySearchResult" />
       <ListSort :sorter="sorter" v-model:sort-by="sortBy" v-model:sort-order="sortOrder" />
     </li>

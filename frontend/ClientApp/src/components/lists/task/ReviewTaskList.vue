@@ -15,8 +15,10 @@ import ListSort from '../ListSort.vue'
 import ListStateFilter from '../ListStateFilter.vue'
 import TaskListSearch from './TaskListSearch.vue'
 
+type ReviewTask = ContractTemplateReviewTask | ContractReviewTask
+
 const props = defineProps<{
-  items: (ContractTemplateReviewTask | ContractReviewTask)[]
+  items: ReviewTask[]
 }>()
 
 const templatesStore = useContractTemplatesStore()
@@ -32,10 +34,10 @@ const defaultSort = sorter.keys().next().value!
 const sortBy = ref(defaultSort)
 const sortOrder = ref(1)
 
-const searchFilteredItems: Ref<(ContractTemplateReviewTask | ContractReviewTask)[]> = ref([])
+const searchFilteredItems: Ref<ReviewTask[]> = ref(props.items)
 
 const searchedItems = computed(() => {
-  return searchFilteredItems.value.length > 0 ? searchFilteredItems.value : props.items
+  return searchFilteredItems.value.length >= 0 ? searchFilteredItems.value : props.items
 })
 
 const sortedItems = computed(() => {
@@ -43,8 +45,8 @@ const sortedItems = computed(() => {
     return searchedItems.value
   }
   return searchedItems.value.slice().sort((taskA, taskB) => {
-    const aSortValue = taskA[sortBy.value as keyof (ContractTemplateReviewTask | ContractReviewTask)]
-    const bSortValue = taskB[sortBy.value as keyof (ContractTemplateReviewTask | ContractReviewTask)]
+    const aSortValue = taskA[sortBy.value as keyof ReviewTask]
+    const bSortValue = taskB[sortBy.value as keyof ReviewTask]
     const aValue = toComparableValue(aSortValue)
     const bValue = toComparableValue(bSortValue)
     if (!aValue && !bValue) return 0
@@ -76,7 +78,7 @@ const getContractName = (item: ContractReviewTask) => {
   return contractsStore.contracts.find((contract) => contract.did === item.did)?.name ?? 'Nameless Contract'
 }
 
-const canEdit = (item: ContractTemplateReviewTask | ContractReviewTask) => {
+const canEdit = (item: ReviewTask) => {
   if (item.type === 'template') {
     const template = templatesStore.contractTemplates.find((template) => template.did === item.did)
     const state = template?.state
@@ -91,7 +93,7 @@ const canEdit = (item: ContractTemplateReviewTask | ContractReviewTask) => {
   }
 }
 
-const resolveViewRouteName = (item: ContractTemplateReviewTask | ContractReviewTask) => {
+const resolveViewRouteName = (item: ReviewTask) => {
   if (item.type === 'template') {
     if (item.state === ReviewTaskState.open) {
       return ROUTES.TEMPLATES.REVIEW
@@ -102,7 +104,7 @@ const resolveViewRouteName = (item: ContractTemplateReviewTask | ContractReviewT
   }
 }
 
-const applySearchResult = (searchResult: (ContractTemplateReviewTask | ContractReviewTask)[]) => {
+const applySearchResult = (searchResult: ReviewTask[]) => {
   searchFilteredItems.value = props.items.filter((task) =>
     searchResult.map((template) => template.did).includes(task.did),
   )
@@ -122,7 +124,7 @@ onUnmounted(() => stateFilterStore.reset())
       <div class="list-col-grow card bg-base-200 card-border hover:bg-base-300">
         <div class="card-body">
           <h2 class="card-title flex-wrap justify-between">
-            <div v-if="item.type === 'template'">Review Task for Contract Template: {{ getTemplateName(item) }}</div>
+            <div v-if="item.type === 'template'">Review Task for Template: {{ getTemplateName(item) }}</div>
             <div v-else>Review Task for Contract: {{ getContractName(item) }}</div>
             <div class="flex-1"></div>
             <div class="badge badge-accent">{{ toProperCase(item.type) }} Task</div>
@@ -133,7 +135,9 @@ onUnmounted(() => stateFilterStore.reset())
               Document number: {{ item.document_number }}
             </div>
             <div v-if="item.type === 'template' && item.version">Version: {{ item.version }}</div>
-            <div v-else-if="item.type === 'contract' && item.contract_version">Version: {{ item.contract_version }}</div>
+            <div v-else-if="item.type === 'contract' && item.contract_version">
+              Version: {{ item.contract_version }}
+            </div>
           </div>
           <div class="flex justify-between">
             <div>Creation date: {{ new Date(item.created_at).toLocaleDateString() }}</div>

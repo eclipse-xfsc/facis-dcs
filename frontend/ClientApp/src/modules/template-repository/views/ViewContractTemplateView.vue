@@ -105,7 +105,7 @@ const submitTemplate = async (result: SelectedUserRole[]) => {
       router.push({ name: ROUTES.TEMPLATES.LIST })
     }
   } catch (error) {
-    console.error('Contract Template Submission failed', error)
+    console.error('Template Submission failed', error)
   }
 }
 
@@ -120,7 +120,7 @@ const submitRejectedTemplate = async () => {
       router.push({ name: ROUTES.TEMPLATES.LIST })
     }
   } catch (error) {
-    console.error('Contract Template Submission failed', error)
+    console.error('Template Submission failed', error)
   }
 }
 </script>
