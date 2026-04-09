@@ -21,3 +21,5 @@ deployment/certs
 tests/bdd/.venv
 tests/bdd/.tmp
 tests/bdd/.reports
+tests/bdd/.coverage
+tests/bdd/.coverage.*
