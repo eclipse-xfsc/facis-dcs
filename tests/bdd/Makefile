@@ -72,11 +72,15 @@ setup_dev:
 	"$(VENV_PATH)/bin/pip" install -e "$$SRC_PATH[dev]"
 
 run_bdd_dev: setup_dev
+	@"$(VENV_PATH)/bin/python" -c 'import eu.xfsc.bdd.core' 2>/dev/null || \
+		(echo "ERROR: bdd-executor (eu.xfsc.bdd.core) not found in venv — run 'make setup_dev' first" && exit 1)
 	source "$(VENV_PATH)/bin/activate" && \
 	mkdir -p .reports/junit && \
 	"$(VENV_PATH)/bin/coverage" run --append -m behave $(ARG_BDD_JUNIT) -t "$(TAGS)" "$(FEATURES_PATH)" $(ARG_BDD)
 
 run_bdd_all: setup_dev
+	@"$(VENV_PATH)/bin/python" -c 'import eu.xfsc.bdd.core' 2>/dev/null || \
+		(echo "ERROR: bdd-executor (eu.xfsc.bdd.core) not found in venv — run 'make setup_dev' first" && exit 1)
 	source "$(VENV_PATH)/bin/activate" && \
 	mkdir -p .reports/junit && \
 	"$(VENV_PATH)/bin/coverage" run --append -m behave $(ARG_BDD_JUNIT) "$(FEATURES_PATH)" $(ARG_BDD)
