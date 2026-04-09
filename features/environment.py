@@ -6,7 +6,8 @@ from pathlib import Path
 
 
 def before_all(context):
-    steps_dir = Path(__file__).resolve().parent / "steps"
+    # Behave auto-discovers steps/ at project root; add to sys.path for direct imports
+    steps_dir = Path(__file__).resolve().parent.parent / "steps"
     steps_dir_str = str(steps_dir)
     if steps_dir_str not in sys.path:
         sys.path.insert(0, steps_dir_str)

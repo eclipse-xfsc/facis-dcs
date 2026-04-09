@@ -18,6 +18,15 @@ frontend/.cache
 
 deployment/certs
 
+# BDD test build artifacts
+bdd-executor
+tests/bdd/.coverage*
+tests/bdd/.tmp
+tests/bdd/.venv
+tests/bdd/.reports
+steps/__pycache__
+steps/support/__pycache__
+
 tests/bdd/.venv
 tests/bdd/.tmp
 tests/bdd/.reports
