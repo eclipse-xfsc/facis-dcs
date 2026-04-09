@@ -10,6 +10,7 @@ type Searchable = PartialContractTemplate | Contract
 
 const props = defineProps<{
   items: T[]
+  placeholder?: string
 }>()
 
 const emit = defineEmits<{
@@ -80,7 +81,7 @@ const handleSearchResult = (searchResults: Searchable[]) => {
     :filter-labels="filterLabels"
     :search-fn="search"
     :empty-item="emptyTemplate"
-    placeholder="Search templates/contracts"
+    :placeholder="placeholder || 'Search templates/contracts'"
     @search-result="handleSearchResult"
   />
 </template>
