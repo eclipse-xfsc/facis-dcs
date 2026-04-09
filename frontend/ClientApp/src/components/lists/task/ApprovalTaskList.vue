@@ -14,8 +14,10 @@ import ListSort from '../ListSort.vue'
 import ListStateFilter from '../ListStateFilter.vue'
 import TaskListSearch from './TaskListSearch.vue'
 
+type ApprovalTask = ContractTemplateApprovalTask | ContractApprovalTask
+
 const props = defineProps<{
-  items: (ContractTemplateApprovalTask | ContractApprovalTask)[]
+  items: ApprovalTask[]
 }>()
 
 const templatesStore = useContractTemplatesStore()
@@ -30,10 +32,10 @@ const defaultSort = sorter.keys().next().value!
 const sortBy = ref(defaultSort)
 const sortOrder = ref(1)
 
-const searchFilteredItems: Ref<(ContractTemplateApprovalTask | ContractApprovalTask)[]> = ref(props.items)
+const searchFilteredItems: Ref<ApprovalTask[]> = ref(props.items)
 
 const searchedItems = computed(() => {
-  return searchFilteredItems.value.length > 0 ? searchFilteredItems.value : props.items
+  return searchFilteredItems.value.length >= 0 ? searchFilteredItems.value : props.items
 })
 
 const sortedItems = computed(() => {
@@ -41,8 +43,8 @@ const sortedItems = computed(() => {
     return searchedItems.value
   }
   return searchedItems.value.slice().sort((taskA, taskB) => {
-    const aSortValue = taskA[sortBy.value as keyof (ContractTemplateApprovalTask | ContractApprovalTask)]
-    const bSortValue = taskB[sortBy.value as keyof (ContractTemplateApprovalTask | ContractApprovalTask)]
+    const aSortValue = taskA[sortBy.value as keyof ApprovalTask]
+    const bSortValue = taskB[sortBy.value as keyof ApprovalTask]
     const aValue = toComparableValue(aSortValue)
     const bValue = toComparableValue(bSortValue)
     if (!aValue && !bValue) return 0
@@ -82,7 +84,7 @@ const canApprove = (item: ContractTemplateApprovalTask) => {
   return item.state === ApprovalTaskState.open && getTemplateState(item) === TemplateState.reviewed
 }
 
-const resolveViewRouteName = (item: ContractTemplateApprovalTask | ContractApprovalTask) => {
+const resolveViewRouteName = (item: ApprovalTask) => {
   if (item.type === 'template') {
     if (canApprove(item)) {
       return ROUTES.TEMPLATES.APPROVE
@@ -93,7 +95,7 @@ const resolveViewRouteName = (item: ContractTemplateApprovalTask | ContractAppro
   }
 }
 
-const applySearchResult = (searchResult: (ContractTemplateApprovalTask | ContractApprovalTask)[]) => {
+const applySearchResult = (searchResult: ApprovalTask[]) => {
   searchFilteredItems.value = props.items.filter((task) =>
     searchResult.map((template) => template.did).includes(task.did),
   )

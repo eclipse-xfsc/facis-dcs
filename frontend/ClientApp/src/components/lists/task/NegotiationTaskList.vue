@@ -24,10 +24,10 @@ const defaultSort = sorter.keys().next().value!
 const sortBy = ref(defaultSort)
 const sortOrder = ref(1)
 
-const searchFilteredItems: Ref<ContractNegotiationTask[]> = ref([])
+const searchFilteredItems: Ref<ContractNegotiationTask[]> = ref(props.items)
 
 const searchedItems = computed(() => {
-  return searchFilteredItems.value.length > 0 ? searchFilteredItems.value : props.items
+  return searchFilteredItems.value.length >= 0 ? searchFilteredItems.value : props.items
 })
 
 const sortedItems = computed(() => {
