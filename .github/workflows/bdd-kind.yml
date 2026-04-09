@@ -75,6 +75,8 @@ jobs:
           path: tests/bdd/.reports/junit/*.xml
           reporter: java-junit
           fail-on-error: false
+          list-suites: all
+          list-tests: all
 
       - name: Upload BDD reports
         if: always()

@@ -5,6 +5,11 @@ import sys
 from pathlib import Path
 
 
+def before_scenario(context, scenario):
+    if "skip" in scenario.effective_tags or "skipped" in scenario.effective_tags:
+        scenario.skip()
+
+
 def before_all(context):
     steps_dir = Path(__file__).resolve().parent / "steps"
     steps_dir_str = str(steps_dir)

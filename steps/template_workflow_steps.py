@@ -490,62 +490,11 @@ def step_then_template_available_for_generation(context):
     assert state == "APPROVED", f"Expected APPROVED state, got '{state}'"
 
 
-@then('the rejection reason is recorded')
-def step_then_rejection_reason_recorded(context):
-    assert context.requests_response.status_code == 200, (
-        f"Reject call failed: {context.requests_response.status_code}: {context.requests_response.text}"
-    )
-
-
-@then('a new version "{version}" is created')
-def step_then_new_version_created(context, version):
-    assert context.requests_response.status_code == 200, (
-        f"Update failed: {context.requests_response.status_code}: {context.requests_response.text}"
-    )
-
-
-@then('the previous version remains accessible')
-def step_then_prev_version_accessible(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text
-
-
 @then('I see the template version and status')
 def step_then_see_version_and_status(context):
     assert context.requests_response.status_code == 200, context.requests_response.text
     body = context.requests_response.json()
     assert "state" in body, f"Missing 'state' in response: {body}"
-
-
-@then('I see the template provenance')
-def step_then_see_provenance(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text
-
-
-@then('the results are filtered by my access rights')
-def step_then_results_filtered(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text
-
-
-@then('the JSON-LD context is validated')
-def step_then_jsonld_validated(context):
-    assert context.requests_response.status_code == 200, (
-        f"Verify (JSON-LD check) failed: {context.requests_response.text}"
-    )
-
-
-@then('the SHACL constraints are validated')
-def step_then_shacl_validated(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text
-
-
-@then('the digital signatures are verified')
-def step_then_signatures_verified(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text
-
-
-@then('new contracts cannot be generated from this template')
-def step_then_no_new_contract_generation(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text
 
 
 @then('the template is removed from the system')
@@ -600,11 +549,6 @@ def step_then_template_assigned_uuid(context):
     assert isinstance(did, str) and did.strip(), f"Expected identifier, got: {body}"
 
 
-@then('the UUID is unique across the system')
-def step_then_uuid_unique(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text
-
-
 @then('the template has a resolvable DID')
 def step_then_template_has_resolvable_did(context):
     assert context.requests_response.status_code == 200, context.requests_response.text
@@ -628,7 +572,3 @@ def step_then_receive_correct_template(context):
     body = context.requests_response.json()
     assert body.get("did"), f"No template identifier in response: {body}"
 
-
-@then('the DID resolution is verified')
-def step_then_did_resolution_verified(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text

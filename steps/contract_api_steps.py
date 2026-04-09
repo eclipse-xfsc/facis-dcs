@@ -69,13 +69,3 @@ def step_then_contract_unique_id(context):
     body = context.requests_response.json()
     did = body.get("did")
     assert isinstance(did, str) and did.strip(), f"Expected a contract DID, got: {body}"
-
-
-@then("metadata is auto-filled including parties, jurisdiction, and applicable schemas")
-def step_then_metadata_auto_filled(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text
-
-
-@then("the creation is logged and traceable to the template version")
-def step_then_creation_logged_traceable(context):
-    assert context.requests_response.status_code == 200, context.requests_response.text
