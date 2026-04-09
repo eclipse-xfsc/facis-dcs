@@ -27,6 +27,7 @@ trap cleanup EXIT
 : "${KEYCLOAK_SERVICE_PORT:?KEYCLOAK_SERVICE_PORT is required}"
 : "${BDD_KEYCLOAK_REALM:?BDD_KEYCLOAK_REALM is required}"
 : "${BDD_RUN_MODE:?BDD_RUN_MODE is required (dev|all)}"
+: "${PROJECT_ROOT:?PROJECT_ROOT is required}"
 
 mkdir -p .tmp .reports/junit
 printf "%s localhost\n" "$KEYCLOAK_SERVICE" > .tmp/hostaliases
@@ -99,8 +100,10 @@ fi
 
 echo "Running BDD suite via bdd-executor environment"
 if [[ "$BDD_RUN_MODE" == "all" ]]; then
+  cd "$PROJECT_ROOT"
   "$VENV_PATH/bin/coverage" run --append -m behave "${JUNIT_ARGS[@]}" "$FEATURES_PATH" "${EXTRA_ARGS[@]}"
 else
+  cd "$PROJECT_ROOT"
   "$VENV_PATH/bin/coverage" run --append -m behave "${JUNIT_ARGS[@]}" -t "${TAGS:?TAGS is required for dev mode}" "$FEATURES_PATH" "${EXTRA_ARGS[@]}"
 fi
 

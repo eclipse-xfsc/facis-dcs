@@ -2,13 +2,17 @@ SHELL := /bin/bash -eu -o pipefail
 
 PYTHON ?= python3
 VENV_PATH ?= .venv
+THIS_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+PROJECT_ROOT := $(abspath $(THIS_DIR)../..)
+VENV_ABS := $(THIS_DIR)$(VENV_PATH)
+REPORTS_ABS := $(THIS_DIR).reports
 BDD_EXECUTOR_REPO ?= https://github.com/eclipse-xfsc/bdd-executor.git
 BDD_EXECUTOR_PATH ?= ../../bdd-executor
 BDD_EXECUTOR_FALLBACK_PATH ?= .tmp/bdd-executor
-FEATURES_PATH ?= ../../features
+FEATURES_PATH ?= features
 TAGS ?= @executable
 ARG_BDD ?=
-ARG_BDD_JUNIT ?= --junit --junit-directory .reports/junit
+ARG_BDD_JUNIT ?= --junit --junit-directory $(REPORTS_ABS)/junit
 K8S_NAMESPACE ?= default
 HELM_RELEASE ?= dcs
 DCS_SERVICE ?= $(HELM_RELEASE)-digital-contracting-service
@@ -75,18 +79,21 @@ run_bdd_dev: setup_dev
 	@"$(VENV_PATH)/bin/python" -c 'import eu.xfsc.bdd.core' 2>/dev/null || \
 		(echo "ERROR: bdd-executor (eu.xfsc.bdd.core) not found in venv — run 'make setup_dev' first" && exit 1)
 	source "$(VENV_PATH)/bin/activate" && \
-	mkdir -p .reports/junit && \
-	"$(VENV_PATH)/bin/coverage" run --append -m behave $(ARG_BDD_JUNIT) -t "$(TAGS)" "$(FEATURES_PATH)" $(ARG_BDD)
+	mkdir -p "$(REPORTS_ABS)/junit" && \
+	cd "$(PROJECT_ROOT)" && \
+	"$(VENV_ABS)/bin/coverage" run --append -m behave $(ARG_BDD_JUNIT) -t "$(TAGS)" $(FEATURES_PATH) $(ARG_BDD)
 
 run_bdd_all: setup_dev
 	@"$(VENV_PATH)/bin/python" -c 'import eu.xfsc.bdd.core' 2>/dev/null || \
 		(echo "ERROR: bdd-executor (eu.xfsc.bdd.core) not found in venv — run 'make setup_dev' first" && exit 1)
 	source "$(VENV_PATH)/bin/activate" && \
-	mkdir -p .reports/junit && \
-	"$(VENV_PATH)/bin/coverage" run --append -m behave $(ARG_BDD_JUNIT) "$(FEATURES_PATH)" $(ARG_BDD)
+	mkdir -p "$(REPORTS_ABS)/junit" && \
+	cd "$(PROJECT_ROOT)" && \
+	"$(VENV_ABS)/bin/coverage" run --append -m behave $(ARG_BDD_JUNIT) $(FEATURES_PATH) $(ARG_BDD)
 
 run_bdd_helm_dev: setup_dev ensure_k8s_tools
-	@VENV_PATH="$(VENV_PATH)" \
+	@VENV_PATH="$(VENV_ABS)" \
+		PROJECT_ROOT="$(PROJECT_ROOT)" \
 		FEATURES_PATH="$(FEATURES_PATH)" \
 		KUBECTL_BIN="$(KUBECTL_BIN)" \
 		K8S_NAMESPACE="$(K8S_NAMESPACE)" \
@@ -108,7 +115,8 @@ run_bdd_helm_dev: setup_dev ensure_k8s_tools
 		bash "$(BDD_RUNNER_SCRIPT)"
 
 run_bdd_helm_all: setup_dev ensure_k8s_tools
-	@VENV_PATH="$(VENV_PATH)" \
+	@VENV_PATH="$(VENV_ABS)" \
+		PROJECT_ROOT="$(PROJECT_ROOT)" \
 		FEATURES_PATH="$(FEATURES_PATH)" \
 		KUBECTL_BIN="$(KUBECTL_BIN)" \
 		K8S_NAMESPACE="$(K8S_NAMESPACE)" \
