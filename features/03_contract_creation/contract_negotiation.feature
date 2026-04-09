@@ -4,7 +4,6 @@ Feature: Contract Negotiation
   commenting, version tracking, and structured negotiation workflows with
   redline proposals and full audit logs.
 
-  @executable
   Scenario: Open draft contract for negotiation
     Given I am authenticated with role "Contract Manager"
     And contract "Service Agreement" is in "Draft" status
@@ -60,7 +59,6 @@ Feature: Contract Negotiation
     And I see approvals and rejections
     And I see the full audit trail
 
-  @executable
   Scenario: Submit contract for review after negotiation
     Given I am authenticated with role "Contract Manager"
     And contract "Service Agreement" negotiation is complete
@@ -69,7 +67,6 @@ Feature: Contract Negotiation
     And the contract status changes to "Under Review"
     And the submission is logged
 
-  @executable
   Scenario: Unauthorized role cannot negotiate contracts
     Given I am authenticated with role "Contract Observer"
     And contract "Service Agreement" is in "Draft" status

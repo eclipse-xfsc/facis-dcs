@@ -3,14 +3,12 @@ Feature: Template Approval Workflow
   Templates progress through submission, review, and approval
   before becoming available for contract generation.
 
-  @executable
   Scenario: Submit template for review
     Given I am authenticated with role "Template Creator"
     And template "Standard NDA" is in "Draft" status
     When I submit template "Standard NDA" for review
     Then the template status is "Submitted"
 
-  @executable
   Scenario: Review and recommend template for approval
     Given I am authenticated with role "Template Reviewer"
     And template "Standard NDA" is in "Submitted" status
@@ -18,7 +16,6 @@ Feature: Template Approval Workflow
     And I recommend template "Standard NDA" for approval
     Then the template status is "Reviewed"
 
-  @executable
   Scenario: Approve reviewed template
     Given I am authenticated with role "Template Approver"
     And template "Standard NDA" is in "Reviewed" status
@@ -26,7 +23,6 @@ Feature: Template Approval Workflow
     Then the template status is "Approved"
     And the template is available for contract generation
 
-  @executable
   Scenario: Reject template with reason
     Given I am authenticated with role "Template Approver"
     And template "Standard NDA" is in "Reviewed" status
@@ -34,7 +30,6 @@ Feature: Template Approval Workflow
     Then the template status is "Draft"
     And the rejection reason is recorded
 
-  @executable
   Scenario: Unauthorized role cannot approve template
     Given I am authenticated with role "Template Creator"
     And template "Standard NDA" is in "Reviewed" status

@@ -4,7 +4,6 @@ Feature: Contract Approval
   approvers before signing. The system logs approvals with timestamps,
   locks content upon completion, and transitions to signing phase.
 
-  @executable
   Scenario: Initiate approval process for finalized contract
     Given I am authenticated with role "Contract Manager"
     And contract "Service Agreement" is in "Under Review" status
@@ -12,7 +11,6 @@ Feature: Contract Approval
     Then the contract is routed to required approvers
     And the contract status shows "Pending Approval"
 
-  @executable
   Scenario: Approve contract via approval interface
     Given I am authenticated with role "Contract Approver"
     And contract "Service Agreement" requires my approval
@@ -22,7 +20,6 @@ Feature: Contract Approval
     And my approval is logged with digital credentials
     And the approval status is updated
 
-  @executable
   Scenario: Reject contract with comments
     Given I am authenticated with role "Contract Approver"
     And contract "Service Agreement" requires my approval
@@ -78,7 +75,6 @@ Feature: Contract Approval
     And I see completed approvals with timestamps
     And I see the overall approval progress
 
-  @executable
   Scenario: Unauthorized role cannot approve contracts
     Given I am authenticated with role "Contract Observer"
     And contract "Service Agreement" is pending approval

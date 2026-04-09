@@ -2,7 +2,6 @@
 Feature: Public Authentication Endpoints
   Public auth endpoints should stay reachable without bearer authentication.
 
-  @executable
   Scenario Outline: Public auth endpoint responds successfully
     When the system sends "<method>" request to public endpoint "<endpoint>"
     Then the response status is 200

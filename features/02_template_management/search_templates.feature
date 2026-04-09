@@ -3,14 +3,12 @@ Feature: Search and Retrieve Contract Templates
   Users search and access existing contract templates
   filtered by role-based access rights.
 
-  @executable
   Scenario: Search templates by keyword
     Given I am authenticated with role "Template Manager"
     And templates exist in the system
     When I search for templates with keyword "NDA"
     Then the results are filtered by my access rights
 
-  @executable
   Scenario: Retrieve template details
     Given I am authenticated with role "Template Reviewer"
     When I retrieve template "Standard NDA"

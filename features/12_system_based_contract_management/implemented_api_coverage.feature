@@ -2,7 +2,6 @@
 Feature: Implemented Protected API Coverage
   Every currently implemented protected API endpoint must reject invalid credentials.
 
-  @executable
   Scenario Outline: Protected endpoint denies invalid token
     Given a system service provides an invalid API key
     When the system sends "<method>" request to protected endpoint "<endpoint>" with payload "<payload_key>"
