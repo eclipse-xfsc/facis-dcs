@@ -1,13 +1,10 @@
 export type ApprovalTaskState =
-  (typeof ContractTemplateApprovalTaskState)[keyof typeof ContractTemplateApprovalTaskState]
+  (typeof ApprovalTaskState)[keyof typeof ApprovalTaskState]
 
-export type ContractApprovalTaskState = Omit<typeof ContractTemplateApprovalTaskState, 'resubmitted'>
-
-export const ContractTemplateApprovalTaskState = {
+export const ApprovalTaskState = {
   open: 'OPEN',
   rejected: 'REJECTED',
-  resubmitted: 'RESUBMITTED',
   approved: 'APPROVED',
 } as const
 
-export const approvalTaskStates: ApprovalTaskState[] = Object.values(ContractTemplateApprovalTaskState)
+export const approvalTaskStates: ApprovalTaskState[] = Object.values(ApprovalTaskState)

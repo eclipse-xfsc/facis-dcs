@@ -4,17 +4,20 @@ import ReviewContractTemplateView from '@/modules/template-repository/views/Revi
 import ViewContractTemplateView from '@/modules/template-repository/views/ViewContractTemplateView.vue'
 import { authenticationService } from '@/services/authentication-service'
 import { useAuthStore } from '@/stores/auth-store'
-import { useDataRouteStore } from '@/stores/data-route-store'
 import AuthSuccessView from '@/views/auth/AuthSuccessView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import ContractListView from '@/views/contract/ContractListView.vue'
 import NewContractView from '@/views/contract/NewContractView.vue'
 import ContractTemplateListView from '@/views/contract-template-list/ContractTemplateListView.vue'
-import ContractTemplateTaskView from '@/views/task/ContractTemplateTaskView.vue'
-import TemplateCatalogueListView from '@/views/template-repository/TemplateCatalogueListView.vue'
-import TemplateCatalogueView from '@/views/template-repository/TemplateCatalogueView.vue'
+import TaskListView from '@/views/task/TaskListView.vue'
 import TemplateCatalogueAdminView from '@/views/template-repository/TemplateCatalogueAdminView.vue'
-import { DocumentCheckIcon, DocumentDuplicateIcon, DocumentMagnifyingGlassIcon, DocumentTextIcon } from '@heroicons/vue/20/solid'
+import {
+  ChatBubbleLeftRightIcon,
+  DocumentCheckIcon,
+  DocumentDuplicateIcon,
+  DocumentMagnifyingGlassIcon,
+  DocumentTextIcon,
+} from '@heroicons/vue/20/solid'
 import NewContractTemplateView from '@template-repository/views/NewContractTemplateView.vue'
 import { createRouter, createWebHistory, type RouteRecordRaw } from 'vue-router'
 
@@ -31,10 +34,9 @@ const ROUTES = {
   TASKS: {
     REVIEWS: 'tasks.reviews',
     APPROVALS: 'tasks.approvals',
+    NEGOTIATIONS: 'tasks.negotiations',
   },
   TEMPLATE_CATALOGUES: {
-    LIST: 'template.catalogues.list',
-    VIEW: 'template.catalogues.view',
     ADMIN: 'template.catalogues.admin',
   },
   AUTH: {
@@ -59,7 +61,7 @@ const routes: RouteRecordRaw[] = [
     name: ROUTES.TEMPLATES.LIST,
     component: ContractTemplateListView,
     meta: {
-      name: 'Contract Templates',
+      name: 'Templates',
       icon: DocumentTextIcon,
       requiresAuth: true,
       title: 'DCS - Templates',
@@ -123,64 +125,40 @@ const routes: RouteRecordRaw[] = [
   {
     path: '/tasks/reviews',
     name: ROUTES.TASKS.REVIEWS,
-    component: ContractTemplateTaskView,
+    component: TaskListView,
     meta: {
-      name: 'Assigned Review Tasks',
+      name: 'Review Tasks',
       icon: DocumentMagnifyingGlassIcon,
       requiresAuth: true,
       title: 'DCS - Review Tasks',
       order: 3.1,
       roles: ['TEMPLATE_REVIEWER'],
-      requiresData: true,
-    },
-    beforeEnter: (to) => {
-      const dataRouteStore = useDataRouteStore()
-      if (!dataRouteStore.isRouteDataLoaded(to.name)) {
-        return { name: ROUTES.TEMPLATES.LIST }
-      }
     },
   },
   {
     path: '/tasks/approvals',
     name: ROUTES.TASKS.APPROVALS,
-    component: ContractTemplateTaskView,
+    component: TaskListView,
     meta: {
-      name: 'Assigned Approval Tasks',
+      name: 'Approval Tasks',
       icon: DocumentCheckIcon,
       requiresAuth: true,
       title: 'DCS - Approval Tasks',
       order: 3.2,
       roles: ['TEMPLATE_APPROVER'],
-      requiresData: true,
-    },
-    beforeEnter: (to) => {
-      const dataRouteStore = useDataRouteStore()
-      if (!dataRouteStore.isRouteDataLoaded(to.name)) {
-        return { name: ROUTES.TEMPLATES.LIST }
-      }
     },
   },
   {
-    path: '/catalogues',
-    name: ROUTES.TEMPLATE_CATALOGUES.LIST,
-    component: TemplateCatalogueListView,
+    path: '/tasks/negotiations',
+    name: ROUTES.TASKS.NEGOTIATIONS,
+    component: TaskListView,
     meta: {
-      name: 'Template Catalogues',
-      icon: DocumentTextIcon,
+      name: 'Negotiation Tasks',
+      icon: ChatBubbleLeftRightIcon,
       requiresAuth: true,
-      title: 'DCS - Template Catalogues',
-      order: 4,
-    },
-  },
-  {
-    path: '/catalogues/:did',
-    name: ROUTES.TEMPLATE_CATALOGUES.VIEW,
-    component: TemplateCatalogueView,
-    meta: {
-      name: 'Template Catalogue',
-      hideInSidebar: true,
-      requiresAuth: true,
-      title: 'DCS - Template Catalogue',
+      title: 'DCS - Negotiation Tasks',
+      order: 3.3,
+      roles: ['CONTRACT_NEGOTIATOR'],
     },
   },
   {
@@ -192,7 +170,7 @@ const routes: RouteRecordRaw[] = [
       icon: DocumentTextIcon,
       requiresAuth: true,
       title: 'DCS - Template Catalogue Admin',
-      order: 5,
+      order: 4,
       roles: ['SYSTEM_ADMINISTRATOR'],
     },
   },
@@ -206,7 +184,7 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
       title: 'DCS - Contracts',
       order: 2,
-      roles: ['CONTRACT_CREATOR', 'CONTRACT_REVIEWER', 'CONTRACT_APPROVER', 'CONTRACT_MANAGER']
+      roles: ['CONTRACT_CREATOR', 'CONTRACT_REVIEWER', 'CONTRACT_APPROVER', 'CONTRACT_MANAGER'],
     },
   },
   {

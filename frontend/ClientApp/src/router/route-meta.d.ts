@@ -15,6 +15,5 @@ declare module 'vue-router' {
     layout?: 'blank'
     order?: number
     roles?: UserRole[]
-    requiresData?: boolean
   }
 }

@@ -13,7 +13,6 @@ import (
 	templatecatalogueintegration "digital-contracting-service/gen/template_catalogue_integration"
 	templaterepository "digital-contracting-service/gen/template_repository"
 	"digital-contracting-service/internal/auth"
-	nats2 "digital-contracting-service/internal/base/eventbus/nats"
 	cwerepo "digital-contracting-service/internal/contractworkflowengine/db/pg"
 	"digital-contracting-service/internal/middleware"
 	"digital-contracting-service/internal/service"
@@ -103,19 +102,11 @@ func main() {
 	ctRTRepo := tplrepo.PostgresReviewTaskRepo{Ctx: ctx}
 	ctATRepo := tplrepo.PostgresApprovalTaskRepo{Ctx: ctx}
 
-	eventBus := nats2.NatsEventBus{
-		Conn: natsConn,
-	}
-
 	cweRepo := cwerepo.PostgresContractRepo{Ctx: ctx}
 	cweRTRepo := cwerepo.PostgresReviewTaskRepo{Ctx: ctx}
 	cweATRepo := cwerepo.PostgresApprovalTaskRepo{Ctx: ctx}
+	cweNTRepo := cwerepo.PostgresNegotiationTaskRepo{Ctx: ctx}
 	cweNRepo := cwerepo.PostgresNegotiationRepo{Ctx: ctx}
-
-	cweSvc, err := service.NewContractWorkflowEngine(db, jwtAuth, &eventBus, &cweRepo, &cweRTRepo, &cweATRepo, &cweNRepo)
-	if err != nil {
-		log.Fatalf(ctx, err, "failed to create contract workflow engine")
-	}
 
 	// Initialize the service.
 	var (
@@ -133,7 +124,7 @@ func main() {
 	{
 		authSvc = service.NewAuth()
 		contractStorageArchiveSvc = service.NewContractStorageArchive(jwtAuth)
-		contractWorkflowEngineSvc = cweSvc
+		contractWorkflowEngineSvc = service.NewContractWorkflowEngine(db, jwtAuth, &cweRepo, &cweRTRepo, &cweATRepo, &cweNTRepo, &cweNRepo)
 		dcsToDcsSvc = service.NewDcsToDcs(jwtAuth)
 		externalTargetSystemAPISvc = service.NewExternalTargetSystemAPI(jwtAuth)
 		orchestrationWebhooksSvc = service.NewOrchestrationWebhooks(jwtAuth)

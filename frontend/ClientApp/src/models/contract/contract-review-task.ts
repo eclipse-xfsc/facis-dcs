@@ -1,6 +1,7 @@
 import type { ReviewTaskState } from "@/types/review-task-state";
 
 export interface ContractReviewTask {
+  type: 'contract'
   did: string;
   contract_version?: string;
   state: ReviewTaskState;

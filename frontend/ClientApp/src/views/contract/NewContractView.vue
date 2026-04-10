@@ -72,11 +72,13 @@ const submitContract = async (result: SelectedUserRole[]) => {
   if (!contract.value) return
   const reviewers = result.filter((user) => user.role === 'CONTRACT_REVIEWER').map((user) => user.user.username)
   const approver = result.find((user) => user.role === 'CONTRACT_APPROVER')?.user.username!
+  const negotiators = result.filter((user) => user.role === 'CONTRACT_NEGOTIATOR').map((user) => user.user.username)
   const response = await contractWorkflowService.submit({
     did: contract.value?.did,
     updated_at: contract.value?.updated_at,
     reviewers,
     approver,
+    negotiators,
   })
   if (response.did) {
     router.push({ name: ROUTES.CONTRACTS.LIST })
@@ -88,7 +90,7 @@ const submitContract = async (result: SelectedUserRole[]) => {
   <div class="flex flex-col min-h-full -mx-4 md:-mx-8 -my-4 md:-my-8">
     <div v-if="!isEditMode" class="max-w-4xl mx-auto px-6 py-12">
       <select v-model="selectedTemplate" class="select">
-        <option :value="null" disabled selected>Pick a contract template</option>
+        <option :value="null" disabled selected>Pick a template</option>
         <option v-for="template in approvedTemplates" :key="template.did" :value="template">{{ template.name }}</option>
       </select>
     </div>

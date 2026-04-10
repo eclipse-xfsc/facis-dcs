@@ -1,3 +1,4 @@
+import type { FilterStore } from '@/models/stores/filter-store'
 import type { ContractTemplateState } from '@/types/contract-template-state'
 import { defineStore } from 'pinia'
 import { computed, ref, type Ref } from 'vue'
@@ -5,11 +6,11 @@ import { computed, ref, type Ref } from 'vue'
 export const useContractTemplateStateFilterStore = defineStore('contractTemplateStateFilter', () => {
   const stateFilters: Ref<Set<ContractTemplateState>> = ref(new Set())
 
-  function hasFilter(filter: ContractTemplateState) {
-    return stateFilters.value.has( filter)
-  }
-
   const hasFilters = computed(() => stateFilters.value.size > 0)
+
+  function hasFilter(filter: ContractTemplateState) {
+    return stateFilters.value.has(filter)
+  }
 
   function setFilter(filter: ContractTemplateState) {
     stateFilters.value.add(filter)
@@ -23,5 +24,12 @@ export const useContractTemplateStateFilterStore = defineStore('contractTemplate
     stateFilters.value.clear()
   }
 
-  return { stateFilters, hasFilters: hasFilters, hasFilter, setFilter, removeFilter, reset }
+  return {
+    stateFilters,
+    hasFilters: hasFilters,
+    hasFilter,
+    setFilter,
+    removeFilter,
+    reset,
+  } satisfies FilterStore<ContractTemplateState>
 })
