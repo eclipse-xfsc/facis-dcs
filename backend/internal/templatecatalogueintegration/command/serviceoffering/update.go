@@ -1,17 +1,17 @@
-package command
+package serviceoffering
 
 import (
 	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"digital-contracting-service/internal/templatecatalogueintegration/client"
 	"digital-contracting-service/internal/templatecatalogueintegration/selfdescription"
+	serviceofferingid "digital-contracting-service/internal/templatecatalogueintegration/serviceoffering"
 )
 
-type UpdateServiceOfferingCmd struct {
+type UpdateCmd struct {
 	Token              string
 	ParticipantID      string
 	EndPointURL        string
@@ -20,17 +20,17 @@ type UpdateServiceOfferingCmd struct {
 	Description        string
 }
 
-type UpdateServiceOfferingResult struct {
-	ID string
-}
-
 // UpdateServiceOffering handler updates the service offering in the Federated Catalogue.
-type UpdateServiceOffering struct {
+type Updater struct {
 	Ctx      context.Context
 	FCClient *client.FederatedCatalogueClient
 }
 
-func (h *UpdateServiceOffering) Handle(cmd UpdateServiceOfferingCmd) (*UpdateServiceOfferingResult, error) {
+type UpdateResult struct {
+	ID string
+}
+
+func (h *Updater) Handle(cmd UpdateCmd) (*UpdateResult, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
@@ -50,9 +50,9 @@ func (h *UpdateServiceOffering) Handle(cmd UpdateServiceOfferingCmd) (*UpdateSer
 		return nil, fmt.Errorf("service offering description is empty")
 	}
 
-	serviceOfferingID := strings.ReplaceAll(cmd.ParticipantID, "participant", "service-offering")
-	if serviceOfferingID == "" {
-		return nil, fmt.Errorf("service offering id is empty")
+	serviceOfferingID, err := serviceofferingid.BuildID(cmd.ParticipantID)
+	if err != nil {
+		return nil, err
 	}
 
 	jsonLD := selfdescription.BuildServiceOfferingSelfDescription(selfdescription.ServiceOfferingSdInput{
@@ -74,11 +74,11 @@ func (h *UpdateServiceOffering) Handle(cmd UpdateServiceOfferingCmd) (*UpdateSer
 		return nil, err
 	}
 	if resp.StatusCode == http.StatusNotFound {
-		return nil, nil
+		return &UpdateResult{ID: serviceOfferingID}, nil
 	}
 	if resp.StatusCode != http.StatusCreated {
 		return nil, fmt.Errorf("update service offering failed with status %d", resp.StatusCode)
 	}
 
-	return &UpdateServiceOfferingResult{ID: serviceOfferingID}, nil
+	return &UpdateResult{ID: serviceOfferingID}, nil
 }

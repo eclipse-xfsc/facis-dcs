@@ -1,4 +1,4 @@
-package command
+package serviceoffering
 
 import (
 	"context"
@@ -6,14 +6,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"strings"
 
 	"digital-contracting-service/internal/templatecatalogueintegration/client"
-	"digital-contracting-service/internal/templatecatalogueintegration/query"
+	serviceofferingquery "digital-contracting-service/internal/templatecatalogueintegration/query/serviceoffering"
+	serviceofferingid "digital-contracting-service/internal/templatecatalogueintegration/serviceoffering"
 	"digital-contracting-service/internal/templatecatalogueintegration/selfdescription"
 )
 
-type CreateServiceOfferingCmd struct {
+type CreateCmd struct {
 	Token              string
 	ParticipantID      string
 	EndPointURL        string
@@ -22,12 +22,8 @@ type CreateServiceOfferingCmd struct {
 	Description        string
 }
 
-type CreateServiceOfferingResult struct {
-	ID string
-}
-
 // CreateServiceOffering handler creates a service offering in the Federated Catalogue.
-type CreateServiceOffering struct {
+type Creator struct {
 	Ctx      context.Context
 	FCClient *client.FederatedCatalogueClient
 }
@@ -35,7 +31,11 @@ type CreateServiceOffering struct {
 // ErrServiceOfferingAlreadyExists indicates that a serviceOffering with the same serviceOfferingID
 var ErrServiceOfferingAlreadyExists = errors.New("ServiceOffering already exists")
 
-func (h *CreateServiceOffering) Handle(cmd CreateServiceOfferingCmd) (*CreateServiceOfferingResult, error) {
+type CreateResult struct {
+	ID string
+}
+
+func (h *Creator) Handle(cmd CreateCmd) (*CreateResult, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
@@ -48,17 +48,17 @@ func (h *CreateServiceOffering) Handle(cmd CreateServiceOfferingCmd) (*CreateSer
 	if cmd.TermsAndConditions == "" {
 		return nil, fmt.Errorf("service offering terms and conditions is empty")
 	}
-	serviceOfferingID := strings.ReplaceAll(cmd.ParticipantID, "participant", "service-offering")
-	if serviceOfferingID == "" {
-		return nil, fmt.Errorf("service offering id is empty")
+	serviceOfferingID, err := serviceofferingid.BuildID(cmd.ParticipantID)
+	if err != nil {
+		return nil, err
 	}
 
 	// Check if the service offering already exists by serviceOfferingID.
-	existsHandler := query.ServiceOfferingExistsHandler{
+	existsHandler := serviceofferingquery.ServiceOfferingExistsHandler{
 		Ctx:      h.Ctx,
 		FCClient: h.FCClient,
 	}
-	existsResp, err := existsHandler.Handle(query.ServiceOfferingExistsQry{
+	existsResp, err := existsHandler.Handle(serviceofferingquery.ServiceOfferingExistsQry{
 		ServiceOfferingID: serviceOfferingID,
 		Token:             cmd.Token,
 	})
@@ -103,5 +103,5 @@ func (h *CreateServiceOffering) Handle(cmd CreateServiceOfferingCmd) (*CreateSer
 		return nil, fmt.Errorf("create service offering response id is empty")
 	}
 
-	return &CreateServiceOfferingResult{ID: fcResp.ID}, nil
+	return &CreateResult{ID: serviceOfferingID}, nil
 }

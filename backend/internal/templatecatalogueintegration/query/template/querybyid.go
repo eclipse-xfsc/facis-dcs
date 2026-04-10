@@ -1,4 +1,4 @@
-package query
+package template
 
 import (
 	"context"
@@ -6,14 +6,15 @@ import (
 	"fmt"
 
 	"digital-contracting-service/internal/templatecatalogueintegration/client"
+	"digital-contracting-service/internal/templatecatalogueintegration/internal/ptr"
 )
 
-type RetrieveTemplateByIDQry struct {
+type GetByIDQry struct {
 	Token string
 	DID   string
 }
 
-type RetrieveTemplateByIDHandler struct {
+type GetByIDHandler struct {
 	Ctx      context.Context
 	FCClient *client.FederatedCatalogueClient
 }
@@ -49,7 +50,7 @@ RETURN {
 LIMIT 1
 `
 
-func (h *RetrieveTemplateByIDHandler) Handle(qry RetrieveTemplateByIDQry) (*templatecatalogueintegration.TemplateCatalogueRetrieveByIDResponse, error) {
+func (h *GetByIDHandler) Handle(qry GetByIDQry) (*templatecatalogueintegration.TemplateCatalogueRetrieveByIDResponse, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
@@ -82,16 +83,16 @@ func (h *RetrieveTemplateByIDHandler) Handle(qry RetrieveTemplateByIDQry) (*temp
 	}
 
 	return &templatecatalogueintegration.TemplateCatalogueRetrieveByIDResponse{
-		Did:            derefString(n, "did"),
-		DocumentNumber: stringPtr(derefString(n, "document_number")),
-		Version:        intPtr(derefInt(n, "version")),
-		SchemaVersion:  intPtr(derefInt(n, "schema_version")),
-		Name:           stringPtr(derefString(n, "name")),
-		Description:    stringPtr(derefString(n, "description")),
-		TemplateType:   stringPtr(derefString(n, "template_type")),
+		Did:            ptr.StringFromMap(n, "did"),
+		DocumentNumber: ptr.Ref(ptr.StringFromMap(n, "document_number")),
+		Version:        ptr.Ref(ptr.IntFromMap(n, "version")),
+		SchemaVersion:  ptr.Ref(ptr.IntFromMap(n, "schema_version")),
+		Name:           ptr.Ref(ptr.StringFromMap(n, "name")),
+		Description:    ptr.Ref(ptr.StringFromMap(n, "description")),
+		TemplateType:   ptr.Ref(ptr.StringFromMap(n, "template_type")),
 		Participant:    mapTemplateParticipantSummary(n),
-		CreatedAt:      stringPtr(derefString(n, "created_at")),
-		UpdatedAt:      stringPtr(derefString(n, "updated_at")),
+		CreatedAt:      ptr.Ref(ptr.StringFromMap(n, "created_at")),
+		UpdatedAt:      ptr.Ref(ptr.StringFromMap(n, "updated_at")),
 	}, nil
 }
 
@@ -105,13 +106,13 @@ func mapTemplateParticipantSummary(n map[string]interface{}) *templatecataloguei
 	headquarterRaw, _ := participantRaw["headquarter_address"].(map[string]interface{})
 
 	return &templatecatalogueintegration.TemplateCatalogueParticipantSummary{
-		LegalName:          stringPtr(derefString(participantRaw, "legal_name")),
-		RegistrationNumber: stringPtr(derefString(participantRaw, "registration_number")),
-		LeiCode:            stringPtr(derefString(participantRaw, "lei_code")),
+		LegalName:          ptr.Ref(ptr.StringFromMap(participantRaw, "legal_name")),
+		RegistrationNumber: ptr.Ref(ptr.StringFromMap(participantRaw, "registration_number")),
+		LeiCode:            ptr.Ref(ptr.StringFromMap(participantRaw, "lei_code")),
 		HeadquarterAddress: &templatecatalogueintegration.TemplateCatalogueParticipantHeadquarterSummary{
-			Country:  stringPtr(derefString(headquarterRaw, "country")),
-			Locality: stringPtr(derefString(headquarterRaw, "locality")),
+			Country:  ptr.Ref(ptr.StringFromMap(headquarterRaw, "country")),
+			Locality: ptr.Ref(ptr.StringFromMap(headquarterRaw, "locality")),
 		},
-		TermsAndConditions: stringPtr(derefString(participantRaw, "terms_and_conditions")),
+		TermsAndConditions: ptr.Ref(ptr.StringFromMap(participantRaw, "terms_and_conditions")),
 	}
 }

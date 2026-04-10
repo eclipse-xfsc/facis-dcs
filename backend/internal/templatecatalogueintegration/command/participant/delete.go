@@ -1,4 +1,4 @@
-package command
+package participant
 
 import (
 	"context"
@@ -9,52 +9,46 @@ import (
 	fcclient "digital-contracting-service/internal/templatecatalogueintegration/client"
 )
 
-type DeleteParticipantCmd struct {
+type DeleteCmd struct {
 	ID    string
 	Token string
 }
 
-type DeleteParticipantResult struct {
-	ID string
-}
-
 // DeleteParticipant handler deletes a participant from the Federated Catalogue.
-type DeleteParticipant struct {
+type Deleter struct {
 	Ctx      context.Context
 	FCClient *fcclient.FederatedCatalogueClient
 }
 
-func (h *DeleteParticipant) Handle(cmd DeleteParticipantCmd) (*DeleteParticipantResult, error) {
+func (h *Deleter) Handle(cmd DeleteCmd) error {
 	if h.FCClient == nil {
-		return nil, fmt.Errorf("federated catalogue client is nil")
+		return fmt.Errorf("federated catalogue client is nil")
 	}
 	if cmd.ID == "" {
-		return nil, fmt.Errorf("participant id is empty")
+		return fmt.Errorf("participant id is empty")
 	}
 	// The participant graph node won't be deleted if other SDs depend on it.
 	if err := h.deleteOtherSelfDescriptionsByIDs(cmd.Token, cmd.ID); err != nil {
-		return nil, err
+		return err
 	}
 	path := fcclient.ParticipantsEndpointPath + "/" + url.PathEscape(cmd.ID)
 
 	resp, err := h.FCClient.Delete(h.Ctx, path, cmd.Token, nil)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if resp.StatusCode != http.StatusOK && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, nil
+			return nil
 		}
-		return nil, fmt.Errorf("delete participant failed with status %d", resp.StatusCode)
+		return fmt.Errorf("delete participant failed with status %d", resp.StatusCode)
 	}
 
-	return &DeleteParticipantResult{
-		ID: cmd.ID,
-	}, nil
+	return nil
 }
 
 // deleteOtherSelfDescriptionsByIDs deletes all SDs except the participant's own SD.
-func (h *DeleteParticipant) deleteOtherSelfDescriptionsByIDs(token string, participantID string) error {
+func (h *Deleter) deleteOtherSelfDescriptionsByIDs(token string, participantID string) error {
 	sdResp, err := h.FCClient.GetSelfDescriptions(h.Ctx, token, fcclient.GetSelfDescriptionsRequest{
 		WithContent: false,
 	})

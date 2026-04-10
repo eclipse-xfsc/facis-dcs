@@ -1,4 +1,4 @@
-package query
+package selfdescription
 
 import (
 	"context"
@@ -13,7 +13,7 @@ type GetSelfDescriptionsMetaByIDsQry struct {
 	Token string
 }
 
-type GetSelfDescriptionsMetaByIDsResponse struct {
+type GetSelfDescriptionsMetaByIDsResult struct {
 	// SdHashByID maps SelfDescription id -> meta.sdHash.
 	SdHashByID map[string]string
 }
@@ -24,7 +24,7 @@ type GetSelfDescriptionsMetaByIDsHandler struct {
 	FCClient *client.FederatedCatalogueClient
 }
 
-func (h *GetSelfDescriptionsMetaByIDsHandler) Handle(qry GetSelfDescriptionsMetaByIDsQry) (*GetSelfDescriptionsMetaByIDsResponse, error) {
+func (h *GetSelfDescriptionsMetaByIDsHandler) Handle(qry GetSelfDescriptionsMetaByIDsQry) (*GetSelfDescriptionsMetaByIDsResult, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
@@ -56,5 +56,5 @@ func (h *GetSelfDescriptionsMetaByIDsHandler) Handle(qry GetSelfDescriptionsMeta
 		return nil, nil
 	}
 
-	return &GetSelfDescriptionsMetaByIDsResponse{SdHashByID: out}, nil
+	return &GetSelfDescriptionsMetaByIDsResult{SdHashByID: out}, nil
 }

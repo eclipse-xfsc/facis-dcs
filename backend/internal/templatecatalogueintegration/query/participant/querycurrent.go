@@ -1,10 +1,11 @@
-package query
+package participant
 
 import (
 	"context"
 	"fmt"
 
 	"digital-contracting-service/internal/templatecatalogueintegration/client"
+	"digital-contracting-service/internal/templatecatalogueintegration/internal/ptr"
 )
 
 // GetCurrentParticipantQry represents the input required to fetch the current participant projection.
@@ -13,21 +14,21 @@ type GetCurrentParticipantQry struct {
 	Token         string
 }
 
-type AddressResponse struct {
+type AddressResult struct {
 	Country       string
 	StreetAddress string
 	PostalCode    string
 	Locality      string
 }
 
-// GetParticipantResponse is the FC /query projection result consumed by the service layer.
-type GetParticipantResponse struct {
+// GetCurrentParticipantResult is the FC /query projection result consumed by the service layer.
+type GetCurrentParticipantResult struct {
 	LegalName          string
 	RegistrationNumber string
 	LeiCode            string
 	EthereumAddress    string
-	HeadquarterAddress AddressResponse
-	LegalAddress       AddressResponse
+	HeadquarterAddress AddressResult
+	LegalAddress       AddressResult
 	TermsAndConditions string
 }
 
@@ -65,7 +66,7 @@ RETURN {
 LIMIT 1
 `
 
-func (h *GetCurrentParticipantHandler) Handle(qry GetCurrentParticipantQry) (*GetParticipantResponse, error) {
+func (h *GetCurrentParticipantHandler) Handle(qry GetCurrentParticipantQry) (*GetCurrentParticipantResult, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
@@ -111,41 +112,23 @@ func (h *GetCurrentParticipantHandler) Handle(qry GetCurrentParticipantQry) (*Ge
 		la = map[string]interface{}{}
 	}
 
-	return &GetParticipantResponse{
-		LegalName:          derefString(participant, "legal_name"),
-		RegistrationNumber: derefString(participant, "registration_number"),
-		LeiCode:            derefString(participant, "lei_code"),
-		EthereumAddress:    derefString(participant, "ethereum_address"),
-		HeadquarterAddress: AddressResponse{
-			Country:       derefString(hq, "country"),
-			StreetAddress: derefString(hq, "street_address"),
-			PostalCode:    derefString(hq, "postal_code"),
-			Locality:      derefString(hq, "locality"),
+	return &GetCurrentParticipantResult{
+		LegalName:          ptr.StringFromMap(participant, "legal_name"),
+		RegistrationNumber: ptr.StringFromMap(participant, "registration_number"),
+		LeiCode:            ptr.StringFromMap(participant, "lei_code"),
+		EthereumAddress:    ptr.StringFromMap(participant, "ethereum_address"),
+		HeadquarterAddress: AddressResult{
+			Country:       ptr.StringFromMap(hq, "country"),
+			StreetAddress: ptr.StringFromMap(hq, "street_address"),
+			PostalCode:    ptr.StringFromMap(hq, "postal_code"),
+			Locality:      ptr.StringFromMap(hq, "locality"),
 		},
-		LegalAddress: AddressResponse{
-			Country:       derefString(la, "country"),
-			StreetAddress: derefString(la, "street_address"),
-			PostalCode:    derefString(la, "postal_code"),
-			Locality:      derefString(la, "locality"),
+		LegalAddress: AddressResult{
+			Country:       ptr.StringFromMap(la, "country"),
+			StreetAddress: ptr.StringFromMap(la, "street_address"),
+			PostalCode:    ptr.StringFromMap(la, "postal_code"),
+			Locality:      ptr.StringFromMap(la, "locality"),
 		},
-		TermsAndConditions: derefString(participant, "terms_and_conditions"),
+		TermsAndConditions: ptr.StringFromMap(participant, "terms_and_conditions"),
 	}, nil
 }
-
-// derefString extracts a string field from an FC query projection.
-// If the field is missing or not a string, it returns an empty string.
-func derefString(m map[string]interface{}, key string) string {
-	if m == nil {
-		return ""
-	}
-	v, ok := m[key]
-	if !ok || v == nil {
-		return ""
-	}
-	s, ok := v.(string)
-	if !ok {
-		return ""
-	}
-	return s
-}
-

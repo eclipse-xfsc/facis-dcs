@@ -1,19 +1,20 @@
-package query
+package serviceoffering
 
 import (
 	"context"
 	"fmt"
 
 	"digital-contracting-service/internal/templatecatalogueintegration/client"
+	"digital-contracting-service/internal/templatecatalogueintegration/internal/ptr"
 )
 
-// GetServiceOfferingByParticipantQry fetches a service offering by participant-id.
-type GetServiceOfferingByParticipantQry struct {
+// GetByParticipantQry fetches a service offering by participant-id.
+type GetByParticipantQry struct {
 	ParticipantID string
 	Token         string
 }
 
-type ServiceOfferingByParticipantResponse struct {
+type GetByParticipantResult struct {
 	URI                string
 	Keywords           []string
 	Description        string
@@ -21,8 +22,8 @@ type ServiceOfferingByParticipantResponse struct {
 	TermsAndConditions string
 }
 
-// GetServiceOfferingByParticipantHandler fetches a service offering projection by participant-id.
-type GetServiceOfferingByParticipantHandler struct {
+// GetByParticipantHandler fetches a service offering projection by participant-id.
+type GetByParticipantHandler struct {
 	Ctx      context.Context
 	FCClient *client.FederatedCatalogueClient
 }
@@ -41,7 +42,7 @@ RETURN {
 LIMIT 1
 `
 
-func (h *GetServiceOfferingByParticipantHandler) Handle(qry GetServiceOfferingByParticipantQry) (*ServiceOfferingByParticipantResponse, error) {
+func (h *GetByParticipantHandler) Handle(qry GetByParticipantQry) (*GetByParticipantResult, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
@@ -76,32 +77,11 @@ func (h *GetServiceOfferingByParticipantHandler) Handle(qry GetServiceOfferingBy
 		return nil, fmt.Errorf("query projection missing projected map for participantId=%s", qry.ParticipantID)
 	}
 
-	return &ServiceOfferingByParticipantResponse{
-		URI:                derefString(offering, "uri"),
-		Keywords:           derefStringSlice(offering, "keywords"),
-		Description:        derefString(offering, "description"),
-		EndPointURL:        derefString(offering, "end_point_url"),
-		TermsAndConditions: derefString(offering, "terms_and_conditions"),
+	return &GetByParticipantResult{
+		URI:                ptr.StringFromMap(offering, "uri"),
+		Keywords:           ptr.StringSliceFromMap(offering, "keywords"),
+		Description:        ptr.StringFromMap(offering, "description"),
+		EndPointURL:        ptr.StringFromMap(offering, "end_point_url"),
+		TermsAndConditions: ptr.StringFromMap(offering, "terms_and_conditions"),
 	}, nil
-}
-
-func derefStringSlice(m map[string]interface{}, key string) []string {
-	if m == nil {
-		return []string{}
-	}
-	v, ok := m[key]
-	if !ok || v == nil {
-		return []string{}
-	}
-	arr, ok := v.([]interface{})
-	if !ok {
-		return []string{}
-	}
-	out := make([]string, 0, len(arr))
-	for _, item := range arr {
-		if s, ok := item.(string); ok {
-			out = append(out, s)
-		}
-	}
-	return out
 }

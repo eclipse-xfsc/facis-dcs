@@ -1,21 +1,21 @@
-package query
+package template
 
 import (
 	"context"
 	templatecatalogueintegration "digital-contracting-service/gen/template_catalogue_integration"
 	"fmt"
-	"strconv"
 
 	"digital-contracting-service/internal/templatecatalogueintegration/client"
+	"digital-contracting-service/internal/templatecatalogueintegration/internal/ptr"
 )
 
-type RetrieveTemplatesQry struct {
+type GetAllMetadataQry struct {
 	Token  string
 	Offset int
 	Limit  int
 }
 
-type RetrieveTemplatesHandler struct {
+type GetAllMetadataHandler struct {
 	Ctx      context.Context
 	FCClient *client.FederatedCatalogueClient
 }
@@ -43,7 +43,7 @@ SKIP %d
 LIMIT %d
 `
 
-func (h *RetrieveTemplatesHandler) Handle(qry RetrieveTemplatesQry) (*templatecatalogueintegration.TemplateCatalogueRetrieveResponse, error) {
+func (h *GetAllMetadataHandler) Handle(qry GetAllMetadataQry) (*templatecatalogueintegration.TemplateCatalogueRetrieveResponse, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
@@ -87,16 +87,16 @@ func (h *RetrieveTemplatesHandler) Handle(qry RetrieveTemplatesQry) (*templateca
 			continue
 		}
 		items = append(items, &templatecatalogueintegration.TemplateCatalogueItem{
-			Did:            derefString(ct, "did"),
-			DocumentNumber: stringPtr(derefString(ct, "document_number")),
-			Version:        intPtr(derefInt(ct, "version")),
-			SchemaVersion:  intPtr(derefInt(ct, "schema_version")),
-			Name:           stringPtr(derefString(ct, "name")),
-			Description:    stringPtr(derefString(ct, "description")),
-			TemplateType:   stringPtr(derefString(ct, "template_type")),
-			ParticipantID:  stringPtr(derefString(ct, "participant_id")),
-			CreatedAt:      stringPtr(derefString(ct, "created_at")),
-			UpdatedAt:      stringPtr(derefString(ct, "updated_at")),
+			Did:            ptr.StringFromMap(ct, "did"),
+			DocumentNumber: ptr.Ref(ptr.StringFromMap(ct, "document_number")),
+			Version:        ptr.Ref(ptr.IntFromMap(ct, "version")),
+			SchemaVersion:  ptr.Ref(ptr.IntFromMap(ct, "schema_version")),
+			Name:           ptr.Ref(ptr.StringFromMap(ct, "name")),
+			Description:    ptr.Ref(ptr.StringFromMap(ct, "description")),
+			TemplateType:   ptr.Ref(ptr.StringFromMap(ct, "template_type")),
+			ParticipantID:  ptr.Ref(ptr.StringFromMap(ct, "participant_id")),
+			CreatedAt:      ptr.Ref(ptr.StringFromMap(ct, "created_at")),
+			UpdatedAt:      ptr.Ref(ptr.StringFromMap(ct, "updated_at")),
 		})
 	}
 
@@ -104,37 +104,4 @@ func (h *RetrieveTemplatesHandler) Handle(qry RetrieveTemplatesQry) (*templateca
 		TotalCount: totalCount,
 		Items:      items,
 	}, nil
-}
-
-func derefInt(m map[string]interface{}, key string) int {
-	if m == nil {
-		return 0
-	}
-	v, ok := m[key]
-	if !ok || v == nil {
-		return 0
-	}
-	switch t := v.(type) {
-	case float64:
-		return int(t)
-	case int:
-		return t
-	case int64:
-		return int(t)
-	case string:
-		if i, err := strconv.Atoi(t); err == nil {
-			return i
-		}
-		return 0
-	default:
-		return 0
-	}
-}
-
-func stringPtr(v string) *string {
-	return &v
-}
-
-func intPtr(v int) *int {
-	return &v
 }

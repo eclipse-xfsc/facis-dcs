@@ -1,49 +1,49 @@
-package command
+package serviceoffering
 
 import (
 	"context"
 	"fmt"
 	"net/http"
 	"net/url"
-	"strings"
 
 	"digital-contracting-service/internal/templatecatalogueintegration/client"
-	"digital-contracting-service/internal/templatecatalogueintegration/query"
+	selfdescriptionquery "digital-contracting-service/internal/templatecatalogueintegration/query/selfdescription"
+	serviceofferingid "digital-contracting-service/internal/templatecatalogueintegration/serviceoffering"
 )
 
-type DeleteServiceOfferingCmd struct {
+type DeleteCmd struct {
 	Token         string
 	ParticipantID string
 }
 
-type DeleteServiceOfferingResult struct {
-	ID string
-}
-
 // DeleteServiceOffering handler deletes the service offering in the Federated Catalogue.
-type DeleteServiceOffering struct {
+type Deleter struct {
 	Ctx      context.Context
 	FCClient *client.FederatedCatalogueClient
 }
 
-func (h *DeleteServiceOffering) Handle(cmd DeleteServiceOfferingCmd) (*DeleteServiceOfferingResult, error) {
+type DeleteResult struct {
+	ID string
+}
+
+func (h *Deleter) Handle(cmd DeleteCmd) (*DeleteResult, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
 	if cmd.ParticipantID == "" {
 		return nil, fmt.Errorf("participant id is empty")
 	}
-	serviceOfferingID := strings.ReplaceAll(cmd.ParticipantID, "participant", "service-offering")
-	if serviceOfferingID == "" {
-		return nil, fmt.Errorf("service offering id is empty")
+	serviceOfferingID, err := serviceofferingid.BuildID(cmd.ParticipantID)
+	if err != nil {
+		return nil, err
 	}
 
 	// 1. Get the self-description hash by service offering id
-	hashHandler := query.GetSelfDescriptionsMetaByIDsHandler{
+	hashHandler := selfdescriptionquery.GetSelfDescriptionsMetaByIDsHandler{
 		Ctx:      h.Ctx,
 		FCClient: h.FCClient,
 	}
-	hashResult, err := hashHandler.Handle(query.GetSelfDescriptionsMetaByIDsQry{
+	hashResult, err := hashHandler.Handle(selfdescriptionquery.GetSelfDescriptionsMetaByIDsQry{
 		IDs:   []string{serviceOfferingID},
 		Token: cmd.Token,
 	})
@@ -51,11 +51,11 @@ func (h *DeleteServiceOffering) Handle(cmd DeleteServiceOfferingCmd) (*DeleteSer
 		return nil, err
 	}
 	if hashResult == nil {
-		return nil, nil
+		return &DeleteResult{ID: serviceOfferingID}, nil
 	}
 	sdHash := hashResult.SdHashByID[serviceOfferingID]
 	if sdHash == "" {
-		return nil, nil
+		return &DeleteResult{ID: serviceOfferingID}, nil
 	}
 
 	// 2. Delete the service offering
@@ -67,12 +67,10 @@ func (h *DeleteServiceOffering) Handle(cmd DeleteServiceOfferingCmd) (*DeleteSer
 	}
 	if resp.StatusCode != http.StatusOK && (resp.StatusCode < 200 || resp.StatusCode >= 300) {
 		if resp.StatusCode == http.StatusNotFound {
-			return nil, nil
+			return &DeleteResult{ID: serviceOfferingID}, nil
 		}
 		return nil, fmt.Errorf("delete service offering failed with status %d", resp.StatusCode)
 	}
 
-	return &DeleteServiceOfferingResult{
-		ID: serviceOfferingID,
-	}, nil
+	return &DeleteResult{ID: serviceOfferingID}, nil
 }

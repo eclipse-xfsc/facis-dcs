@@ -1,4 +1,4 @@
-package query
+package participant
 
 import (
 	"context"
@@ -13,7 +13,7 @@ type ParticipantExistsQry struct {
 	Token         string
 }
 
-type ParticipantExistsResponse struct {
+type ParticipantExistsResult struct {
 	Exists bool
 }
 
@@ -31,7 +31,7 @@ RETURN { exists: true } AS n
 LIMIT 1
 `
 
-func (h *ParticipantExistsHandler) Handle(qry ParticipantExistsQry) (*ParticipantExistsResponse, error) {
+func (h *ParticipantExistsHandler) Handle(qry ParticipantExistsQry) (*ParticipantExistsResult, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
@@ -52,6 +52,5 @@ func (h *ParticipantExistsHandler) Handle(qry ParticipantExistsQry) (*Participan
 	}
 
 	exists := !(queryResp.TotalCount == 0 || len(queryResp.Items) == 0)
-	return &ParticipantExistsResponse{Exists: exists}, nil
+	return &ParticipantExistsResult{Exists: exists}, nil
 }
-

@@ -1,4 +1,4 @@
-package query
+package serviceoffering
 
 import (
 	"context"
@@ -13,7 +13,7 @@ type ServiceOfferingExistsQry struct {
 	Token             string
 }
 
-type ServiceOfferingExistsResponse struct {
+type ServiceOfferingExistsResult struct {
 	Exists bool
 }
 
@@ -31,7 +31,7 @@ RETURN { exists: true } AS n
 LIMIT 1
 `
 
-func (h *ServiceOfferingExistsHandler) Handle(qry ServiceOfferingExistsQry) (*ServiceOfferingExistsResponse, error) {
+func (h *ServiceOfferingExistsHandler) Handle(qry ServiceOfferingExistsQry) (*ServiceOfferingExistsResult, error) {
 	if h.FCClient == nil {
 		return nil, fmt.Errorf("federated catalogue client is nil")
 	}
@@ -52,5 +52,5 @@ func (h *ServiceOfferingExistsHandler) Handle(qry ServiceOfferingExistsQry) (*Se
 	}
 
 	exists := !(queryResp.TotalCount == 0 || len(queryResp.Items) == 0)
-	return &ServiceOfferingExistsResponse{Exists: exists}, nil
+	return &ServiceOfferingExistsResult{Exists: exists}, nil
 }

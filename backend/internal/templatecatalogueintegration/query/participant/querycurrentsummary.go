@@ -1,4 +1,4 @@
-package query
+package participant
 
 import (
 	"context"
@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"digital-contracting-service/internal/templatecatalogueintegration/client"
+	"digital-contracting-service/internal/templatecatalogueintegration/internal/ptr"
 )
 
 type GetCurrentParticipantSummaryQry struct {
@@ -76,13 +77,13 @@ func (h *GetCurrentParticipantSummaryHandler) Handle(qry GetCurrentParticipantSu
 	}
 
 	return &templatecatalogueintegration.TemplateCatalogueParticipantSummary{
-		LegalName:          summaryStringPtr(derefString(participant, "legal_name")),
-		RegistrationNumber: summaryStringPtr(derefString(participant, "registration_number")),
-		LeiCode:            summaryStringPtr(derefString(participant, "lei_code")),
+		LegalName:          ptr.Ref(ptr.StringFromMap(participant, "legal_name")),
+		RegistrationNumber: ptr.Ref(ptr.StringFromMap(participant, "registration_number")),
+		LeiCode:            ptr.Ref(ptr.StringFromMap(participant, "lei_code")),
 		HeadquarterAddress: &templatecatalogueintegration.TemplateCatalogueParticipantHeadquarterSummary{
-			Country:  summaryStringPtr(derefString(hq, "country")),
-			Locality: summaryStringPtr(derefString(hq, "locality")),
+			Country:  ptr.Ref(ptr.StringFromMap(hq, "country")),
+			Locality: ptr.Ref(ptr.StringFromMap(hq, "locality")),
 		},
-		TermsAndConditions: summaryStringPtr(derefString(participant, "terms_and_conditions")),
+		TermsAndConditions: ptr.Ref(ptr.StringFromMap(participant, "terms_and_conditions")),
 	}, nil
 }

@@ -1,4 +1,4 @@
-package command
+package participant
 
 import (
 	"context"
@@ -8,20 +8,16 @@ import (
 	"fmt"
 	"net/http"
 
-	"digital-contracting-service/internal/templatecatalogueintegration/query"
+	participantquery "digital-contracting-service/internal/templatecatalogueintegration/query/participant"
 	"digital-contracting-service/internal/templatecatalogueintegration/selfdescription"
 )
 
-type CreateParticipantCmd struct {
+type CreateCmd struct {
 	Token       string
 	Participant selfdescription.ParticipantSdInput
 }
 
-type CreateParticipantResult struct {
-	ID string
-}
-
-type CreateParticipant struct {
+type Creator struct {
 	Ctx      context.Context
 	FCClient *client.FederatedCatalogueClient
 }
@@ -29,28 +25,28 @@ type CreateParticipant struct {
 // ErrParticipantAlreadyExists indicates that a participant with the same participantID
 var ErrParticipantAlreadyExists = errors.New("participant already exists")
 
-func (h *CreateParticipant) Handle(cmd CreateParticipantCmd) (*CreateParticipantResult, error) {
+func (h *Creator) Handle(cmd CreateCmd) error {
 	if h.FCClient == nil {
-		return nil, fmt.Errorf("federated catalogue client is nil")
+		return fmt.Errorf("federated catalogue client is nil")
 	}
 	if cmd.Participant.ParticipantID == "" {
-		return nil, fmt.Errorf("participant id is empty")
+		return fmt.Errorf("participant id is empty")
 	}
 
 	// Check if the participant already exists.
-	existsHandler := query.ParticipantExistsHandler{
+	existsHandler := participantquery.ParticipantExistsHandler{
 		Ctx:      h.Ctx,
 		FCClient: h.FCClient,
 	}
-	existsResp, err := existsHandler.Handle(query.ParticipantExistsQry{
+	existsResp, err := existsHandler.Handle(participantquery.ParticipantExistsQry{
 		ParticipantID: cmd.Participant.ParticipantID,
 		Token:         cmd.Token,
 	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if existsResp != nil && existsResp.Exists {
-		return nil, ErrParticipantAlreadyExists
+		return ErrParticipantAlreadyExists
 	}
 
 	// Build self-description and create the participant in the Federated Catalogue.
@@ -58,15 +54,15 @@ func (h *CreateParticipant) Handle(cmd CreateParticipantCmd) (*CreateParticipant
 
 	body, err := json.Marshal(jsonLD)
 	if err != nil {
-		return nil, fmt.Errorf("marshal participant template payload failed: %w", err)
+		return fmt.Errorf("marshal participant template payload failed: %w", err)
 	}
 
 	resp, err := h.FCClient.Post(h.Ctx, client.ParticipantsEndpointPath, cmd.Token, nil, body)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if resp.StatusCode != http.StatusCreated {
-		return nil, fmt.Errorf("create participant failed with status %d", resp.StatusCode)
+		return fmt.Errorf("create participant failed with status %d", resp.StatusCode)
 	}
 
 	var fcResp struct {
@@ -74,11 +70,11 @@ func (h *CreateParticipant) Handle(cmd CreateParticipantCmd) (*CreateParticipant
 	}
 
 	if err := json.Unmarshal(resp.Body, &fcResp); err != nil {
-		return nil, fmt.Errorf("parse create participant response failed: %w", err)
+		return fmt.Errorf("parse create participant response failed: %w", err)
 	}
 	if fcResp.ID == "" {
-		return nil, fmt.Errorf("create participant response id is empty")
+		return fmt.Errorf("create participant response id is empty")
 	}
 
-	return &CreateParticipantResult{ID: fcResp.ID}, nil
+	return nil
 }

@@ -6,7 +6,11 @@ import (
 	"digital-contracting-service/internal/auth"
 	"digital-contracting-service/internal/middleware"
 	fcclient "digital-contracting-service/internal/templatecatalogueintegration/client"
-	"digital-contracting-service/internal/templatecatalogueintegration/command"
+	participantcmd "digital-contracting-service/internal/templatecatalogueintegration/command/participant"
+	serviceofferingcmd "digital-contracting-service/internal/templatecatalogueintegration/command/serviceoffering"
+	participantquery "digital-contracting-service/internal/templatecatalogueintegration/query/participant"
+	serviceofferingquery "digital-contracting-service/internal/templatecatalogueintegration/query/serviceoffering"
+	templatequery "digital-contracting-service/internal/templatecatalogueintegration/query/template"
 	selfdescription "digital-contracting-service/internal/templatecatalogueintegration/selfdescription"
 	"errors"
 	"fmt"
@@ -22,12 +26,12 @@ func NewTemplateCatalogueIntegration(jwtAuth auth.JWTAuthenticator, fcClient *fc
 }
 
 func (s *templateCatalogueIntegrationsrvc) RetrieveTemplate(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueRetrieveRequest) (res *templatecatalogueintegration.TemplateCatalogueRetrieveResponse, err error) {
-	handler := command.RetrieveTemplates{
+	queryHandler := templatequery.GetAllMetadataHandler{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.RetrieveTemplatesCmd{
+	result, err := queryHandler.Handle(templatequery.GetAllMetadataQry{
 		Token:  *req.Token,
 		Offset: req.Offset,
 		Limit:  req.Limit,
@@ -39,12 +43,12 @@ func (s *templateCatalogueIntegrationsrvc) RetrieveTemplate(ctx context.Context,
 }
 
 func (s *templateCatalogueIntegrationsrvc) RetrieveTemplateByID(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueRetrieveByIDRequest) (res *templatecatalogueintegration.TemplateCatalogueRetrieveByIDResponse, err error) {
-	handler := command.RetrieveTemplateByID{
+	queryHandler := templatequery.GetByIDHandler{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.RetrieveTemplateByIDCmd{
+	result, err := queryHandler.Handle(templatequery.GetByIDQry{
 		Token: *req.Token,
 		DID:   req.Did,
 	})
@@ -62,7 +66,7 @@ func (s *templateCatalogueIntegrationsrvc) RetrieveTemplateByID(ctx context.Cont
 // A new participant group will be created in the Keycloak.
 func (s *templateCatalogueIntegrationsrvc) CreateParticipant(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueCreateParticipantRequest) (res *templatecatalogueintegration.TemplateCatalogueCreateParticipantResponse, err error) {
 
-	handler := command.CreateParticipant{
+	createHandler := participantcmd.Creator{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
@@ -88,7 +92,7 @@ func (s *templateCatalogueIntegrationsrvc) CreateParticipant(ctx context.Context
 		legalLocality = derefString(req.LegalAddress.Locality)
 	}
 
-	result, err := handler.Handle(command.CreateParticipantCmd{
+	cmd := participantcmd.CreateCmd{
 		Token: *req.Token,
 		Participant: selfdescription.ParticipantSdInput{
 			ParticipantID:             middleware.GetParticipantID(ctx),
@@ -106,35 +110,38 @@ func (s *templateCatalogueIntegrationsrvc) CreateParticipant(ctx context.Context
 			LegalAddressLocality:      legalLocality,
 			TermsAndConditions:        req.TermsAndConditions,
 		},
-	})
+	}
+	err = createHandler.Handle(cmd)
 	if err != nil {
-		if errors.Is(err, command.ErrParticipantAlreadyExists) {
+		if errors.Is(err, participantcmd.ErrParticipantAlreadyExists) {
 			return nil, templatecatalogueintegration.MakeBadRequest(err)
 		}
 		return nil, templatecatalogueintegration.MakeInternalError(err)
 	}
 
+	participantID := middleware.GetParticipantID(ctx)
 	return &templatecatalogueintegration.TemplateCatalogueCreateParticipantResponse{
-		ID: result.ID,
+		ID: participantID,
 	}, nil
 }
 
 func (s *templateCatalogueIntegrationsrvc) CreateServiceOffering(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueCreateServiceOfferingRequest) (res *templatecatalogueintegration.TemplateCatalogueCreateServiceOfferingResponse, err error) {
-	handler := command.CreateServiceOffering{
+	createHandler := serviceofferingcmd.Creator{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.CreateServiceOfferingCmd{
+	cmd := serviceofferingcmd.CreateCmd{
 		Token:              *req.Token,
 		ParticipantID:      middleware.GetParticipantID(ctx),
 		Description:        req.Description,
 		Keywords:           req.Keywords,
 		EndPointURL:        req.EndPointURL,
 		TermsAndConditions: req.TermsAndConditions,
-	})
+	}
+	result, err := createHandler.Handle(cmd)
 	if err != nil {
-		if errors.Is(err, command.ErrServiceOfferingAlreadyExists) {
+		if errors.Is(err, serviceofferingcmd.ErrServiceOfferingAlreadyExists) {
 			return nil, templatecatalogueintegration.MakeBadRequest(err)
 		}
 		return nil, templatecatalogueintegration.MakeInternalError(err)
@@ -146,12 +153,12 @@ func (s *templateCatalogueIntegrationsrvc) CreateServiceOffering(ctx context.Con
 }
 
 func (s *templateCatalogueIntegrationsrvc) GetCurrentParticipant(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueGetCurrentParticipantRequest) (res *templatecatalogueintegration.TemplateCatalogueGetCurrentParticipantResponse, err error) {
-	handler := command.GetCurrentParticipant{
+	queryHandler := participantquery.GetCurrentParticipantHandler{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.GetCurrentParticipantCmd{
+	result, err := queryHandler.Handle(participantquery.GetCurrentParticipantQry{
 		ParticipantID: middleware.GetParticipantID(ctx),
 		Token:         *req.Token,
 	})
@@ -168,28 +175,28 @@ func (s *templateCatalogueIntegrationsrvc) GetCurrentParticipant(ctx context.Con
 		LeiCode:            result.LeiCode,
 		EthereumAddress:    result.EthereumAddress,
 		HeadquarterAddress: &templatecatalogueintegration.TemplateCatalogueHeadquarterAddress{
-			Country:       &result.HeadquarterCountry,
-			StreetAddress: &result.HeadquarterStreet,
-			PostalCode:    &result.HeadquarterPostal,
-			Locality:      &result.HeadquarterLocality,
+			Country:       &result.HeadquarterAddress.Country,
+			StreetAddress: &result.HeadquarterAddress.StreetAddress,
+			PostalCode:    &result.HeadquarterAddress.PostalCode,
+			Locality:      &result.HeadquarterAddress.Locality,
 		},
 		LegalAddress: &templatecatalogueintegration.TemplateCatalogueAddress{
-			Country:       &result.LegalCountry,
-			StreetAddress: &result.LegalStreet,
-			PostalCode:    &result.LegalPostal,
-			Locality:      &result.LegalLocality,
+			Country:       &result.LegalAddress.Country,
+			StreetAddress: &result.LegalAddress.StreetAddress,
+			PostalCode:    &result.LegalAddress.PostalCode,
+			Locality:      &result.LegalAddress.Locality,
 		},
 		TermsAndConditions: result.TermsAndConditions,
 	}, nil
 }
 
 func (s *templateCatalogueIntegrationsrvc) GetCurrentParticipantSummary(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueGetCurrentParticipantRequest) (res *templatecatalogueintegration.TemplateCatalogueParticipantSummary, err error) {
-	handler := command.GetCurrentParticipantSummary{
+	queryHandler := participantquery.GetCurrentParticipantSummaryHandler{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.GetCurrentParticipantSummaryCmd{
+	result, err := queryHandler.Handle(participantquery.GetCurrentParticipantSummaryQry{
 		ParticipantID: middleware.GetParticipantID(ctx),
 		Token:         *req.Token,
 	})
@@ -204,12 +211,12 @@ func (s *templateCatalogueIntegrationsrvc) GetCurrentParticipantSummary(ctx cont
 }
 
 func (s *templateCatalogueIntegrationsrvc) ListOtherParticipants(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueListOtherParticipantsRequest) (res []*templatecatalogueintegration.TemplateCatalogueParticipantSummary, err error) {
-	handler := command.ListOtherParticipants{
+	queryHandler := participantquery.GetOtherParticipantsHandler{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.ListOtherParticipantsCmd{
+	result, err := queryHandler.Handle(participantquery.GetOtherParticipantsQry{
 		ParticipantID: middleware.GetParticipantID(ctx),
 		Token:         *req.Token,
 	})
@@ -221,12 +228,12 @@ func (s *templateCatalogueIntegrationsrvc) ListOtherParticipants(ctx context.Con
 }
 
 func (s *templateCatalogueIntegrationsrvc) GetCurrentServiceOffering(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueGetCurrentServiceOfferingRequest) (res *templatecatalogueintegration.TemplateCatalogueGetCurrentServiceOfferingResponse, err error) {
-	handler := command.GetCurrentServiceOffering{
+	queryHandler := serviceofferingquery.GetByParticipantHandler{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.GetCurrentServiceOfferingCmd{
+	result, err := queryHandler.Handle(serviceofferingquery.GetByParticipantQry{
 		ParticipantID: middleware.GetParticipantID(ctx),
 		Token:         *req.Token,
 	})
@@ -245,7 +252,7 @@ func (s *templateCatalogueIntegrationsrvc) GetCurrentServiceOffering(ctx context
 	}, nil
 }
 func (s *templateCatalogueIntegrationsrvc) UpdateParticipant(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueUpdateParticipantRequest) (res *templatecatalogueintegration.TemplateCatalogueUpdateParticipantResponse, err error) {
-	handler := command.UpdateParticipant{
+	updateHandler := participantcmd.Updater{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
@@ -271,7 +278,7 @@ func (s *templateCatalogueIntegrationsrvc) UpdateParticipant(ctx context.Context
 		legalLocality = derefString(req.LegalAddress.Locality)
 	}
 
-	result, err := handler.Handle(command.UpdateParticipantCmd{
+	cmd := participantcmd.UpdateCmd{
 		Token: *req.Token,
 		Participant: selfdescription.ParticipantSdInput{
 			ParticipantID:             middleware.GetParticipantID(ctx),
@@ -289,38 +296,35 @@ func (s *templateCatalogueIntegrationsrvc) UpdateParticipant(ctx context.Context
 			LegalAddressLocality:      legalLocality,
 			TermsAndConditions:        req.TermsAndConditions,
 		},
-	})
+	}
+	err = updateHandler.Handle(cmd)
 	if err != nil {
 		return nil, templatecatalogueintegration.MakeInternalError(err)
 	}
-	if result == nil {
-		return nil, templatecatalogueintegration.MakeNotFound(fmt.Errorf("participant not found"))
-	}
 
+	participantID := middleware.GetParticipantID(ctx)
 	return &templatecatalogueintegration.TemplateCatalogueUpdateParticipantResponse{
-		ID: result.ID,
+		ID: participantID,
 	}, nil
 }
 
 func (s *templateCatalogueIntegrationsrvc) UpdateServiceOffering(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueUpdateServiceOfferingRequest) (res *templatecatalogueintegration.TemplateCatalogueUpdateServiceOfferingResponse, err error) {
-	handler := command.UpdateServiceOffering{
+	updateHandler := serviceofferingcmd.Updater{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.UpdateServiceOfferingCmd{
+	cmd := serviceofferingcmd.UpdateCmd{
 		Token:              *req.Token,
 		ParticipantID:      middleware.GetParticipantID(ctx),
 		Keywords:           req.Keywords,
 		Description:        req.Description,
 		EndPointURL:        req.EndPointURL,
 		TermsAndConditions: req.TermsAndConditions,
-	})
+	}
+	result, err := updateHandler.Handle(cmd)
 	if err != nil {
 		return nil, templatecatalogueintegration.MakeInternalError(err)
-	}
-	if result == nil {
-		return nil, templatecatalogueintegration.MakeNotFound(fmt.Errorf("service offering not found"))
 	}
 
 	return &templatecatalogueintegration.TemplateCatalogueUpdateServiceOfferingResponse{
@@ -331,42 +335,39 @@ func (s *templateCatalogueIntegrationsrvc) UpdateServiceOffering(ctx context.Con
 // Delete the current participant from the Federated Catalogue.
 // The participant group will be deleted from the Keycloak.
 func (s *templateCatalogueIntegrationsrvc) DeleteParticipant(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueDeleteParticipantRequest) (res *templatecatalogueintegration.TemplateCatalogueDeleteParticipantResponse, err error) {
-	handler := command.DeleteParticipant{
+	deleteHandler := participantcmd.Deleter{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.DeleteParticipantCmd{
+	cmd := participantcmd.DeleteCmd{
 		ID:    middleware.GetParticipantID(ctx),
 		Token: *req.Token,
-	})
+	}
+	err = deleteHandler.Handle(cmd)
 	if err != nil {
 		return nil, templatecatalogueintegration.MakeInternalError(err)
 	}
-	if result == nil {
-		return nil, templatecatalogueintegration.MakeNotFound(fmt.Errorf("participant not found"))
-	}
 
+	participantID := middleware.GetParticipantID(ctx)
 	return &templatecatalogueintegration.TemplateCatalogueDeleteParticipantResponse{
-		ID: result.ID,
+		ID: participantID,
 	}, nil
 }
 
 func (s *templateCatalogueIntegrationsrvc) DeleteServiceOffering(ctx context.Context, req *templatecatalogueintegration.TemplateCatalogueDeleteServiceOfferingRequest) (res *templatecatalogueintegration.TemplateCatalogueDeleteServiceOfferingResponse, err error) {
-	handler := command.DeleteServiceOffering{
+	deleteHandler := serviceofferingcmd.Deleter{
 		Ctx:      ctx,
 		FCClient: s.fcClient,
 	}
 
-	result, err := handler.Handle(command.DeleteServiceOfferingCmd{
+	cmd := serviceofferingcmd.DeleteCmd{
 		Token:         *req.Token,
 		ParticipantID: middleware.GetParticipantID(ctx),
-	})
+	}
+	result, err := deleteHandler.Handle(cmd)
 	if err != nil {
 		return nil, templatecatalogueintegration.MakeInternalError(err)
-	}
-	if result == nil {
-		return nil, templatecatalogueintegration.MakeNotFound(fmt.Errorf("service offering not found"))
 	}
 
 	return &templatecatalogueintegration.TemplateCatalogueDeleteServiceOfferingResponse{
