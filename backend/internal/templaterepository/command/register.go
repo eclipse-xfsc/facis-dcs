@@ -21,6 +21,7 @@ import (
 
 type RegisterCmd struct {
 	DID           string
+	UpdatedAt     time.Time
 	RegisteredBy  string
 	ParticipantID string
 	Token         string
@@ -49,6 +50,10 @@ func (h *Registrar) Handle(cmd RegisterCmd) error {
 	processData, err := h.CTRepo.ReadProcessData(tx, cmd.DID)
 	if err != nil {
 		return fmt.Errorf("could not read process data: %w", err)
+	}
+
+	if cmd.UpdatedAt.Unix() < processData.UpdatedAt.Unix() {
+		return errors.New("contract template was updated elsewhere, please reload")
 	}
 
 	if processData.State != contracttemplatestate.Approved.String() {
