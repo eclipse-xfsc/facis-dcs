@@ -3,12 +3,12 @@ import type { ContractTemplateReviewTask } from '@/models/contract-template-revi
 import type { ContractReviewTask } from '@/models/contract/contract-review-task'
 import { ROUTES } from '@/router/router'
 import { useAuthStore } from '@/stores/auth-store'
-import { useContractTemplateReviewTaskStateFilterStore } from '@/stores/contract-template-review-task-state-filter-store'
 import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import { useContractsStore } from '@/stores/contracts-store'
+import { useReviewTaskStateFilterStore } from '@/stores/state-filter-store'
 import { TemplateState } from '@/types/contract-template-state'
 import { ReviewTaskState, reviewTaskStates } from '@/types/review-task-state'
-import { toComparableValue } from '@/utils/comparison'
+import { compareValues } from '@/utils/comparison'
 import { toProperCase } from '@/utils/string'
 import { computed, onUnmounted, ref, type Ref } from 'vue'
 import ListSort from '../ListSort.vue'
@@ -24,9 +24,9 @@ const props = defineProps<{
 const templatesStore = useContractTemplatesStore()
 const contractsStore = useContractsStore()
 const authStore = useAuthStore()
-const stateFilterStore = useContractTemplateReviewTaskStateFilterStore()
+const stateFilterStore = useReviewTaskStateFilterStore()
 
-const sorter = new Map([
+const sorter = new Map<keyof ReviewTask, string>([
   ['created_at', 'Creation date'],
   ['state', 'Task state'],
 ])
@@ -34,33 +34,18 @@ const defaultSort = sorter.keys().next().value!
 const sortBy = ref(defaultSort)
 const sortOrder = ref(1)
 
-const searchFilteredItems: Ref<ReviewTask[]> = ref(props.items)
+const searchedItems: Ref<ReviewTask[]> = ref([])
+const isSearchActive = ref(false)
 
-const searchedItems = computed(() => {
-  return searchFilteredItems.value.length >= 0 ? searchFilteredItems.value : props.items
+const displayedItems = computed(() => {
+  return isSearchActive.value ? searchedItems.value : props.items
 })
 
 const sortedItems = computed(() => {
   if (!sorter.has(sortBy.value)) {
-    return searchedItems.value
+    return displayedItems.value
   }
-  return searchedItems.value.slice().sort((taskA, taskB) => {
-    const aSortValue = taskA[sortBy.value as keyof ReviewTask]
-    const bSortValue = taskB[sortBy.value as keyof ReviewTask]
-    const aValue = toComparableValue(aSortValue)
-    const bValue = toComparableValue(bSortValue)
-    if (!aValue && !bValue) return 0
-    if (!aValue) return sortOrder.value
-    if (!bValue) return sortOrder.value * -1
-
-    let result: number
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      result = Math.sign(bValue - aValue)
-    } else {
-      result = String(aValue).localeCompare(String(bValue))
-    }
-    return sortOrder.value * result
-  })
+  return displayedItems.value.slice().sort((taskA, taskB) => compareValues(taskA, taskB, sortBy.value, sortOrder.value))
 })
 
 const filteredItems = computed(() => {
@@ -105,9 +90,8 @@ const resolveViewRouteName = (item: ReviewTask) => {
 }
 
 const applySearchResult = (searchResult: ReviewTask[]) => {
-  searchFilteredItems.value = props.items.filter((task) =>
-    searchResult.map((template) => template.did).includes(task.did),
-  )
+  isSearchActive.value = searchResult.length !== props.items.length
+  searchedItems.value = searchResult
 }
 
 onUnmounted(() => stateFilterStore.reset())
@@ -120,51 +104,54 @@ onUnmounted(() => stateFilterStore.reset())
       <TaskListSearch class="flex-1" :items="items" @search-result="applySearchResult" />
       <ListSort :sorter="sorter" v-model:sort-by="sortBy" v-model:sort-order="sortOrder" />
     </li>
-    <li v-for="item in filteredItems" class="list-row">
-      <div class="list-col-grow card bg-base-200 card-border hover:bg-base-300">
-        <div class="card-body">
-          <h2 class="card-title flex-wrap justify-between">
-            <div v-if="item.type === 'template'">Review Task for Template: {{ getTemplateName(item) }}</div>
-            <div v-else>Review Task for Contract: {{ getContractName(item) }}</div>
-            <div class="flex-1"></div>
-            <div class="badge badge-accent">{{ toProperCase(item.type) }} Task</div>
-            <div class="badge badge-secondary">{{ item.state }}</div>
-          </h2>
-          <div class="flex justify-between">
-            <div v-if="item.type === 'template' && item.document_number">
-              Document number: {{ item.document_number }}
+    <template v-if="filteredItems.length > 0">
+      <li v-for="item in filteredItems" :key="item.did" class="list-row">
+        <div class="list-col-grow card bg-base-200 card-border hover:bg-base-300">
+          <div class="card-body">
+            <h2 class="card-title flex-wrap justify-between">
+              <div v-if="item.type === 'template'">Review Task for Template: {{ getTemplateName(item) }}</div>
+              <div v-else>Review Task for Contract: {{ getContractName(item) }}</div>
+              <div class="flex-1"></div>
+              <div class="badge badge-accent">{{ toProperCase(item.type) }} Task</div>
+              <div class="badge badge-secondary">{{ item.state }}</div>
+            </h2>
+            <div class="flex justify-between">
+              <div v-if="item.type === 'template' && item.document_number">
+                Document number: {{ item.document_number }}
+              </div>
+              <div v-if="item.type === 'template' && item.version">Version: {{ item.version }}</div>
+              <div v-else-if="item.type === 'contract' && item.contract_version">
+                Version: {{ item.contract_version }}
+              </div>
             </div>
-            <div v-if="item.type === 'template' && item.version">Version: {{ item.version }}</div>
-            <div v-else-if="item.type === 'contract' && item.contract_version">
-              Version: {{ item.contract_version }}
-            </div>
-          </div>
-          <div class="flex justify-between">
-            <div>Creation date: {{ new Date(item.created_at).toLocaleDateString() }}</div>
-            <div class="card-actions justify-end">
-              <RouterLink
-                :to="{
-                  name: resolveViewRouteName(item),
-                  params: { did: item.did },
-                }"
-                class="btn btn-sm btn-primary rounded-box"
-              >
-                View
-              </RouterLink>
-              <RouterLink
-                v-if="canEdit(item)"
-                :to="{
-                  name: ROUTES.TEMPLATES.EDIT,
-                  params: { did: item.did },
-                }"
-                class="btn btn-sm btn-secondary rounded-box gap-2"
-              >
-                Edit
-              </RouterLink>
+            <div class="flex justify-between">
+              <div>Creation date: {{ new Date(item.created_at).toLocaleDateString() }}</div>
+              <div class="card-actions justify-end">
+                <RouterLink
+                  :to="{
+                    name: resolveViewRouteName(item),
+                    params: { did: item.did },
+                  }"
+                  class="btn btn-sm btn-primary rounded-box"
+                >
+                  View
+                </RouterLink>
+                <RouterLink
+                  v-if="canEdit(item)"
+                  :to="{
+                    name: ROUTES.TEMPLATES.EDIT,
+                    params: { did: item.did },
+                  }"
+                  class="btn btn-sm btn-secondary rounded-box gap-2"
+                >
+                  Edit
+                </RouterLink>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </li>
+      </li>
+    </template>
+    <li v-else class="px-4">No review tasks found.</li>
   </ul>
 </template>

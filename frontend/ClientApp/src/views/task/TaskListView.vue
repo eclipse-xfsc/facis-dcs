@@ -6,22 +6,25 @@ import { ROUTES } from '@/router/router'
 import { useAuthStore } from '@/stores/auth-store'
 import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import { useContractsStore } from '@/stores/contracts-store'
-import { useErrorStore } from '@/stores/error-store'
 import type { UserRole } from '@/types/user-role'
-import { computed, nextTick, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const router = useRouter()
 
 const authStore = useAuthStore()
-const errorStore = useErrorStore()
 
 const templatesStore = useContractTemplatesStore()
 const contractsStore = useContractsStore()
-const reviewTasks = computed(() => [...templatesStore.reviewTasks, ...contractsStore.reviewTasks])
-const approvalTasks = computed(() => [...templatesStore.approvalTasks, ...contractsStore.approvalTasks])
-const negotiationTasks = computed(() => contractsStore.negotiationTasks)
+const reviewTasks = computed(() => {
+  return route.name === ROUTES.TASKS.REVIEWS ? [...templatesStore.reviewTasks, ...contractsStore.reviewTasks] : []
+})
+const approvalTasks = computed(() => {
+  return route.name === ROUTES.TASKS.APPROVALS ? [...templatesStore.approvalTasks, ...contractsStore.approvalTasks] : []
+})
+const negotiationTasks = computed(() => {
+  return route.name === ROUTES.TASKS.NEGOTIATIONS ? contractsStore.negotiationTasks : []
+})
 
 const hasTemplateRole = computed(() => {
   return (
@@ -48,21 +51,9 @@ const loadTasks = async () => {
   }
 }
 
-const redirectOnEmptyTasks = async () => {
-  await loadTasks()
-  await nextTick()
-  if (route.name === ROUTES.TASKS.REVIEWS && reviewTasks.value.length < 1) {
-    errorStore.add('No review tasks assigned', 'info')
-    router.back()
-  } else if (route.name === ROUTES.TASKS.APPROVALS && approvalTasks.value.length < 1) {
-    errorStore.add('No approval tasks assigned', 'info')
-    router.back()
-  }
-}
-
 watch(
   () => route.name,
-  () => redirectOnEmptyTasks(),
+  () => loadTasks(),
   { immediate: true },
 )
 </script>
