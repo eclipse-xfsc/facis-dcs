@@ -2,7 +2,7 @@
 import type { PartialContractTemplate } from '@/models/contract-template'
 import { useContractTemplateStateFilterStore } from '@/stores/contract-template-state-filter-store'
 import { contractTemplateStates } from '@/types/contract-template-state'
-import { toComparableValue } from '@/utils/comparison'
+import { compareValues } from '@/utils/comparison'
 import { computed, onUnmounted, ref, type Ref } from 'vue'
 import ListSort from '../ListSort.vue'
 import ListStateFilter from '../ListStateFilter.vue'
@@ -15,7 +15,7 @@ const props = defineProps<{
   hasApprovalTask: (template: PartialContractTemplate) => boolean
 }>()
 
-const sorter = new Map([
+const sorter = new Map<keyof PartialContractTemplate, string>([
   ['created_at', 'Creation date'],
   ['updated_at', 'Update date'],
   ['state', 'Template state'],
@@ -34,23 +34,9 @@ const sortedItems = computed(() => {
   if (!sorter.has(sortBy.value)) {
     return searchedItems.value
   }
-  return searchedItems.value.slice().sort((a, b) => {
-    const aSortValue = a[sortBy.value as keyof PartialContractTemplate]
-    const bSortValue = b[sortBy.value as keyof PartialContractTemplate]
-    const aValue = toComparableValue(aSortValue)
-    const bValue = toComparableValue(bSortValue)
-    if (!aValue && !bValue) return 0
-    if (!aValue) return sortOrder.value
-    if (!bValue) return sortOrder.value * -1
-
-    let result: number
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      result = Math.sign(bValue - aValue)
-    } else {
-      result = String(aValue).localeCompare(String(bValue))
-    }
-    return sortOrder.value * result
-  })
+  return searchedItems.value
+    .slice()
+    .sort((templateA, templateB) => compareValues(templateA, templateB, sortBy.value, sortOrder.value))
 })
 
 const filteredItems = computed(() => {

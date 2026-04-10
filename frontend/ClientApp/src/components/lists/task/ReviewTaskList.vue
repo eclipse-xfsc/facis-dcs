@@ -8,7 +8,7 @@ import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import { useContractsStore } from '@/stores/contracts-store'
 import { TemplateState } from '@/types/contract-template-state'
 import { ReviewTaskState, reviewTaskStates } from '@/types/review-task-state'
-import { toComparableValue } from '@/utils/comparison'
+import { compareValues } from '@/utils/comparison'
 import { toProperCase } from '@/utils/string'
 import { computed, onUnmounted, ref, type Ref } from 'vue'
 import ListSort from '../ListSort.vue'
@@ -26,7 +26,7 @@ const contractsStore = useContractsStore()
 const authStore = useAuthStore()
 const stateFilterStore = useContractTemplateReviewTaskStateFilterStore()
 
-const sorter = new Map([
+const sorter = new Map<keyof ReviewTask, string>([
   ['created_at', 'Creation date'],
   ['state', 'Task state'],
 ])
@@ -45,23 +45,7 @@ const sortedItems = computed(() => {
   if (!sorter.has(sortBy.value)) {
     return displayedItems.value
   }
-  return displayedItems.value.slice().sort((taskA, taskB) => {
-    const aSortValue = taskA[sortBy.value as keyof ReviewTask]
-    const bSortValue = taskB[sortBy.value as keyof ReviewTask]
-    const aValue = toComparableValue(aSortValue)
-    const bValue = toComparableValue(bSortValue)
-    if (!aValue && !bValue) return 0
-    if (!aValue) return sortOrder.value
-    if (!bValue) return sortOrder.value * -1
-
-    let result: number
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      result = Math.sign(bValue - aValue)
-    } else {
-      result = String(aValue).localeCompare(String(bValue))
-    }
-    return sortOrder.value * result
-  })
+  return displayedItems.value.slice().sort((taskA, taskB) => compareValues(taskA, taskB, sortBy.value, sortOrder.value))
 })
 
 const filteredItems = computed(() => {
