@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { TemplateDraftState, AddBlockPayload, AddBlockOptions } from "@template-repository/models/template-draft-store"
+import type { TemplateDraftState, AddBlockPayload, AddBlockOptions, SubTemplateReference } from "@template-repository/models/template-draft-store"
 import type { DocumentOutline, DocumentOutlineBlock, DocumentBlock, TemplateTypeValue, SemanticCondition, MetaData } from "@template-repository/models/contract-templace"
 import { DocumentBlockType, TemplateType, isClauseBlock, isSectionBlock, isApprovedTemplateBlock } from "@template-repository/models/contract-templace"
 import type { ContractTemplate, SubTemplateSnapshot } from '@/models/contract-template'
@@ -116,15 +116,42 @@ export const useTemplateDraftStore = defineStore(storeId, {
         conditionId: crypto.randomUUID(),
       })
     },
-    deleteSemanticCondition(conditionId: string): void {
+    updateSemanticCondition(conditionId: string, payload: Omit<SemanticCondition, 'conditionId'>, subTemplateRef?: SubTemplateReference): void {
+      const conditions = subTemplateRef
+        ? findSubTemplateSnapshotByRef(this.subTemplateSnapshots, subTemplateRef)?.template_data?.semanticConditions ?? []
+        : this.semanticConditions
+      const idx = conditions.findIndex((item) => item.conditionId === conditionId)
+      if (idx < 0) return
+      conditions[idx] = {
+        ...payload,
+        conditionId,
+      }
+    },
+    deleteSemanticCondition(conditionId: string, subTemplateRef?: SubTemplateReference): void {
+      const blocks = subTemplateRef
+        ? findSubTemplateSnapshotByRef(this.subTemplateSnapshots, subTemplateRef)?.template_data?.documentBlocks ?? []
+        : this.documentBlocks
+      const conditions = subTemplateRef
+        ? findSubTemplateSnapshotByRef(this.subTemplateSnapshots, subTemplateRef)?.template_data?.semanticConditions ?? []
+        : this.semanticConditions
+      if (!blocks || !conditions) return
+
       const placeholderRegex = placeholderRegexForCondition(conditionId)
-      for (const block of this.documentBlocks) {
+      for (const block of blocks) {
         if (!isClauseBlock(block)) continue
         const hadCondition = block.conditionIds.includes(conditionId)
         block.conditionIds = block.conditionIds.filter((id) => id !== conditionId)
         if (hadCondition) block.text = block.text.replace(placeholderRegex, '')
       }
-      this.semanticConditions = this.semanticConditions.filter((c) => c.conditionId !== conditionId)
+
+      const filteredConditions = conditions.filter((c) => c.conditionId !== conditionId)
+      if (!subTemplateRef) {
+        this.semanticConditions = filteredConditions
+        return
+      }
+      const snapshot = findSubTemplateSnapshotByRef(this.subTemplateSnapshots, subTemplateRef)
+      if (!snapshot?.template_data) return
+      snapshot.template_data.semanticConditions = filteredConditions
     },
     // Clauses operations: add, delete, update
     /** Adds a clause block to documentBlocks only */
@@ -411,6 +438,13 @@ function isSameTemplate(
   t2: { did: string, version?: number, document_number?: string }
 ): boolean {
   return t1.did === t2.did && t1.version === t2.version && t1.document_number === t2.document_number
+}
+
+function findSubTemplateSnapshotByRef(
+  subTemplates: SubTemplateSnapshot[],
+  subTemplateRef: SubTemplateReference
+): SubTemplateSnapshot | undefined {
+  return subTemplates.find((subTemplate) => isSameTemplate(subTemplate, subTemplateRef))
 }
 
 function normalizeSubTemplateSnapshots(snapshots: SubTemplateSnapshot[]): SubTemplateSnapshot[] {
