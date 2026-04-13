@@ -2,9 +2,7 @@
 import ContractList from '@/components/lists/contract/ContractList.vue'
 import { ROUTES } from '@/router/router'
 import { useAuthStore } from '@/stores/auth-store'
-import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import { useContractsStore } from '@/stores/contracts-store'
-import { storeToRefs } from 'pinia'
 import { computed, onMounted } from 'vue'
 
 const contractsStore = useContractsStore()
@@ -15,8 +13,6 @@ const error = computed(() => contractsStore.error)
 const contracts = computed(() => contractsStore.contracts)
 
 const authStore = useAuthStore()
-const templatesStore = useContractTemplatesStore()
-const { hasApprovedTemplates } = storeToRefs(templatesStore)
 
 async function loadContracts() {
   await contractsStore.loadContracts()
@@ -34,7 +30,7 @@ onMounted(loadContracts)
     </h2>
 
     <RouterLink
-      v-if="hasApprovedTemplates && isContractCreator"
+      v-if="isContractCreator"
       :to="{ name: ROUTES.CONTRACTS.NEW }"
       class="btn rounded-box self-end btn-secondary gap-2"
       #default="{ route }"

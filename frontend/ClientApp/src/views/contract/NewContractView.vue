@@ -17,7 +17,7 @@ const router = useRouter()
 
 const errorStore = useErrorStore()
 const templatesStore = useContractTemplatesStore()
-const { approvedTemplates } = storeToRefs(templatesStore)
+const { approvedTemplates, hasApprovedTemplates } = storeToRefs(templatesStore)
 
 const did = ref<string | null>(null)
 const isEditMode = computed(() => !!route.params.did || !!did.value)
@@ -26,7 +26,7 @@ const selectedTemplate: Ref<PartialContractTemplate | null> = ref(null)
 
 const contract: Ref<Contract | null> = ref(null)
 
-const canSubmit = computed(() => isEditMode.value || selectedTemplate.value !== null)
+const canSubmit = computed(() => isEditMode.value || hasApprovedTemplates.value && selectedTemplate.value !== null)
 
 const submit = async () => {
   isSubmitting.value = true
@@ -65,6 +65,8 @@ watch(
       } catch (err: any) {
         console.error('Failed to load contract')
       }
+    } else if (!hasApprovedTemplates.value) {
+      await templatesStore.loadTemplates()
     }
   },
   { immediate: true },
@@ -91,8 +93,8 @@ const submitContract = async (result: SelectedUserRole[]) => {
 <template>
   <div class="flex flex-col min-h-full -mx-4 md:-mx-8 -my-4 md:-my-8">
     <div v-if="!isEditMode" class="max-w-4xl mx-auto px-6 py-12">
-      <select v-model="selectedTemplate" class="select">
-        <option :value="null" disabled selected>Pick a template</option>
+      <select v-model="selectedTemplate" class="select" :disabled="!hasApprovedTemplates">
+        <option :value="null" disabled selected>{{ hasApprovedTemplates ? 'Pick a template' : 'No templates available' }}</option>
         <option v-for="template in approvedTemplates" :key="template.did" :value="template">{{ template.name }}</option>
       </select>
     </div>

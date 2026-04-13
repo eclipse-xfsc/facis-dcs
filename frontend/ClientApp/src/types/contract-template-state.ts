@@ -1,4 +1,5 @@
 export type ContractTemplateState = (typeof TemplateState)[keyof typeof TemplateState]
+
 export const TemplateState = {
     draft: 'DRAFT',
     submitted: 'SUBMITTED',
