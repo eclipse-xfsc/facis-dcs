@@ -92,6 +92,15 @@ export const useTemplateDraftStore = defineStore(storeId, {
     },
     /** Updates block fields. */
     updateBlock(blockId: string, payload: { title?: string; text?: string; conditionIds?: string[] }): void {
+      for (const subTemplate of this.subTemplateSnapshots) {
+        if (!subTemplate.template_data) continue
+        const block = subTemplate.template_data.documentBlocks.find((block) => block.blockId === blockId)
+        if (!block || !isClauseBlock(block)) continue
+        if (payload.title !== undefined) block.title = payload.title
+        if (payload.text !== undefined) block.text = payload.text
+        block.conditionIds = payload.conditionIds ?? []
+      }
+
       const block = this.documentBlocks.find((b) => b.blockId === blockId)
       if (!block) return
       if (payload.title !== undefined) block.title = payload.title
@@ -167,10 +176,14 @@ export const useTemplateDraftStore = defineStore(storeId, {
     },
     /** Removes the clause from documentBlocks and documentOutline. */
     deleteClause(blockId: string): void {
-      this.documentBlocks = this.documentBlocks.filter((b) => b.blockId !== blockId)
-      const parent = this.documentOutline.find((b) => b.children.includes(blockId))
-      if (parent) {
-        parent.children = parent.children.filter((id) => id !== blockId)
+      this.documentBlocks = removeClauseAndOutlineRefs(this.documentBlocks, this.documentOutline, blockId)
+      for (const subTemplate of this.subTemplateSnapshots) {
+        if (!subTemplate.template_data) continue
+        subTemplate.template_data.documentBlocks = removeClauseAndOutlineRefs(
+          subTemplate.template_data.documentBlocks ?? [],
+          subTemplate.template_data.documentOutline ?? [],
+          blockId,
+        )
       }
     },
     updateClause(blockId: string, payload: { title?: string; text?: string; conditionIds?: string[] }): void {
@@ -397,6 +410,18 @@ function createBlockFromPayload(blockId: string, payload: AddBlockPayload): Docu
     default:
       throw new Error(`Unknown blockType: ${payload.blockType}`)
   }
+}
+
+function removeClauseAndOutlineRefs(
+  blocks: DocumentBlock[],
+  outlineBlocks: DocumentOutlineBlock[],
+  blockId: string
+): DocumentBlock[] {
+  outlineBlocks.forEach((outlineBlock) => {
+    if (!outlineBlock.children.includes(blockId)) return
+    outlineBlock.children = outlineBlock.children.filter((id) => id !== blockId)
+  })
+  return blocks.filter((b) => b.blockId !== blockId)
 }
 
 /** Returns a Set of blockId and all descendant block ids in the outline. */

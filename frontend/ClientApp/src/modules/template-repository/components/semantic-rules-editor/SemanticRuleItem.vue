@@ -20,29 +20,34 @@
         </div>
       </div>
     </div>
-    <button
+    <div
       v-if="isEditable"
-      type="button"
-      class="btn btn-ghost btn-xs text-base-content/70 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-      aria-label="Edit rule"
-      @click="$emit('edit-rule', condition.conditionId)"
+      class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
     >
-      Edit
-    </button>
-    <button
-      v-if="isEditable"
-      type="button"
-      class="btn btn-ghost btn-xs text-error opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-      aria-label="Delete rule"
-      @click="$emit('delete-rule', condition.conditionId)"
-    >
-      ✕
-    </button>
+      <button
+        type="button"
+        class="btn btn-ghost btn-xs"
+        aria-label="Edit rule"
+        @click="$emit('edit-rule', condition.conditionId)"
+      >
+        <IconEdit class="w-4 h-4" />
+      </button>
+      <button
+        type="button"
+        class="btn btn-ghost btn-xs text-error"
+        aria-label="Delete rule"
+        @click="$emit('delete-rule', condition.conditionId)"
+      >
+        <IconRemove class="w-4 h-4" />
+      </button>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { SemanticCondition } from '@template-repository/models/contract-templace'
+import IconEdit from '@/core/components/icons/IconEdit.vue'
+import IconRemove from '@/core/components/icons/IconRemove.vue'
 
 const props = defineProps<{
   condition: SemanticCondition
