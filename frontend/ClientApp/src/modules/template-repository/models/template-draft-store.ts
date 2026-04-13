@@ -44,4 +44,6 @@ export interface AddBlockOptions {
   addToOutline?: boolean
 }
 
+export type SubTemplateReference = Pick<SubTemplateSnapshot, 'did' | 'version' | 'document_number'>
+
 export type { TemplateDraftState }
