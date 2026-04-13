@@ -82,8 +82,9 @@
       </div>
     </div>
 
-    <div class="flex justify-end gap-2">
-      <button v-if="isEditMode" type="button" class="btn btn-ghost btn-sm" @click="$emit('cancel')">Cancel</button>
+    <div class="flex justify-between items-center">
+      <button v-if="isEditMode" type="button" class="btn btn-ghost btn-xs" @click="$emit('cancel')">Cancel</button>
+      <span v-else />
       <button type="button" class="btn btn-secondary btn-sm" :disabled="!canSubmitRule" @click="submitRule">
         {{ submitLabel }}
       </button>
@@ -136,7 +137,7 @@ const newCondition = ref<NewConditionPayload>(getDefaultNewCondition())
 const draftParameter = ref<SemanticConditionParameter>(defaultParam())
 const isEditMode = computed(() => props.mode === 'edit')
 const formTitle = computed(() => (isEditMode.value ? 'Edit rule' : 'New rule'))
-const submitLabel = computed(() => (isEditMode.value ? 'Update rule' : 'Add rule'))
+const submitLabel = computed(() => (isEditMode.value ? 'Save changes' : 'Add rule'))
 
 watch(
   () => [props.mode, props.initialCondition] as const,
