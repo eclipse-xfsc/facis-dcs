@@ -20,6 +20,7 @@ const defaultState: Readonly<TemplateDraftState> = {
   document_number: null,
   version: null,
   updated_at: null,
+  created_by: '',
 }
 
 export const useTemplateDraftStore = defineStore(storeId, {

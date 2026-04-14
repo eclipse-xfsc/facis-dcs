@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Contract } from '@/models/contract/contract'
 import { ROUTES } from '@/router/router'
+import { useAuthStore } from '@/stores/auth-store'
 import { ContractState } from '@/types/contract-state'
 import { computed } from 'vue'
 
@@ -8,7 +9,11 @@ const props = defineProps<{
   item: Contract
 }>()
 
-const canEdit = computed(() => props.item.state === ContractState.draft)
+const authStore = useAuthStore()
+
+const canEdit = computed(() => {
+  return props.item.created_by === authStore.user?.username && props.item.state === ContractState.draft
+})
 </script>
 
 <template>
@@ -21,7 +26,7 @@ const canEdit = computed(() => props.item.state === ContractState.draft)
           </div>
           <div class="badge badge-secondary">{{ item.state }}</div>
         </h2>
-        <div class="flex justify-between">
+        <div class="flex justify-end">
           <div v-if="item.contract_version">Version: {{ item.contract_version }}</div>
         </div>
         <div class="flex justify-between min-w-0">
@@ -30,7 +35,7 @@ const canEdit = computed(() => props.item.state === ContractState.draft)
             {{ item.description }}
           </div>
           <div class="card-actions justify-end">
-            <RouterLink to="#" class="btn btn-sm btn-primary rounded-box btn-disabled"> View </RouterLink>
+            <RouterLink to="#" class="btn btn-sm btn-primary rounded-box btn-disabled">View</RouterLink>
             <RouterLink
               :to="
                 canEdit

@@ -7,12 +7,12 @@
       <div class="max-w-4xl mx-auto px-6 py-3 flex flex-col md:flex-row gap-3">
         <button class="btn btn-ghost md:w-32" @click="router.back()">Back</button>
         <SubmitSelectionDialog
-          v-if="state === TemplateState.draft"
+          v-if="isCreator && state === TemplateState.draft"
           dialog-type="template"
           @submit="submitTemplate"
           class="btn btn-primary flex-1"
         />
-        <button v-if="state === TemplateState.rejected" class="btn btn-primary flex-1" @click="submitRejectedTemplate">Submit</button>
+        <button v-if="isCreator && state === TemplateState.rejected" class="btn btn-primary flex-1" @click="submitRejectedTemplate">Submit</button>
         <TemplateManagerActions v-if="contractTemplate && isManager" :item="contractTemplate" class="btn btn-primary flex-1" />
       </div>
     </div>
@@ -45,6 +45,10 @@ const { state } = storeToRefs(draftStore)
 
 const hasDid = computed(() => !!route.params.did)
 const hasChosenType = ref(false)
+
+const isCreator = computed(() => {
+  return draftStore.created_by === authStore.user?.username
+})
 
 const isManager = computed(() => {
   return hasDid.value && (authStore.user?.roles?.includes('TEMPLATE_MANAGER') ?? false)
@@ -81,6 +85,7 @@ watch(hasDid, (hasDid) => {
         version: template.version ?? null,
         document_number: template.document_number ?? null,
         updated_at: template.updated_at ?? null,
+        created_by: template.created_by
       })
     })
     .catch(error => {
