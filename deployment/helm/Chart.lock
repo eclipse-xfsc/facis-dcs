@@ -11,5 +11,8 @@ dependencies:
 - name: neo4j
   repository: file://charts/neo4j
   version: 0.1.0
-digest: sha256:161935ada7b639acfffae0ca5de339575b768d58ee7c0f071a037f6c9ef850cf
-generated: "2026-03-06T12:31:03.120900323+01:00"
+- name: federated-catalogue
+  repository: file://charts/federated-catalogue
+  version: 0.1.0
+digest: sha256:be19e2048b3eb531035c887599d76e4040265fc970dd52a508038edc11954db4
+generated: "2026-04-15T14:30:10.508704702+02:00"

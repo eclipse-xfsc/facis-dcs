@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: [registry]
+  repository: "[registry]"
   pullPolicy: IfNotPresent
   tag: ""
 
@@ -37,7 +37,7 @@ ingress:
   hosts: []
   tls: []
 
-# Istio VirtualService (optional, for Istio service mesh users)
+# Istio VirtualService (optional)
 istio:
   enabled: false
   hosts: []
@@ -63,24 +63,32 @@ nodeSelector: {}
 tolerations: []
 affinity: {}
 
+extraEnv: []
+extraEnvFrom: []
+
+# Route and path configuration
+route:
+  basePath: "/digital-contracting-service"
+
+# Override individual paths (derived from route.basePath if not set)
+paths:
+  api: ""
+  ui: ""
+
+# OIDC / authentication
+# issuerURL is derived from keycloak.route.path + istio/ingress host when not set explicitly
 oidc:
   issuerURL: ""
   clientID: "[oidc-client-id]"
   redirectURI: "[oidc-redirect-uri]"
   logoutRedirectURI: "[oidc-logout-redirect-uri]"
   realm: "gaia-x"
-  keycloakScheme: "http"
+  keycloakScheme: "https"
   issuerURLSecretRef:
     name: ""
     key: "OIDC_ISSUER_URL"
 
-route:
-  basePath: "/digital-contracting-service"
-
-paths:
-  api: ""
-  ui: ""
-
+# Database connection – derived from the postgresql sub-chart when not set explicitly
 database:
   url: ""
   port: 5432
@@ -92,6 +100,7 @@ database:
     name: ""
     key: "DATABASE_URL"
 
+# NATS connection – derived from the nats sub-chart when not set explicitly
 messaging:
   natsURL: ""
   natsPort: 4222
@@ -99,158 +108,45 @@ messaging:
     name: ""
     key: "NATS_URL"
 
+# Service discovery overrides – all auto-wired when the sub-charts below are enabled
 serviceDiscovery:
   postgresqlHost: ""
   keycloakHost: ""
   natsHost: ""
   keycloakPort: ""
 
-extraEnv: []
-extraEnvFrom: []
+# ---- Co-deployed dependencies ----------------------------------------
+# Each sub-chart owns its full set of configurable values.
+# Only fields referenced by the parent chart's helpers are listed here.
+# All other sub-chart options (images, resources, persistence, etc.) can
+# be set directly in your values override file.
 
-# Co-deployed dependencies (set enabled: true to include)
 postgresql:
   enabled: false
-  image:
-    repository: postgres
-    tag: "16-alpine"
-    pullPolicy: IfNotPresent
-  service:
-    port: 5432
   auth:
     username: dcs
     password: dcs
     database: dcs
-  additionalDatabases: []
-  persistence:
-    enabled: false
-    size: 1Gi
-    accessModes:
-      - ReadWriteOnce
-  resources: {}
 
 keycloak:
   enabled: false
-  image:
-    repository: quay.io/keycloak/keycloak
-    tag: "26.0"
-    pullPolicy: IfNotPresent
   service:
-    type: ClusterIP
     port: 8080
-    annotations: {}
-    loadBalancerIP: ""
-    externalTrafficPolicy: ""
   route:
     path: ""
-  ingress:
-    enabled: false
-    className: ""
-    annotations: {}
-    host: ""
-    path: "/"
-    pathType: Prefix
-    tls: []
-  auth:
-    adminUser: admin
-    adminPassword: admin
-  extraEnv: []
-  realm:
-    import: false
-  resources: {}
 
 nats:
   enabled: false
-  image:
-    repository: nats
-    tag: "2.10-alpine"
-    pullPolicy: IfNotPresent
-  service:
-    port: 4222
-  resources: {}
 
 neo4j:
   enabled: false
-  image:
-    repository: neo4j
-    tag: "5.18-community"
-    pullPolicy: IfNotPresent
-  service:
-    httpPort: 7474
-    boltPort: 7687
-  auth:
-    username: neo4j
-    password: changeme
-  plugins: '["apoc", "graph-data-science", "n10s"]'
-  persistence:
-    enabled: false
-    size: 1Gi
-    accessModes:
-      - ReadWriteOnce
-  resources:
-    requests:
-      cpu: 100m
-      memory: 512Mi
-    limits:
-      cpu: 1000m
-      memory: 1Gi
 
 # XFSC Federated Catalogue (requires neo4j, keycloak, postgresql with "fc" database)
+# See charts/federated-catalogue/values.yaml for all configurable fields.
 federatedCatalogue:
   enabled: false
-  replicaCount: 1
-  image:
-    repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-service-server
-    tag: "latest"
-    pullPolicy: IfNotPresent
-  service:
-    type: ClusterIP
-    port: 8081
-  route:
-    path: ""
-  neo4j:
-    uri: ""
-    username: ""
-    password: ""
-  database:
-    url: ""
-    name: "fc"
-    username: ""
-    password: ""
-  keycloak:
-    authServerUrl: ""
-    realm: "gaia-x"
-    clientId: "federated-catalogue"
-    clientSecret: "federated-catalogue-secret"
-  verifySignatures: false
-  extraEnv: []
-  resources:
-    requests:
-      cpu: 100m
-      memory: 256Mi
-    limits:
-      cpu: 500m
-      memory: 512Mi
-  portal:
-    enabled: false
-    replicaCount: 1
-    image:
-      repository: node-654e3bca7fbeeed18f81d7c7.ps-xaas.io/catalogue/fc-demo-portal
-      tag: "latest"
-      pullPolicy: IfNotPresent
-    service:
-      type: ClusterIP
-      port: 8088
-    route:
-      path: ""
-    keycloak:
-      clientId: ""
-      clientSecret: ""
-    extraEnv: []
-    resources:
-      requests:
-        cpu: 50m
-        memory: 128Mi
-      limits:
-        cpu: 200m
-        memory: 256Mi
+  # URL the DCS backend uses to reach the Federated Catalogue API
+  apiURL: ""
+  secretRef:
+    name: ""
+    key: "FEDERATED_CATALOGUE_API_URL"

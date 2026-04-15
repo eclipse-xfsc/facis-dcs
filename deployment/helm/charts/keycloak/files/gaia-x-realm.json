@@ -26,40 +26,109 @@
     ],
     "client": {
       "federated-catalogue": [
-        { "name": "Ro-SD-A" },
-        { "name": "Ro-PA-A" },
-        { "name": "uma_protection" },
+        {
+          "name": "Ro-SD-A"
+        },
+        {
+          "name": "Ro-PA-A"
+        },
+        {
+          "name": "uma_protection"
+        },
         {
           "name": "Ro-MU-CA",
           "composite": true,
           "composites": {
             "client": {
-              "federated-catalogue": ["Ro-SD-A", "Ro-PA-A", "Ro-MU-A"]
+              "federated-catalogue": [
+                "Ro-SD-A",
+                "Ro-PA-A",
+                "Ro-MU-A"
+              ]
             }
           }
         },
-        { "name": "Ro-MU-A" }
+        {
+          "name": "Ro-MU-A"
+        }
       ],
       "dcs-client": [
-        { "name": "Template Creator", "clientRole": true },
-        { "name": "Template Reviewer", "clientRole": true },
-        { "name": "Template Approver", "clientRole": true },
-        { "name": "Template Manager", "clientRole": true },
-        { "name": "Contract Creator", "clientRole": true },
-        { "name": "Contract Negotiator", "clientRole": true },
-        { "name": "Contract Reviewer", "clientRole": true },
-        { "name": "Contract Approver", "clientRole": true },
-        { "name": "Contract Manager", "clientRole": true },
-        { "name": "Contract Signer", "clientRole": true },
-        { "name": "Contract Observer", "clientRole": true },
-        { "name": "Sys. Contract Creator", "clientRole": true },
-        { "name": "Sys. Contract Reviewer", "clientRole": true },
-        { "name": "Sys. Contract Approver", "clientRole": true },
-        { "name": "Sys. Contract Manager", "clientRole": true },
-        { "name": "Sys. Contract Signer", "clientRole": true },
-        { "name": "Archive Manager", "clientRole": true },
-        { "name": "Auditor", "clientRole": true },
-        { "name": "Compliance Officer", "clientRole": true }
+        {
+          "name": "Template Creator",
+          "clientRole": true
+        },
+        {
+          "name": "Template Reviewer",
+          "clientRole": true
+        },
+        {
+          "name": "Template Approver",
+          "clientRole": true
+        },
+        {
+          "name": "Template Manager",
+          "clientRole": true
+        },
+        {
+          "name": "Contract Creator",
+          "clientRole": true
+        },
+        {
+          "name": "Contract Negotiator",
+          "clientRole": true
+        },
+        {
+          "name": "Contract Reviewer",
+          "clientRole": true
+        },
+        {
+          "name": "Contract Approver",
+          "clientRole": true
+        },
+        {
+          "name": "Contract Manager",
+          "clientRole": true
+        },
+        {
+          "name": "Contract Signer",
+          "clientRole": true
+        },
+        {
+          "name": "Contract Observer",
+          "clientRole": true
+        },
+        {
+          "name": "Sys. Contract Creator",
+          "clientRole": true
+        },
+        {
+          "name": "Sys. Contract Reviewer",
+          "clientRole": true
+        },
+        {
+          "name": "Sys. Contract Approver",
+          "clientRole": true
+        },
+        {
+          "name": "Sys. Contract Manager",
+          "clientRole": true
+        },
+        {
+          "name": "Sys. Contract Signer",
+          "clientRole": true
+        },
+        {
+          "name": "Archive Manager",
+          "clientRole": true
+        },
+        {
+          "name": "Auditor",
+          "clientRole": true
+        },
+        {
+          "name": "Compliance Officer",
+          "clientRole": true
+        }
       ]
     }
   },
@@ -68,10 +137,18 @@
       "username": "service-account-federated-catalogue",
       "enabled": true,
       "serviceAccountClientId": "federated-catalogue",
-      "realmRoles": ["default-roles-gaia-x"],
+      "realmRoles": [
+        "default-roles-gaia-x"
+      ],
       "clientRoles": {
-        "federated-catalogue": ["uma_protection"],
-        "realm-management": ["manage-users", "view-users", "view-clients"]
+        "federated-catalogue": [
+          "uma_protection"
+        ],
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "view-clients"
+        ]
       }
     },
     {
@@ -88,9 +165,16 @@
           "temporary": false
         }
       ],
-      "realmRoles": ["default-roles-gaia-x"],
+      "realmRoles": [
+        "default-roles-gaia-x"
+      ],
       "clientRoles": {
-        "federated-catalogue": ["Ro-MU-CA", "Ro-SD-A", "Ro-PA-A", "Ro-MU-A"],
+        "federated-catalogue": [
+          "Ro-MU-CA",
+          "Ro-SD-A",
+          "Ro-PA-A",
+          "Ro-MU-A"
+        ],
         "dcs-client": [
           "Template Creator",
           "Template Reviewer",
@@ -121,8 +205,8 @@
       "enabled": true,
       "clientAuthenticatorType": "client-secret",
       "secret": "federated-catalogue-secret",
-      "redirectUris": ["*"],
-      "webOrigins": ["*"],
+      "redirectUris": {{ toJson .Values.realm.dcsClient.redirectUris }},
+      "webOrigins": {{ toJson .Values.realm.dcsClient.webOrigins }},
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": true,
@@ -158,8 +242,19 @@
           }
         }
       ],
-      "defaultClientScopes": ["openid", "profile", "email", "web-origins", "gaia-x", "roles"],
-      "optionalClientScopes": ["participant", "self-description", "offline_access"],
+      "defaultClientScopes": [
+        "openid",
+        "profile",
+        "email",
+        "web-origins",
+        "gaia-x",
+        "roles"
+      ],
+      "optionalClientScopes": [
+        "participant",
+        "self-description",
+        "offline_access"
+      ],
       "authorizationSettings": {
         "allowRemoteResourceManagement": false,
         "policyEnforcementMode": "ENFORCING",
@@ -167,7 +262,9 @@
           {
             "name": "Default Resource",
             "type": "urn:federated-catalogue:resources:default",
-            "uris": ["/*"]
+            "uris": [
+              "/*"
+            ]
           }
         ],
         "policies": [
@@ -189,10 +286,23 @@
       "enabled": true,
       "publicClient": true,
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": false,
+      "directAccessGrantsEnabled": true,
       "serviceAccountsEnabled": false,
-      "redirectUris": ["*"],
-      "webOrigins": ["*"],
+      "protocolMappers": [
+        {
+          "name": "sub",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ],
+      "redirectUris": {{ toJson .Values.realm.dcsClient.redirectUris }},
+      "webOrigins": {{ toJson .Values.realm.dcsClient.webOrigins }},
       "protocol": "openid-connect",
       "frontchannelLogout": true,
       "attributes": {
@@ -382,12 +492,16 @@
     {
       "name": "participant",
       "protocol": "openid-connect",
-      "attributes": { "include.in.token.scope": "true" }
+      "attributes": {
+        "include.in.token.scope": "true"
+      }
     },
     {
       "name": "self-description",
       "protocol": "openid-connect",
-      "attributes": { "include.in.token.scope": "true" }
+      "attributes": {
+        "include.in.token.scope": "true"
+      }
     }
   ]
 }

@@ -4,7 +4,9 @@ image:
   pullPolicy: IfNotPresent
 
 service:
+  type: ClusterIP
   port: 5432
+  nodePort: null
 
 auth:
   username: dcs

@@ -4,6 +4,8 @@ image:
   pullPolicy: IfNotPresent
 
 service:
+  type: ClusterIP
   port: 4222
+  nodePort: null
 
 resources: {}

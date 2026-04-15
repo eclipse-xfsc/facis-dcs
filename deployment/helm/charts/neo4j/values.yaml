@@ -4,8 +4,11 @@ image:
   pullPolicy: IfNotPresent
 
 service:
+  type: ClusterIP
   httpPort: 7474
   boltPort: 7687
+  nodePortHttp: null
+  nodePortBolt: null
 
 auth:
   username: neo4j

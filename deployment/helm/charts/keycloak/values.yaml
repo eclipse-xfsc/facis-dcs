@@ -6,6 +6,7 @@ image:
 service:
   type: ClusterIP
   port: 8080
+  nodePort: null
   annotations: {}
   loadBalancerIP: ""
   externalTrafficPolicy: ""
@@ -34,5 +35,10 @@ extraEnv: []
 # When enabled, imports the gaia-x realm with pre-configured clients (federated-catalogue, dcs-client) and roles on startup.
 realm:
   import: false
+  dcsClient:
+    redirectUris:
+      - "*"
+    webOrigins:
+      - "*"
 
 resources: {}

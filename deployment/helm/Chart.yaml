@@ -22,3 +22,8 @@ dependencies:
     version: "0.1.0"
     repository: "file://charts/neo4j"
     condition: neo4j.enabled
+  - name: federated-catalogue
+    version: "0.1.0"
+    repository: "file://charts/federated-catalogue"
+    condition: federatedCatalogue.enabled
+    alias: federatedCatalogue
