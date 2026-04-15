@@ -126,7 +126,7 @@ make -C tests/bdd run_bdd_helm_dev \
 
 ### CI
 
-The `bdd-kind.yml` GitHub Actions workflow runs on every push to `main` and every pull request:
+The `bdd-kind.yml` GitHub Actions workflow runs:
 
 ```yaml
 make -C tests/bdd run_bdd_kind_ci
@@ -153,10 +153,6 @@ JUnit reports are published as check annotations and uploaded as workflow artifa
 Override the following at minimum:
 
 ```yaml
-image:
-  repository: <your-registry>/digital-contracting-service
-  tag: <version>
-
 oidc:
   issuerURL: "https://keycloak.example.com/realms/gaia-x"
   clientID: "dcs-client"
