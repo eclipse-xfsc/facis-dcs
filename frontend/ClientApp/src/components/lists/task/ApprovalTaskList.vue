@@ -2,12 +2,12 @@
 import type { ContractTemplateApprovalTask } from '@/models/contract-template-approval-task'
 import type { ContractApprovalTask } from '@/models/contract/contract-approval-task'
 import { ROUTES } from '@/router/router'
-import { useContractTemplateApprovalTaskStateFilterStore } from '@/stores/contract-template-approval-task-state-filter-store'
 import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import { useContractsStore } from '@/stores/contracts-store'
+import { useApprovalTaskStateFilterStore } from '@/stores/state-filter-store'
 import { ApprovalTaskState, approvalTaskStates } from '@/types/approval-task-state'
 import { TemplateState } from '@/types/contract-template-state'
-import { toComparableValue } from '@/utils/comparison'
+import { compareValues } from '@/utils/comparison'
 import { toProperCase } from '@/utils/string'
 import { computed, onUnmounted, ref, type Ref } from 'vue'
 import ListSort from '../ListSort.vue'
@@ -22,9 +22,9 @@ const props = defineProps<{
 
 const templatesStore = useContractTemplatesStore()
 const contractsStore = useContractsStore()
-const stateFilterStore = useContractTemplateApprovalTaskStateFilterStore()
+const stateFilterStore = useApprovalTaskStateFilterStore()
 
-const sorter = new Map([
+const sorter = new Map<keyof ApprovalTask, string>([
   ['created_at', 'Creation date'],
   ['state', 'Task state'],
 ])
@@ -43,23 +43,7 @@ const sortedItems = computed(() => {
   if (!sorter.has(sortBy.value)) {
     return displayedItems.value
   }
-  return displayedItems.value.slice().sort((taskA, taskB) => {
-    const aSortValue = taskA[sortBy.value as keyof ApprovalTask]
-    const bSortValue = taskB[sortBy.value as keyof ApprovalTask]
-    const aValue = toComparableValue(aSortValue)
-    const bValue = toComparableValue(bSortValue)
-    if (!aValue && !bValue) return 0
-    if (!aValue) return sortOrder.value
-    if (!bValue) return sortOrder.value * -1
-
-    let result: number
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      result = Math.sign(bValue - aValue)
-    } else {
-      result = String(aValue).localeCompare(String(bValue))
-    }
-    return sortOrder.value * result
-  })
+  return displayedItems.value.slice().sort((taskA, taskB) => compareValues(taskA, taskB, sortBy.value, sortOrder.value))
 })
 
 const filteredItems = computed(() => {
@@ -92,7 +76,8 @@ const resolveViewRouteName = (item: ApprovalTask) => {
     }
     return ROUTES.TEMPLATES.VIEW
   } else {
-    // TODO:
+    // TODO: contract view routes
+    return ROUTES.CONTRACTS.VIEW
   }
 }
 
@@ -149,6 +134,6 @@ onUnmounted(() => stateFilterStore.reset())
         </div>
       </li>
     </template>
-    <li v-else class="px-4">No review tasks found.</li>
+    <li v-else class="px-4">No approval tasks found.</li>
   </ul>
 </template>

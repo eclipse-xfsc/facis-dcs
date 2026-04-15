@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import type { ContractNegotiationTask } from '@/models/contract/contract-negotiation-task'
-import { useContractNeogtiationTaskStateFilterStore } from '@/stores/contract-negotiation-task-state-filter-store'
+import { ROUTES } from '@/router/router'
 import { useContractsStore } from '@/stores/contracts-store'
+import { useNegotiationTaskStateFilterStore } from '@/stores/state-filter-store'
 import { negotiationTaskStates } from '@/types/negotiation-task-state'
-import { toComparableValue } from '@/utils/comparison'
+import { compareValues } from '@/utils/comparison'
 import { computed, onUnmounted, ref, type Ref } from 'vue'
 import ListSort from '../ListSort.vue'
 import ListStateFilter from '../ListStateFilter.vue'
@@ -14,9 +15,9 @@ const props = defineProps<{
 }>()
 
 const contractsStore = useContractsStore()
-const stateFilterStore = useContractNeogtiationTaskStateFilterStore()
+const stateFilterStore = useNegotiationTaskStateFilterStore()
 
-const sorter = new Map([
+const sorter = new Map<keyof ContractNegotiationTask, string>([
   ['created_at', 'Creation date'],
   ['state', 'Task state'],
 ])
@@ -35,23 +36,7 @@ const sortedItems = computed(() => {
   if (!sorter.has(sortBy.value)) {
     return displayedItems.value
   }
-  return displayedItems.value.slice().sort((taskA, taskB) => {
-    const aSortValue = taskA[sortBy.value as keyof ContractNegotiationTask]
-    const bSortValue = taskB[sortBy.value as keyof ContractNegotiationTask]
-    const aValue = toComparableValue(aSortValue)
-    const bValue = toComparableValue(bSortValue)
-    if (!aValue && !bValue) return 0
-    if (!aValue) return sortOrder.value
-    if (!bValue) return sortOrder.value * -1
-
-    let result: number
-    if (typeof aValue === 'number' && typeof bValue === 'number') {
-      result = Math.sign(bValue - aValue)
-    } else {
-      result = String(aValue).localeCompare(String(bValue))
-    }
-    return sortOrder.value * result
-  })
+  return displayedItems.value.slice().sort((taskA, taskB) => compareValues(taskA, taskB, sortBy.value, sortOrder.value))
 })
 
 const filteredItems = computed(() => {
@@ -95,13 +80,18 @@ onUnmounted(() => stateFilterStore.reset())
             <div class="flex justify-between">
               <div>Creation date: {{ new Date(item.created_at).toLocaleDateString() }}</div>
               <div class="card-actions justify-end">
-                <RouterLink to="#" class="btn btn-sm btn-primary rounded-box"> View </RouterLink>
+                <RouterLink
+                  :to="{ name: ROUTES.CONTRACTS.VIEW, params: { did: item.did } }"
+                  class="btn btn-sm btn-primary rounded-box"
+                >
+                  View
+                </RouterLink>
               </div>
             </div>
           </div>
         </div>
       </li>
     </template>
-    <li v-else class="px-4">No review tasks found.</li>
+    <li v-else class="px-4">No negotiation tasks found.</li>
   </ul>
 </template>

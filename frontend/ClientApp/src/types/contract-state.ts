@@ -1,4 +1,5 @@
 export type ContractState = (typeof ContractState)[keyof typeof ContractState]
+
 export const ContractState = {
   draft: 'DRAFT',
   rejected: 'REJECTED',
@@ -7,6 +8,7 @@ export const ContractState = {
   reviewed: 'REVIEWED',
   approved: 'APPROVED',
   terminated: 'TERMINATED',
+  expired: 'EXPIRED',
 } as const
 
 export const contractStates: ContractState[] = Object.values(ContractState)

@@ -31,6 +31,8 @@ var ContractUpdateRequest = Type("ContractUpdateRequest", func() {
 
 	Attribute("updated_at", String, "The timestamp when the contract was updated")
 
+	Attribute("expiration_date", String, "The timestamp when the contract expired")
+
 	Attribute("contract_version", Int, "The version of the contract")
 
 	Attribute("name", String, "The name of the contract")
@@ -87,10 +89,11 @@ var ContractItem = Type("ContractItem", func() {
 	Attribute("state", String, "Current state of the contract")
 	Attribute("name", String, "The name of the contract")
 	Attribute("description", String, "The description of the contract")
+	Attribute("created_by", String, "Identifier of who created the contract negotiation")
 	Attribute("created_at", String, "Created at")
 	Attribute("updated_at", String, "Updated at")
 
-	Required("did", "state", "created_at", "updated_at")
+	Required("did", "state", "created_by", "created_at", "updated_at")
 })
 
 var ContractReviewTaskItem = Type("ContractReviewTaskItem", func() {
@@ -198,25 +201,6 @@ var ContractReviewResponse = Type("ContractReviewResponse", func() {
 	Description("Result for reviewing contract")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
-
-	Required("did")
-})
-
-var ContractVerifyRequest = Type("ContractVerifyRequest", func() {
-	Description("Contract verify request")
-
-	Token("token", String, "JWT token")
-
-	Attribute("did", String, "Decentralized Identifier of the contract")
-
-	Required("did")
-})
-
-var ContractVerifyResponse = Type("ContractVerifyResponse", func() {
-	Description("Result for verifying a contract")
-
-	Attribute("did", String, "Decentralized Identifier of the contract")
-	Attribute("findings", ArrayOf(String), "A list of findings")
 
 	Required("did")
 })
@@ -363,9 +347,9 @@ var ContractTerminateRequest = Type("ContractTerminateRequest", func() {
 	Token("token", String, "JWT token")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
-	Attribute("updated_at", String, "Updated at")
+	Attribute("reason", String, "Reason for terminating contract")
 
-	Required("did", "updated_at")
+	Required("did", "reason")
 })
 
 var ContractTerminateResponse = Type("ContractTerminateResponse", func() {
@@ -611,36 +595,6 @@ var _ = Service("ContractWorkflowEngine", func() {
 			GET("/contract/retrieve/{did}")
 			Param("did")
 
-			Response(StatusOK)
-			Response("bad_request", StatusBadRequest)
-			Response("internal_error", StatusInternalServerError)
-		})
-	})
-
-	// GET /contract/verify
-	Method("verify", func() {
-		Description("run policy, schema, and semantic validations; return findings.")
-		Meta("dcs:ui", "Contract Negotiation", "Contract Review", "Contract Approval", "Contract Management Dashboard")
-
-		Security(JWTAuth, func() {
-			Scope("Contract Creator")
-			Scope("Contract Reviewer")
-			Scope("Sys. Contract Reviewer")
-			Scope("Contract Approver")
-			Scope("Sys. Contract Approver")
-			Scope("Contract Manager")
-			Scope("Sys. Contract Manager")
-		})
-
-		Payload(ContractVerifyRequest)
-		Result(ContractVerifyResponse)
-
-		Error("bad_request", ErrorResult, "Bad request")
-		Error("internal_error", ErrorResult, "Internal server error")
-
-		HTTP(func() {
-			POST("/contract/verify/{did}")
-			Param("did")
 			Response(StatusOK)
 			Response("bad_request", StatusBadRequest)
 			Response("internal_error", StatusInternalServerError)

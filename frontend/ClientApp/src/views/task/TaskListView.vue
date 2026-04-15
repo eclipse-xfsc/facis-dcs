@@ -6,19 +6,20 @@ import { ROUTES } from '@/router/router'
 import { useAuthStore } from '@/stores/auth-store'
 import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import { useContractsStore } from '@/stores/contracts-store'
-import { useErrorStore } from '@/stores/error-store'
 import type { UserRole } from '@/types/user-role'
-import { computed, nextTick, watch } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const router = useRouter()
 
 const authStore = useAuthStore()
-const errorStore = useErrorStore()
 
 const templatesStore = useContractTemplatesStore()
 const contractsStore = useContractsStore()
+
+const loading = computed(() => templatesStore.loading || contractsStore.loading)
+const error = computed(() => templatesStore.error || contractsStore.error)
+
 const reviewTasks = computed(() => {
   return route.name === ROUTES.TASKS.REVIEWS ? [...templatesStore.reviewTasks, ...contractsStore.reviewTasks] : []
 })
@@ -46,29 +47,17 @@ const hasContractRole = computed(() => {
 })
 
 const loadTasks = async () => {
-  if (route.name !== ROUTES.TASKS.NEGOTIATIONS && !templatesStore.hasTemplates && hasTemplateRole.value) {
+  if (route.name !== ROUTES.TASKS.NEGOTIATIONS && hasTemplateRole.value) {
     await templatesStore.loadTemplates()
   }
-  if (!contractsStore.hasContracts && hasContractRole.value) {
+  if (hasContractRole.value) {
     await contractsStore.loadContracts()
-  }
-}
-
-const redirectOnEmptyTasks = async () => {
-  await loadTasks()
-  await nextTick()
-  if (route.name === ROUTES.TASKS.REVIEWS && reviewTasks.value.length < 1) {
-    errorStore.add('No review tasks assigned', 'info')
-    router.back()
-  } else if (route.name === ROUTES.TASKS.APPROVALS && approvalTasks.value.length < 1) {
-    errorStore.add('No approval tasks assigned', 'info')
-    router.back()
   }
 }
 
 watch(
   () => route.name,
-  () => redirectOnEmptyTasks(),
+  () => loadTasks(),
   { immediate: true },
 )
 </script>
@@ -78,13 +67,17 @@ watch(
     {{ $route.meta.name }}
   </h2>
 
-  <template v-if="$route.name === ROUTES.TASKS.REVIEWS">
-    <ReviewTaskList :items="reviewTasks" />
-  </template>
-  <template v-else-if="$route.name === ROUTES.TASKS.APPROVALS">
-    <ApprovalTaskList :items="approvalTasks" />
-  </template>
-  <template v-else-if="$route.name === ROUTES.TASKS.NEGOTIATIONS">
-    <NegotiationTaskList :items="negotiationTasks" />
+  <div v-if="loading">Loading Tasks...</div>
+  <div v-else-if="error">{{ error }}</div>
+  <template v-else>
+    <template v-if="$route.name === ROUTES.TASKS.REVIEWS">
+      <ReviewTaskList :items="reviewTasks" />
+    </template>
+    <template v-else-if="$route.name === ROUTES.TASKS.APPROVALS">
+      <ApprovalTaskList :items="approvalTasks" />
+    </template>
+    <template v-else-if="$route.name === ROUTES.TASKS.NEGOTIATIONS">
+      <NegotiationTaskList :items="negotiationTasks" />
+    </template>
   </template>
 </template>

@@ -17,9 +17,7 @@ export const useErrorStore = defineStore('error', () => {
     const id = nextId++
     errors.value.push({ id, type, message })
 
-    if (duration) {
-      setTimeout(() => remove(id), duration)
-    }
+    setTimeout(() => remove(id), duration)
   }
 
   function remove(id: number) {

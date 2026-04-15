@@ -7,8 +7,10 @@ export interface Contract {
   state: ContractState
   name?: string
   description?: string
+  created_by: string
   created_at: string
   updated_at: string
+  expiration_date?: string
   contract_data?: unknown
   negotiations?: ContractNegotiation[]
 }
