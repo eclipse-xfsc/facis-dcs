@@ -80,7 +80,10 @@ onUnmounted(() => stateFilterStore.reset())
             <div class="flex justify-between">
               <div>Creation date: {{ new Date(item.created_at).toLocaleDateString() }}</div>
               <div class="card-actions justify-end">
-                <RouterLink :to="{ name: ROUTES.CONTRACTS.VIEW }" class="btn btn-sm btn-primary rounded-box">
+                <RouterLink
+                  :to="{ name: ROUTES.CONTRACTS.VIEW, params: { did: item.did } }"
+                  class="btn btn-sm btn-primary rounded-box"
+                >
                   View
                 </RouterLink>
               </div>
