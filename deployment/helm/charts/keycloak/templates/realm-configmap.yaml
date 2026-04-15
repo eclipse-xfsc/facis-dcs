@@ -8,5 +8,5 @@ metadata:
     app.kubernetes.io/instance: {{ .Release.Name }}
 data:
   gaia-x-realm.json: |-
-{{ tpl (.Files.Get "files/gaia-x-realm.json") . | indent 4 }}
+{{ tpl (.Files.Get "files/gaia-x-realm.json.tpl") . | indent 4 }}
 {{- end }}
