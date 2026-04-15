@@ -130,7 +130,15 @@ def ensure_user(admin_access_token: str, username: str, password: str) -> str:
         create_response = _request_with_retry(
             "POST",
             f"{keycloak_base_url()}/admin/realms/{realm}/users",
-            json={"username": username, "enabled": True, "emailVerified": True},
+            json={
+                "username": username,
+                "email": f"{username}@bdd.test",
+                "firstName": "BDD",
+                "lastName": username,
+                "enabled": True,
+                "emailVerified": True,
+                "requiredActions": [],
+            },
             headers={**headers, "Content-Type": "application/json"},
             timeout=20,
         )
@@ -155,6 +163,16 @@ def ensure_user(admin_access_token: str, username: str, password: str) -> str:
         timeout=20,
     )
     assert reset_response.status_code in (204, 200), reset_response.text
+
+    # Keycloak 26+ may still attach required actions after reset-password; clear them explicitly.
+    clear_response = _request_with_retry(
+        "PUT",
+        f"{keycloak_base_url()}/admin/realms/{realm}/users/{user_id}",
+        json={"requiredActions": []},
+        headers={**headers, "Content-Type": "application/json"},
+        timeout=20,
+    )
+    assert clear_response.status_code in (204, 200), clear_response.text
     return user_id
 
 

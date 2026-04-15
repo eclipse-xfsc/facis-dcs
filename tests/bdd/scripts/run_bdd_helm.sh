@@ -82,6 +82,7 @@ export BDD_DCS_BASE_URL="http://127.0.0.1:$LOCAL_FORWARD_PORT$DCS_API_BASE_PATH"
 export BDD_KEYCLOAK_BASE_URL="http://$KEYCLOAK_SERVICE:$KEYCLOAK_LOCAL_FORWARD_PORT"
 export BDD_KEYCLOAK_HOST_HEADER="$KEYCLOAK_SERVICE:$KEYCLOAK_SERVICE_PORT"
 export BDD_KEYCLOAK_REALM
+export BDD_KEYCLOAK_CLIENT_ID="${BDD_KEYCLOAK_CLIENT_ID:-dcs-client}"
 
 # Canonical bdd-executor integration requires the package in the active environment.
 python -c 'import eu.xfsc.bdd.core' >/dev/null

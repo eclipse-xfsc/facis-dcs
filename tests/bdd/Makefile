@@ -24,7 +24,7 @@ KEYCLOAK_SERVICE ?= $(HELM_RELEASE)-keycloak
 KEYCLOAK_DEPLOYMENT ?= $(KEYCLOAK_SERVICE)
 KEYCLOAK_SERVICE_PORT ?= 8080
 KEYCLOAK_LOCAL_FORWARD_PORT ?= 18080
-BDD_KEYCLOAK_REALM ?= master
+BDD_KEYCLOAK_REALM ?= gaia-x
 HELM_CHART_PATH ?= ../../deployment/helm
 HELM_TIMEOUT ?= 20m
 
@@ -173,20 +173,9 @@ kind_deploy: kind_load_image
 		--create-namespace \
 		--wait \
 		--timeout "$(HELM_TIMEOUT)" \
+		--values "$(HELM_CHART_PATH)/values.bdd.yml" \
 		--set image.repository="$(DOCKER_IMAGE_REPOSITORY)" \
 		--set image.tag="$(DOCKER_IMAGE_TAG)" \
-		--set postgresql.enabled=true \
-		--set keycloak.enabled=true \
-		--set "keycloak.extraEnv[0].name=KC_HOSTNAME" \
-		--set-string "keycloak.extraEnv[0].value=$(HELM_RELEASE)-keycloak" \
-		--set "keycloak.extraEnv[1].name=KC_HOSTNAME_PORT" \
-		--set-string "keycloak.extraEnv[1].value=8080" \
-		--set "keycloak.extraEnv[2].name=KC_HOSTNAME_STRICT" \
-		--set-string "keycloak.extraEnv[2].value=false" \
-		--set nats.enabled=true \
-		--set oidc.issuerURL="http://$(HELM_RELEASE)-keycloak:8080/realms/master" \
-		--set oidc.clientID="digital-contracting-service" \
-		--set route.basePath="/digital-contracting-service" \
 		$(KIND_HELM_VALUES) \
 		$(KIND_HELM_SET); then \
 		echo "=== PODS ==="; \
