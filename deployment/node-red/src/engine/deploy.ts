@@ -86,7 +86,10 @@ export function deploy(node: DeployNode, config: DeployConfig, msg: NodeMessage)
         try { kubeTmp.removeCallback(); keyTmp.removeCallback(); crtTmp.removeCallback(); } catch (_) { /* ignore */ }
 
         if (err) {
-            const errorMsg = stderr || err.message;
+            const parts = [err.message];
+            if (stdout.trim()) parts.push(`stdout:\n${stdout.trim()}`);
+            if (stderr.trim()) parts.push(`stderr:\n${stderr.trim()}`);
+            const errorMsg = parts.join('\n');
             node.error(errorMsg, msg);
             node.status({ fill: 'red', shape: 'ring', text: 'deploy failed' });
             msg.payload = errorMsg;
