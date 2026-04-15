@@ -17,8 +17,8 @@ export default function (RED: NodeAPI): void {
         RED.nodes.createNode(this, config);
         const node = this;
 
-        node.on('input',  (msg)              => deploy(node, config, msg));
-        node.on('close',  (removed: boolean, done: () => void) => {
+        node.on('input', (msg) => deploy(node, config, msg));
+        node.on('close', (removed: boolean, done: () => void) => {
             if (removed) uninstall(node, config, done);
             else done();
         });

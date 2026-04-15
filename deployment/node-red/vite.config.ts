@@ -37,7 +37,7 @@ function assembleHtmlPlugin(): Plugin {
             const inlineScript = `<script type="text/javascript">\n${editorJs}\n</script>`;
             const assembled = rendered.replace('<!-- EDITOR_SCRIPT_PLACEHOLDER -->', inlineScript);
 
-            const outPath = resolve(DIST, 'Digital-Contracting-Service.html');
+            const outPath = resolve(DIST, 'engine', 'Digital-Contracting-Service.html');
             fs.writeFileSync(outPath, assembled, 'utf-8');
             console.log(`[assemble-html] wrote ${outPath}`);
 
@@ -78,10 +78,10 @@ function zipPlugin(): Plugin {
             } else {
                 console.warn('[zip] warning: engine/Digital-Contracting-Service.js not found in dist/');
             }
-            // Editor UI: dist/Digital-Contracting-Service.html (assembled by assembleHtmlPlugin)
-            const editorHtml = resolve(DIST, 'Digital-Contracting-Service.html');
+            // Editor UI: dist/engine/Digital-Contracting-Service.html (assembled by assembleHtmlPlugin)
+            const editorHtml = resolve(DIST, 'engine', 'Digital-Contracting-Service.html');
             if (fs.existsSync(editorHtml)) {
-                archive.file(editorHtml, { name: path.join('package', 'dist', 'Digital-Contracting-Service.html') });
+                archive.file(editorHtml, { name: path.join('package', 'dist', 'engine', 'Digital-Contracting-Service.html') });
             } else {
                 console.warn('[zip] warning: Digital-Contracting-Service.html not found in dist/');
             }
