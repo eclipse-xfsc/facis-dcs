@@ -5,5 +5,5 @@ export interface ContractContentValuesState {
 }
 
 export type SemanticConditionValueSetter =
-  | ((blockId: string, conditionId: string, parameterName: string, parameterValue: string | number, subBlockId?: string) => void)
+  | ((blockId: string, conditionId: string, parameterName: string, parameterValue: string | number) => void)
   | null

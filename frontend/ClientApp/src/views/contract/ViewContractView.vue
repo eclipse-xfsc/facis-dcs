@@ -68,11 +68,20 @@ const submitContract = async (result: SelectedUserRole[]) => {
 }
 
 const verifySemanticValues = (): boolean => {
-  const combinedConditions = [...templateDraftStore.semanticConditions]
-  templateDraftStore?.subTemplateSnapshots?.forEach((snapshot) => {
-    combinedConditions.push(...(snapshot?.template_data?.semanticConditions ?? []))
+  const subTemplateSemanticConditions = templateDraftStore?.subTemplateSnapshots?.map((subTemplate)=>{
+    return  {
+      templateId: subTemplate.did,
+      version: subTemplate.version,
+      document_number: subTemplate.document_number,
+      semanticConditions: subTemplate.template_data?.semanticConditions ?? []
+    }
   })
-  const result = verifySemanticValue(combinedConditions, contractContentValuesStore.semanticConditionValues)
+  const result = verifySemanticValue(
+    templateDraftStore.semanticConditions, 
+    subTemplateSemanticConditions,
+    contractContentValuesStore.semanticConditionValues,
+    templateDraftStore.documentBlocks
+  )
   verificationResult.value = result
   if (result.isValid) {
     return true

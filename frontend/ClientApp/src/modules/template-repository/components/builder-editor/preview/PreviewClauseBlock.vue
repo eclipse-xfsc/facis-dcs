@@ -27,7 +27,6 @@ import { PREVIEW_NEWLINE_SPAN_CLASS } from './preview-classes'
 
 const props = defineProps<{
   blockId: string
-  subBlockId?: string
   text: string
   semanticConditions: SemanticCondition[]
   semanticConditionValues?: SemanticConditionValue[]
@@ -81,15 +80,13 @@ const segments = computed<PreviewSegment[]>(() => {
 
 function onParamValueChange(seg: PreviewSegment, value: string | number) {
   if (seg.type !== 'param') return
-  props.setSemanticConditionValue?.(props.blockId, seg.conditionId, seg.parameterName, value, props.subBlockId)
+  props.setSemanticConditionValue?.(props.blockId, seg.conditionId, seg.parameterName, value)
 }
 
 function findSemanticValue(conditionId: string, parameterName: string): string | number | undefined {
   return props.semanticConditionValues?.find((item) => {
-    const sameSub = (item.subBlockId ?? undefined) === (props.subBlockId ?? undefined)
     return (
       item.blockId === props.blockId &&
-      sameSub &&
       item.conditionId === conditionId &&
       item.parameterName === parameterName
     )
@@ -99,10 +96,8 @@ function findSemanticValue(conditionId: string, parameterName: string): string |
 function findVerificationError(conditionId: string, parameterName: string) {
   if (!props.verificationResult) return null
   return props.verificationResult.errors.find((item) => {
-    const sameSub = (item.subBlockId ?? undefined) === (props.subBlockId ?? undefined)
     return (
       item.blockId === props.blockId &&
-      sameSub &&
       item.conditionId === conditionId &&
       item.parameterName === parameterName
     )

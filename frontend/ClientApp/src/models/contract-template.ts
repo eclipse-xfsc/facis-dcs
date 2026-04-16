@@ -1,4 +1,5 @@
 import type { DocumentBlock, DocumentOutline, MetaData, SemanticCondition } from "@/modules/template-repository/models/contract-templace"
+import type { TemplateDataVersion } from "@/modules/template-repository/models/template-draft-store"
 import type { ContractTemplateState } from "@/types/contract-template-state"
 import type { TemplateType } from "@/types/template-type"
 
@@ -25,7 +26,7 @@ export interface ContractTemplateData {
     customMetaData: MetaData[]
     // Only when the template is a frame contract, it can have sub-templates
     subTemplateSnapshots?: SubTemplateSnapshot[]
-    templateDataVersion?: number
+    templateDataVersion?: TemplateDataVersion
 }
 
 export interface SubTemplateSnapshot {

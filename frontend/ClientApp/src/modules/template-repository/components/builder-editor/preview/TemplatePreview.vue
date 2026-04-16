@@ -3,7 +3,6 @@
   <template v-if="!hasBlockId" v-for="id in rootChildren" :key="id">
     <TemplatePreview
       :block-id="id"
-      :sub-block-id="subBlockId"
       :section-level="sectionLevel"
       :document-outline="documentOutline"
       :document-blocks="documentBlocks"
@@ -22,7 +21,6 @@
         <template v-for="childId in childrenIds" :key="childId">
           <TemplatePreview
             :block-id="childId"
-            :sub-block-id="subBlockId"
             :section-level="sectionLevel + 1"
             :document-outline="documentOutline"
             :document-blocks="documentBlocks"
@@ -40,10 +38,9 @@
     <!-- Clause block -->
     <PreviewClauseBlock
       v-else-if="block && isClause"
-      :block-id="subBlockId ?? block.blockId"
-      :sub-block-id="subBlockId ? block.blockId : undefined"
+      :block-id="block.blockId"
       :text="block.text ?? ''"
-      :semantic-conditions="semanticConditions"
+      :semantic-conditions="clauseSemanticConditions"
       :semantic-condition-values="semanticConditionValues"
       :verification-result="verificationResult"
       :set-semantic-condition-value="setSemanticConditionValue"
@@ -65,7 +62,6 @@
       <template v-for="childId in childrenIds" :key="childId">
         <TemplatePreview
           :block-id="childId"
-          :sub-block-id="subBlockId"
           :section-level="sectionLevel + 1"
           :document-outline="documentOutline"
           :document-blocks="documentBlocks"
@@ -91,12 +87,17 @@ import type {
   SectionBlock,
   SemanticCondition,
 } from '@template-repository/models/contract-templace'
-import { isSectionBlock, isTextBlock, isClauseBlock, isApprovedTemplateBlock } from '@template-repository/models/contract-templace'
+import { isSectionBlock, isTextBlock, isClauseBlock, isApprovedTemplateBlock, isMergedApprovedTemplateBlock } from '@template-repository/models/contract-templace'
 import type { SubTemplateSnapshot } from '@/models/contract-template'
 import ConditionalWrapper from '@/core/components/ConditionalWrapper.vue'
 import PreviewSectionBlock from './PreviewSectionBlock.vue'
 import PreviewTextBlock from './PreviewTextBlock.vue'
 import PreviewClauseBlock from './PreviewClauseBlock.vue'
+import {
+  getOwnerBlockIdFromMergedBlockId,
+  isMergedBlockId,
+  isSameTemplateDataRef,
+} from '@template-repository/utils/template-data-ref'
 
 const props = withDefaults(
   defineProps<{
@@ -104,7 +105,6 @@ const props = withDefaults(
      *  If not provided, it will render all root-level blocks.
      */
     blockId?: string
-    subBlockId?: string
     /** Section nesting level for headings (1 = top-level) */
     sectionLevel?: number
     documentOutline: DocumentOutline
@@ -122,9 +122,12 @@ const hasBlockId = computed(() => props.blockId != null)
 const documentOutline = computed(() => props.documentOutline)
 const documentBlocks = computed(() => props.documentBlocks)
 const semanticConditions = computed(() => props.semanticConditions)
+const clauseSemanticConditions = computed(() => {
+  if (!isMergedBlockId(props.blockId ?? '')) return props.semanticConditions
+  return subTemplate.value?.template_data?.semanticConditions ?? []
+})
 const semanticConditionValues = computed(() => props.semanticConditionValues)
 const verificationResult = computed(() => props.verificationResult)
-const subBlockId = computed(() => props.subBlockId)
 const setSemanticConditionValue = computed(() => props.setSemanticConditionValue)
 
 const rootChildren = computed(() => {
@@ -157,8 +160,61 @@ const sectionTitle = computed(() => {
 const sectionLevel = computed(() => props.sectionLevel ?? 1)
 const subTemplate = computed((): SubTemplateSnapshot | undefined => {
   const b = block.value
-  if (!b || !isApprovedTemplateBlock(b) || !props.subTemplateSnapshots?.length) return undefined
-  return props.subTemplateSnapshots.find((t) => t.did === b.templateId)
+  if(!b) return
+  if (!props.subTemplateSnapshots?.length) return undefined
+  if (isMergedApprovedTemplateBlock(b)) {
+    return props.subTemplateSnapshots.find((snapshot) =>
+      isSameTemplateDataRef(
+        {
+          templateId: snapshot.did,
+          version: snapshot.version,
+          document_number: snapshot.document_number,
+        },
+        {
+          templateId: b.templateId,
+          version: b.version,
+          document_number: b.document_number,
+        },
+      ),
+    )
+  }
+  if (isMergedBlockId(b.blockId)) {
+    const mergedOwnerBlockId = getOwnerBlockIdFromMergedBlockId(b.blockId)
+    const mergedBlock = props.documentBlocks.find((candidate) => candidate.blockId === mergedOwnerBlockId)
+    if (mergedBlock && isMergedApprovedTemplateBlock(mergedBlock)) {
+      return props.subTemplateSnapshots.find((snapshot) =>
+        isSameTemplateDataRef(
+          {
+            templateId: snapshot.did,
+            version: snapshot.version,
+            document_number: snapshot.document_number,
+          },
+          {
+            templateId: mergedBlock.templateId,
+            version: mergedBlock.version,
+            document_number: mergedBlock.document_number,
+          },
+        ),
+      )
+    }
+  }
+  if (!isApprovedTemplateBlock(b)) return undefined
+  return props.subTemplateSnapshots.find((snapshot) =>
+    isSameTemplateDataRef(
+      {
+        templateId: snapshot.did,
+        version: snapshot.version,
+        document_number: snapshot.document_number,
+      },
+      {
+        templateId: b.templateId,
+        version: b.version,
+        document_number: b.document_number,
+      },
+    ),
+  )
 })
 const hasApprovedTemplateChildren = computed(() => isApprovedTemplate.value && childrenIds.value.length > 0)
+
+
 </script>

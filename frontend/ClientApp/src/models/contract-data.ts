@@ -1,4 +1,5 @@
 import type { DocumentBlock, DocumentOutline, SemanticCondition } from "@/modules/template-repository/models/contract-templace"
+import type { TemplateDataVersion } from "@/modules/template-repository/models/template-draft-store"
 import type { SubTemplateSnapshot } from "./contract-template"
 
 export interface ContractData {
@@ -6,15 +7,13 @@ export interface ContractData {
   documentBlocks: DocumentBlock[]
   semanticConditions: SemanticCondition[]
   subTemplateSnapshots: SubTemplateSnapshot[]
-  templateDataVersion: number
+  templateDataVersion: TemplateDataVersion
   semanticConditionValues: SemanticConditionValue[]
 }
 
 export interface SemanticConditionValue {
   /** Block ID from top-level template_data.documentBlocks */
   blockId: string
-  /** Block ID from subTemplateSnapshots[*].template_data.documentBlocks */
-  subBlockId?: string
   conditionId: string
   parameterName: string
   parameterValue?: string | number
