@@ -25,7 +25,7 @@ export const useContractEditorUiStore = defineStore(storeId, {
       // TBD: which tabs are available in each state
       switch (contractState) {
         case ContractState.draft:
-          return this.tabs.filter(tab => !['details', 'content'].includes(tab.id))
+          return this.tabs.filter(tab => ['details', 'content'].includes(tab.id))
         default:
           // TODO: editor tabs will be added to the UI once the editor widgets are ready
           return this.tabs.filter(tab => ['details', 'content'].includes(tab.id))

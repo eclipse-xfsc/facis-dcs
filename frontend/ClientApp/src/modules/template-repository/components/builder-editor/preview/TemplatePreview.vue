@@ -16,7 +16,7 @@
   <!-- Nested blocks -->
   <template v-else>
     <!-- Section block -->
-    <ConditionalWrapper v-if="block && isSection" :enabled="true" tag="section" wrapper-class="mb-4">
+    <ConditionalWrapper v-if="block && isSection" :enabled="true" tag="section" wrapper-class="w-full mb-4">
       <PreviewSectionBlock :title="sectionTitle" :has-children="childrenIds.length > 0" :level="sectionLevel">
         <template v-for="childId in childrenIds" :key="childId">
           <TemplatePreview
