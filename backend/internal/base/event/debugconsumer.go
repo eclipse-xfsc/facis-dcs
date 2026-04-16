@@ -11,7 +11,7 @@ type NatsDebugConsumer struct {
 }
 
 func (j NatsDebugConsumer) Start() {
-	j.NatsConn.Subscribe("events.>", func(msg *nats.Msg) {
+	j.NatsConn.Subscribe(">", func(msg *nats.Msg) {
 		log.Printf("Subject: %s | Data: %s", msg.Subject, string(msg.Data))
 	})
 }

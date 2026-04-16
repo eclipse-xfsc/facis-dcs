@@ -34,7 +34,7 @@ func startProcessingJob(db *sqlx.DB, ctx context.Context, natsConn *nats.Conn, i
 		defer tx.Rollback()
 
 		rows, err := tx.QueryxContext(ctx, `
-			SELECT id, event_type, event_data, did, created_at
+			SELECT id, component, event_type, event_data, did, created_at
 			FROM outbox_events
 			WHERE processed = FALSE
 			ORDER BY created_at ASC
@@ -47,6 +47,7 @@ func startProcessingJob(db *sqlx.DB, ctx context.Context, natsConn *nats.Conn, i
 
 		type OutboxEvent struct {
 			ID        int64     `db:"id"`
+			Component string    `db:"component"`
 			EventType string    `db:"event_type"`
 			EventData []byte    `db:"event_data"`
 			DID       *string   `db:"did"`
@@ -67,7 +68,7 @@ func startProcessingJob(db *sqlx.DB, ctx context.Context, natsConn *nats.Conn, i
 		log.Println("process ", len(events), " events")
 
 		for _, event := range events {
-			subject := fmt.Sprintf("events.%s", event.EventType)
+			subject := fmt.Sprintf("%s.%s", event.Component, event.EventType)
 			if err := natsConn.Publish(subject, event.EventData); err != nil {
 				return fmt.Errorf("could not publish event %d: %w", event.ID, err)
 			}
