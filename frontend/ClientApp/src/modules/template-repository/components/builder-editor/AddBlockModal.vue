@@ -32,15 +32,6 @@
               </button>
             </div>
           </div>
-
-          <div v-if="isContractWorkflow" class="border-t border-base-300 pt-4">
-            <ApprovedSubTemplatePicker
-              title="Templates:"
-              :templates="subTemplateSnapshots"
-              @select="handleAddApprovedTemplate"
-              :reference-count-by-did="referenceCountByDid"
-            />
-          </div>
         </template>
 
         <div class="flex justify-end pt-2">

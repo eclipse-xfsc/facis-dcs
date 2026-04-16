@@ -4,6 +4,7 @@ import type { DocumentOutline, DocumentOutlineBlock, DocumentBlock, TemplateType
 import { DocumentBlockType, TemplateType, isClauseBlock, isSectionBlock, isApprovedTemplateBlock } from "@template-repository/models/contract-templace"
 import type { ContractTemplate, SubTemplateSnapshot } from '@/models/contract-template'
 import type { ContractTemplateCreateRequest, ContractTemplateUpdateRequest } from '@/models/requests/template-request'
+import { isSameTemplateDataRef } from '@template-repository/utils/template-data-ref'
 
 const storeId = "templateDraft"
 const defaultState: Readonly<TemplateDraftState> = {
@@ -76,15 +77,18 @@ export const useTemplateDraftStore = defineStore(storeId, {
      * 
      * @param parentBlockId - blockId of the outline node (parent) under which to insert
      * @param insertIndex - index in the parent's children array (0 = first)
+     * @param payload - block data
      * @param options.addToOutline - when false, new block is only added to documentBlocks (default true)
      * @returns The new or inserted block's blockId.
      */
     addBlock(parentBlockId: string, insertIndex: number, payload: AddBlockPayload, options?: AddBlockOptions): string {
-      if (this.templateType === TemplateType.subContract && payload.blockType === DocumentBlockType.ApprovedTemplate) {
-        throw new Error('subContract template cannot add APPROVED_TEMPLATE blocks')
-      }
-      if (this.templateType === TemplateType.frameContract && payload.blockType !== DocumentBlockType.ApprovedTemplate) {
-        throw new Error('frameContract template can only add APPROVED_TEMPLATE blocks')
+      if (this.workflow === 'template') {
+        if (this.templateType === TemplateType.subContract && payload.blockType === DocumentBlockType.ApprovedTemplate) {
+          throw new Error('subContract template cannot add APPROVED_TEMPLATE blocks')
+        }
+        if (this.templateType === TemplateType.frameContract && payload.blockType !== DocumentBlockType.ApprovedTemplate) {
+          throw new Error('frameContract template can only add APPROVED_TEMPLATE blocks')
+        }
       }
       return addBlock(this.documentOutline, this.documentBlocks, parentBlockId, insertIndex, payload, options)
     },
@@ -463,7 +467,18 @@ function isSameTemplate(
   t1: { did: string, version?: number, document_number?: string },
   t2: { did: string, version?: number, document_number?: string }
 ): boolean {
-  return t1.did === t2.did && t1.version === t2.version && t1.document_number === t2.document_number
+  return isSameTemplateDataRef(
+    {
+      templateId: t1.did,
+      version: t1.version,
+      document_number: t1.document_number,
+    },
+    {
+      templateId: t2.did,
+      version: t2.version,
+      document_number: t2.document_number,
+    },
+  )
 }
 
 function findSubTemplateSnapshotByRef(

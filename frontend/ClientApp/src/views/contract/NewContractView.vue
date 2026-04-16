@@ -9,6 +9,7 @@ import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import type { SemanticConditionValueSetter } from '@/modules/contract-workflow-engine/models/contract-content-values-store'
 import { useSemanticValueVerification } from '@/modules/contract-workflow-engine/composables/useSemanticValueVerification'
 import type { VerificationResult } from '@/modules/contract-workflow-engine/composables/useSemanticValueVerification'
+import { useContractDataPreprocess } from '@/modules/contract-workflow-engine/composables/useContractDataPreprocess'
 import { useErrorStore } from '@/stores/error-store'
 import { ContractState } from '@/types/contract-state'
 import ContractDetailsEditor from '@/modules/contract-workflow-engine/components/ContractDetailsEditor.vue'
@@ -36,10 +37,12 @@ const templateDraftStore = useTemplateDraftStore()
 const contractContentValuesStore = useContractContentValuesStore()
 const contractEditorUiStore = useContractEditorUiStore()
 const templateEditorUiStore = useTemplateEditorUiStore()
-const { verifySemanticValue } = useSemanticValueVerification()
+const { verifySemanticValue, hasConditionParameterForValue } = useSemanticValueVerification()
+const { preprocessContractData } = useContractDataPreprocess()
 const { approvedTemplates } = storeToRefs(templatesStore)
 const { activeTab } = storeToRefs(contractEditorUiStore)
 const { setActiveTab } = contractEditorUiStore
+const { togglePreviewDialog } = templateEditorUiStore
 
 const did = ref<string | null>(null)
 const isEditMode = computed(() => !!route.params.did || !!did.value)
@@ -52,8 +55,8 @@ const contract: Ref<Contract | null> = ref(null)
 const canSubmit = computed(() => isEditMode.value || selectedTemplate.value !== null)
 const setSemanticConditionValue = computed<SemanticConditionValueSetter>(() => {
   if (!isEditMode.value) return null
-  return (blockId: string, conditionId: string, parameterName: string, parameterValue: string | number, subBlockId?: string) =>
-    contractContentValuesStore.setSemanticConditionValue({ blockId, conditionId, parameterName, parameterValue, subBlockId })
+  return (blockId: string, conditionId: string, parameterName: string, parameterValue: string | number) =>
+    contractContentValuesStore.setSemanticConditionValue({ blockId, conditionId, parameterName, parameterValue })
 })
 
 const tabs = computed(()=> contractEditorUiStore.availableTabs(contract.value?.state ?? ContractState.draft))
@@ -113,6 +116,26 @@ watch(
   { immediate: true },
 )
 
+watch(
+  () => [
+    templateDraftStore.documentBlocks,
+    templateDraftStore.semanticConditions,
+    templateDraftStore.subTemplateSnapshots,
+  ],
+  () => {
+    const invalidValues = contractContentValuesStore.semanticConditionValues.filter(
+      (conditionValue) => !hasConditionParameterForValue(
+        conditionValue,
+        templateDraftStore.documentBlocks,
+        templateDraftStore.semanticConditions,
+        templateDraftStore.subTemplateSnapshots,
+      ),
+    )
+    contractContentValuesStore.removeSemanticConditionValues(invalidValues)
+  },
+  { deep: true },
+)
+
 onMounted(() => {
   templateEditorUiStore.reset({ workflow: 'contract' })
 })
@@ -146,11 +169,20 @@ const submitContract = async (result: SelectedUserRole[]) => {
 }
 
 const verifySemanticValues = (): boolean => {
-  const combinedConditions = [...templateDraftStore.semanticConditions]
-  templateDraftStore?.subTemplateSnapshots?.forEach((snapshot) => {
-    combinedConditions.push(...(snapshot?.template_data?.semanticConditions ?? []))
+  const subTemplateSemanticConditions = templateDraftStore?.subTemplateSnapshots?.map((subTemplate)=>{
+    return  {
+      templateId: subTemplate.did,
+      version: subTemplate.version,
+      document_number: subTemplate.document_number,
+      semanticConditions: subTemplate.template_data?.semanticConditions ?? []
+    }
   })
-  const result = verifySemanticValue(combinedConditions, contractContentValuesStore.semanticConditionValues)
+  const result = verifySemanticValue(
+    templateDraftStore.semanticConditions, 
+    subTemplateSemanticConditions,
+    contractContentValuesStore.semanticConditionValues,
+    templateDraftStore.documentBlocks
+  )
   verificationResult.value = result
   if (result.isValid) {
     return true
@@ -169,14 +201,14 @@ function applyContractDataToDraft(contractData?: unknown) {
     verificationResult.value = null
     return
   }
-  const cd = contractData as ContractData
+  const cd = preprocessContractData(contractData as ContractData)
   templateDraftStore.reset({
     workflow: 'contract',
     documentOutline: cd.documentOutline ?? [],
     documentBlocks: cd.documentBlocks ?? [],
     semanticConditions: cd.semanticConditions ?? [],
     subTemplateSnapshots: cd.subTemplateSnapshots ?? [],
-    templateDataVersion: cd.templateDataVersion ?? 1,
+    templateDataVersion: cd.templateDataVersion,
   })
   contractContentValuesStore.reset({ semanticConditionValues: cd.semanticConditionValues ?? [] })
   verificationResult.value = null
@@ -217,15 +249,17 @@ function applyContractDataToDraft(contractData?: unknown) {
               <div v-show="activeTab === 'content'">
                 <div class="card bg-base-100 border border-base-300 shadow-sm">
                   <div class="card-body gap-5">
-                    <TemplatePreview
-                      :document-outline="templateDraftStore.documentOutline"
-                      :document-blocks="templateDraftStore.documentBlocks"
-                      :semantic-conditions="templateDraftStore.semanticConditions"
-                      :semantic-condition-values="contractContentValuesStore.semanticConditionValues"
-                      :verification-result="verificationResult"
-                      :sub-template-snapshots="templateDraftStore.subTemplateSnapshots"
-                      :set-semantic-condition-value="setSemanticConditionValue"
-                    />
+                    <div>
+                      <TemplatePreview
+                        :document-outline="templateDraftStore.documentOutline"
+                        :document-blocks="templateDraftStore.documentBlocks"
+                        :semantic-conditions="templateDraftStore.semanticConditions"
+                        :semantic-condition-values="contractContentValuesStore.semanticConditionValues"
+                        :verification-result="verificationResult"
+                        :sub-template-snapshots="templateDraftStore.subTemplateSnapshots"
+                        :set-semantic-condition-value="setSemanticConditionValue"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -251,6 +285,12 @@ function applyContractDataToDraft(contractData?: unknown) {
               <div v-show="activeTab === 'builder'">
                 <div class="card bg-base-100 border border-base-300 shadow-sm">
                   <div class="card-body">
+                    <div class="flex items-center justify-between mb-2">
+                      <h2 class="card-title text-sm">Builder</h2>
+                      <button type="button" class="btn btn-sm btn-secondary" @click="togglePreviewDialog">
+                        Preview
+                      </button>
+                    </div>
                     <BuilderEditor />
                   </div>
                 </div>
