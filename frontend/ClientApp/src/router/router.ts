@@ -162,7 +162,7 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
       title: 'DCS - Negotiation Tasks',
       order: 3.3,
-      roles: ['CONTRACT_NEGOTIATOR'],
+      roles: ['CONTRACT_CREATOR', 'CONTRACT_REVIEWER'],
     },
   },
   {
@@ -230,7 +230,7 @@ const routes: RouteRecordRaw[] = [
       hideInSidebar: true,
       requiresAuth: true,
       title: 'DCS - Negotiate Contract',
-      roles: ['CONTRACT_NEGOTIATOR'],
+      roles: ['CONTRACT_CREATOR', 'CONTRACT_REVIEWER'],
     },
   },
   {

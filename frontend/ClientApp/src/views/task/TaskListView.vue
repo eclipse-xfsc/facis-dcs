@@ -44,7 +44,6 @@ const hasContractRole = computed(() => {
       (
         [
           'CONTRACT_CREATOR',
-          'CONTRACT_NEGOTIATOR',
           'CONTRACT_REVIEWER',
           'CONTRACT_APPROVER',
           'CONTRACT_MANAGER',

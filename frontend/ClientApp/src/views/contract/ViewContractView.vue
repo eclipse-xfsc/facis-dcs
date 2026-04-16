@@ -41,7 +41,9 @@ const submitContract = async (result: SelectedUserRole[]) => {
   if (!contract.value) return
   const reviewers = result.filter((user) => user.role === 'CONTRACT_REVIEWER').map((user) => user.user.username)
   const approver = result.find((user) => user.role === 'CONTRACT_APPROVER')?.user.username!
-  const negotiators = result.filter((user) => user.role === 'CONTRACT_NEGOTIATOR').map((user) => user.user.username)
+  const negotiators = result
+    .filter((user) => user.role === 'CONTRACT_NEGOTIATOR')
+    .map((user) => user.user.username)
   const response = await contractWorkflowService.submit({
     did: contract.value?.did,
     updated_at: contract.value?.updated_at,
@@ -65,7 +67,12 @@ const submitContract = async (result: SelectedUserRole[]) => {
 
       <fieldset class="fieldset p-0 border-none">
         <legend class="fieldset-legend">Base Description</legend>
-        <textarea v-model="contract.description" class="textarea textarea-bordered w-full h-24" required disabled></textarea>
+        <textarea
+          v-model="contract.description"
+          class="textarea textarea-bordered w-full h-24"
+          required
+          disabled
+        ></textarea>
       </fieldset>
     </div>
     <div class="sticky bottom-0 shrink-0 border-t border-base-300 bg-base-100">

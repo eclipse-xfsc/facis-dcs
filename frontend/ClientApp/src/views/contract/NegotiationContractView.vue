@@ -6,7 +6,7 @@ import { contractWorkflowService } from '@/services/contract-workflow-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { ContractState } from '@/types/contract-state'
 import { PencilSquareIcon } from '@heroicons/vue/20/solid'
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, ref, watch, watchEffect, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 type ChangeRequest = Pick<Contract, 'name' | 'description' | 'contract_data'>
@@ -46,7 +46,7 @@ watch(
   { immediate: true },
 )
 
-watch(toggle, () => {
+watchEffect(() => {
   if (toggle.value.name) {
     name.value = contract.value?.name ?? null
   }
@@ -79,9 +79,18 @@ const negotiateContractChange = async () => {
     change_request: changeRequest,
   })
   if (response.did) {
-    router.push({ name: ROUTES.CONTRACTS.LIST })
+    router.push({ name: ROUTES.TASKS.NEGOTIATIONS })
   }
 }
+
+const submitContract = async () => {
+  if (!contract.value) return
+  // TODO:
+}
+
+const hasOpenDecisions = computed(() => {
+  return contract.value?.negotiations?.every(negotiation => negotiation.negotiation_decisions.every(decision => !!decision.decision))
+})
 </script>
 
 <template>
@@ -121,7 +130,7 @@ const negotiateContractChange = async () => {
 
       <div class="mt-8" v-if="(contract.negotiations?.length ?? -1) > 0">
         <div>Active negotiations:</div>
-        <NegotiationList :negotiations="contract.negotiations!" />
+        <NegotiationList :contract="contract" />
       </div>
     </div>
     <div class="sticky bottom-0 shrink-0 border-t border-base-300 bg-base-100">
@@ -135,6 +144,7 @@ const negotiateContractChange = async () => {
         >
           Submit change request
         </button>
+        <button class="btn btn-primary flex-1" :disabled="!hasOpenDecisions" @click="submitContract">Submit contract</button>
       </div>
     </div>
   </div>

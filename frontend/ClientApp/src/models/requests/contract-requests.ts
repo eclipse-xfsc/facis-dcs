@@ -55,9 +55,10 @@ export interface ContractNegotiationRequest {
 
 export interface ContractNegotiationRespondRequest {
   id: string
+  did: string
   action_flag: NegotiationActionFlag
   responded_by: string
-  RejectionReason?: string
+  rejection_reason?: string
 }
 
 export interface ContractApproveRequest {
