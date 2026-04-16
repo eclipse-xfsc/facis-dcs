@@ -88,6 +88,11 @@ func main() {
 	}
 	outboxProcessor.Start()
 
+	natsDebugConsumer := event.NatsDebugConsumer{
+		NatsConn: natsConn,
+	}
+	natsDebugConsumer.Start()
+
 	// Initialize OIDC validator and JWT authenticator.
 	oidcIssuerURL := os.Getenv("OIDC_ISSUER_URL")
 	oidcClientID := os.Getenv("OIDC_CLIENT_ID")

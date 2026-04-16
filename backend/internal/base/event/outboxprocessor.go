@@ -64,6 +64,8 @@ func startProcessingJob(db *sqlx.DB, ctx context.Context, natsConn *nats.Conn, i
 		}
 		rows.Close()
 
+		log.Println("process ", len(events), " events")
+
 		for _, event := range events {
 			subject := fmt.Sprintf("events.%s", event.EventType)
 			if err := natsConn.Publish(subject, event.EventData); err != nil {
