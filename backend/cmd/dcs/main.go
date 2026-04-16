@@ -13,10 +13,11 @@ import (
 	templatecatalogueintegration "digital-contracting-service/gen/template_catalogue_integration"
 	templaterepository "digital-contracting-service/gen/template_repository"
 	"digital-contracting-service/internal/auth"
+	"digital-contracting-service/internal/base/event"
 	"digital-contracting-service/internal/middleware"
 	"digital-contracting-service/internal/service"
-	"digital-contracting-service/migrations"
 	"digital-contracting-service/internal/templaterepository/db/pg"
+	"digital-contracting-service/migrations"
 	"flag"
 	"fmt"
 	"net"
@@ -72,13 +73,20 @@ func main() {
 	if natsURL == "" {
 		natsURL = nats.DefaultURL
 	}
-	natsClient, err := nats.Connect(natsURL)
+	natsConn, err := nats.Connect(natsURL)
 	if err != nil {
 		log.Printf(ctx, "Nats support will be deactivated: Could not connect to nats service: %v", err)
 	}
-	if natsClient != nil {
-		defer natsClient.Close()
+	if natsConn != nil {
+		defer natsConn.Close()
 	}
+
+	outboxProcessor := event.OutboxProcessor{
+		DB:       db,
+		Ctx:      ctx,
+		NatsConn: natsConn,
+	}
+	outboxProcessor.Start()
 
 	// Initialize OIDC validator and JWT authenticator.
 	oidcIssuerURL := os.Getenv("OIDC_ISSUER_URL")
