@@ -54,17 +54,6 @@ func createTasks(tx *sqlx.Tx, rtRepo db.ReviewTaskRepo, atRepo db.ApprovalTaskRe
 		}
 	}
 
-	negotiationTask := db.NegotiationTaskData{
-		DID:        cmd.DID,
-		Negotiator: cmd.SubmittedBy,
-		State:      reviewtaskstate.Open.String(),
-		CreatedBy:  cmd.SubmittedBy,
-	}
-	_, err := ntRepo.Create(tx, negotiationTask)
-	if err != nil {
-		return fmt.Errorf("could not create negotiation task: %w", err)
-	}
-
 	for _, negotiator := range cmd.Negotiators {
 		negotiationTask := db.NegotiationTaskData{
 			DID:        cmd.DID,
@@ -84,7 +73,7 @@ func createTasks(tx *sqlx.Tx, rtRepo db.ReviewTaskRepo, atRepo db.ApprovalTaskRe
 		Approver:  *cmd.Approver,
 		State:     reviewtaskstate.Open.String(),
 	}
-	_, err = atRepo.Create(tx, data)
+	_, err := atRepo.Create(tx, data)
 	if err != nil {
 		return fmt.Errorf("could not create approval task: %w", err)
 	}
@@ -186,7 +175,7 @@ func (h *Submitter) Handle(cmd SubmitCmd) error {
 			return fmt.Errorf("could not update negotiation task: %w", err)
 		}
 
-		existOpenTasks, err := h.NTRepo.AnyTasksInState(tx, processData.DID, reviewtaskstate.Open.String())
+		existOpenTasks, err := h.NTRepo.AnyTasksInState(tx, processData.DID, negotiationtaskstate.Open.String())
 		if err != nil {
 			return fmt.Errorf("could not check if review task exists: %w", err)
 		}
