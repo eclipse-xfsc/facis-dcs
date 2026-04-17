@@ -27,6 +27,7 @@ interface TemplateDraftState {
   document_number: string | null
   version: number | null
   updated_at: string | null
+  created_by: string
   workflow: 'contract' | 'template'
 }
 

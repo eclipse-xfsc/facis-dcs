@@ -6,9 +6,11 @@ import { authenticationService } from '@/services/authentication-service'
 import { useAuthStore } from '@/stores/auth-store'
 import AuthSuccessView from '@/views/auth/AuthSuccessView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
-import ContractListView from '@/views/contract/ContractListView.vue'
-import NewContractView from '@/views/contract/NewContractView.vue'
 import ContractTemplateListView from '@/views/contract-template-list/ContractTemplateListView.vue'
+import ContractListView from '@/views/contract/ContractListView.vue'
+import NegotiationContractView from '@/views/contract/NegotiationContractView.vue'
+import NewContractView from '@/views/contract/NewContractView.vue'
+import ViewContractView from '@/views/contract/ViewContractView.vue'
 import TaskListView from '@/views/task/TaskListView.vue'
 import TemplateCatalogueAdminView from '@/views/template-repository/TemplateCatalogueAdminView.vue'
 import {
@@ -46,6 +48,8 @@ const ROUTES = {
     LIST: 'contracts.list',
     NEW: 'contracts.new',
     EDIT: 'contracts.edit',
+    VIEW: 'contracts.view',
+    NEGOTIATION: 'contracts.negotiation',
   },
 } as const
 
@@ -158,7 +162,7 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
       title: 'DCS - Negotiation Tasks',
       order: 3.3,
-      roles: ['CONTRACT_NEGOTIATOR'],
+      roles: ['CONTRACT_CREATOR', 'CONTRACT_REVIEWER'],
     },
   },
   {
@@ -209,6 +213,24 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
       title: 'DCS - Edit Contract',
       roles: ['CONTRACT_CREATOR'],
+    },
+  },
+  {
+    path: '/contracts/view/:did',
+    name: ROUTES.CONTRACTS.VIEW,
+    component: ViewContractView,
+    meta: { name: 'View Contract', hideInSidebar: true, requiresAuth: true, title: 'DCS - View Contract' },
+  },
+  {
+    path: '/contracts/negotiation/:did',
+    name: ROUTES.CONTRACTS.NEGOTIATION,
+    component: NegotiationContractView,
+    meta: {
+      name: 'Negotiate Contract',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - Negotiate Contract',
+      roles: ['CONTRACT_CREATOR', 'CONTRACT_REVIEWER'],
     },
   },
   {

@@ -76,7 +76,8 @@ const resolveViewRouteName = (item: ApprovalTask) => {
     }
     return ROUTES.TEMPLATES.VIEW
   } else {
-    // TODO:
+    // TODO: contract view routes
+    return ROUTES.CONTRACTS.VIEW
   }
 }
 

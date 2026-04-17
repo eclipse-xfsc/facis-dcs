@@ -58,9 +58,12 @@ export const userService: UserService = {
         const userRoles = await this.getRolesByUser({ userId: user.id })
         const isAuthorized = roles.some((role) => role && userRoles.includes(role))
         if (isAuthorized) {
-          user.roleIds = roles.filter((role): role is UserRole => !!role && userRoles.includes(role))
+          return {
+            ...user,
+            roleIds: roles.filter((role): role is UserRole => !!role && userRoles.includes(role)),
+          }
         }
-        return isAuthorized ? user : null
+        return null
       }),
     )
     return authorizedUsers.filter((user) => user !== null)
@@ -81,7 +84,6 @@ const mockUsers: UserProfile[] = [
       'CONTRACT_CREATOR',
       'CONTRACT_REVIEWER',
       'CONTRACT_APPROVER',
-      'CONTRACT_NEGOTIATOR',
       'CONTRACT_MANAGER',
     ],
     id: 'user-000',
@@ -101,7 +103,7 @@ const mockUsers: UserProfile[] = [
     firstName: 'Jane',
     lastName: 'Smith',
     email: 'jane.smith@example.com',
-    roleIds: ['TEMPLATE_MANAGER', 'TEMPLATE_REVIEWER', 'CONTRACT_NEGOTIATOR'],
+    roleIds: ['TEMPLATE_MANAGER', 'TEMPLATE_REVIEWER', 'CONTRACT_APPROVER'],
     id: 'user-002',
     username: 'janesmith',
   },
@@ -119,7 +121,7 @@ const mockUsers: UserProfile[] = [
     firstName: 'Alice',
     lastName: 'Williams',
     email: 'alice.williams@example.com',
-    roleIds: ['TEMPLATE_REVIEWER', 'CONTRACT_NEGOTIATOR'],
+    roleIds: ['TEMPLATE_REVIEWER', 'CONTRACT_REVIEWER'],
     id: 'user-004',
     username: 'alicewilliams',
   },

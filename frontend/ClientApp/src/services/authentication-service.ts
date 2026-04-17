@@ -20,8 +20,7 @@ export const authenticationService: AuthenticationService = {
       .post<AuthCallbackResponse>('/auth/refresh')
       .then((res) => {
         const authTokenStore = useAuthTokenStore()
-        const resp = res.data
-        authTokenStore.setTokens(resp.token_type, resp.access_token)
+        authTokenStore.setTokens(res.data.token_type, res.data.access_token)
         const authStore = useAuthStore()
         const userId = authTokenStore.getUserId
         if (!userId) throw new Error('JWT Error')
