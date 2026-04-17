@@ -1,6 +1,7 @@
 import type { ContractActionFlag } from '@/types/action-flag'
 import type { ContractState } from '@/types/contract-state'
 import type { NegotiationActionFlag } from '@/types/negotiation-action-flag'
+import type { ContractChangeRequest } from '../contract/contract'
 
 export interface ContractCreateRequest {
   did: string
@@ -50,7 +51,7 @@ export interface ContractNegotiationRequest {
   did: string
   updated_at: string
   negotiated_by: string
-  change_request: unknown
+  change_request: ContractChangeRequest
 }
 
 export interface ContractNegotiationRespondRequest {

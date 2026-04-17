@@ -138,7 +138,7 @@ func (r *PostgresNegotiationTaskRepo) AnyTasksInState(tx *sqlx.Tx, did string, s
 
 	query := fmt.Sprintf(`
         SELECT COUNT(*) 
-        FROM contract_review_task 
+        FROM contract_negotiation_task 
         WHERE did = $1 AND state IN (%s)
     `, strings.Join(placeholders, ", "))
 
