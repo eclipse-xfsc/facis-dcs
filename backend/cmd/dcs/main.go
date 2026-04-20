@@ -18,6 +18,7 @@ import (
 	contractworkflowengine2 "digital-contracting-service/internal/contractworkflowengine"
 	cwerepo "digital-contracting-service/internal/contractworkflowengine/db/pg"
 	"digital-contracting-service/internal/middleware"
+	event2 "digital-contracting-service/internal/processauditandcompliance"
 	"digital-contracting-service/internal/service"
 	fcclient "digital-contracting-service/internal/templatecatalogueintegration/client"
 	tplrepo "digital-contracting-service/internal/templaterepository/db/pg"
@@ -104,10 +105,10 @@ func main() {
 	}
 	defer cepPubClient.Close()
 
-	eventDebugConsumer := event.EventDebugConsumer{
+	pac := event2.PACSubscriber{
 		SubClient: cepSubClient,
 	}
-	eventDebugConsumer.Start()
+	pac.Start()
 
 	// Initialize OIDC validator and JWT authenticator.
 	oidcIssuerURL := os.Getenv("OIDC_ISSUER_URL")

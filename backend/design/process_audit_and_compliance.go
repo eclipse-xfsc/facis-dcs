@@ -4,9 +4,9 @@ import (
 	. "goa.design/goa/v3/dsl"
 )
 
-// Process Audit & Compliance Management Service  (/pac/...)
+// Process Audit & Compliance Management Service  (/processauditandcompliance/...)
 var _ = Service("ProcessAuditAndCompliance", func() {
-	Description("Process Audit & Compliance Management APIs (/pac/...)")
+	Description("Process Audit & Compliance Management APIs (/processauditandcompliance/...)")
 
 	Method("audit", func() {
 		Description("trigger an audit on selected scope.")
@@ -20,7 +20,7 @@ var _ = Service("ProcessAuditAndCompliance", func() {
 			Token("token", String, "JWT token")
 		})
 		HTTP(func() {
-			POST("/pac/audit")
+			POST("/processauditandcompliance/audit")
 			Response(StatusOK)
 		})
 		Result(String)
@@ -38,7 +38,7 @@ var _ = Service("ProcessAuditAndCompliance", func() {
 			Token("token", String, "JWT token")
 		})
 		HTTP(func() {
-			GET("/pac/report")
+			GET("/processauditandcompliance/report")
 			Response(StatusOK)
 		})
 		Result(Any)
@@ -56,7 +56,7 @@ var _ = Service("ProcessAuditAndCompliance", func() {
 			Token("token", String, "JWT token")
 		})
 		HTTP(func() {
-			GET("/pac/monitor")
+			GET("/processauditandcompliance/monitor")
 			Response(StatusOK)
 		})
 		Result(Any)
@@ -74,7 +74,7 @@ var _ = Service("ProcessAuditAndCompliance", func() {
 			Token("token", String, "JWT token")
 		})
 		HTTP(func() {
-			POST("/pac/report")
+			POST("/processauditandcompliance/report")
 			Response(StatusOK)
 		})
 		Result(Any)
