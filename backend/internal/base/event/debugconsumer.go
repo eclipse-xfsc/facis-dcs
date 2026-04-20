@@ -3,15 +3,17 @@ package event
 import (
 	"log"
 
-	"github.com/nats-io/nats.go"
+	"github.com/cloudevents/sdk-go/v2/event"
 )
 
-type NatsDebugConsumer struct {
-	NatsConn *nats.Conn
+type EventDebugConsumer struct {
+	SubClient *CloudEventSubClient
 }
 
-func (j NatsDebugConsumer) Start() {
-	j.NatsConn.Subscribe(">", func(msg *nats.Msg) {
-		log.Printf("Subject: %s | Data: %s", msg.Subject, string(msg.Data))
+func (j EventDebugConsumer) Start() {
+	j.SubClient.Subscribe(func(evt event.Event) {
+		data := evt.Data()
+		evt.ID()
+		log.Printf("Subject: %s | Data: %s", evt.ID(), string(data))
 	})
 }

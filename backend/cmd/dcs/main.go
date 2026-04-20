@@ -83,25 +83,32 @@ func main() {
 	if natsURL == "" {
 		natsURL = nats.DefaultURL
 	}
-	natsConn, err := nats.Connect(natsURL)
+
+	cepPubClient, err := event.NewNatsPubClient(ctx, "events", natsURL)
 	if err != nil {
-		log.Printf(ctx, "Nats support will be deactivated: Could not connect to nats service: %v", err)
+		log.Fatalf(ctx, err, "Could not connect to events publisher")
+		os.Exit(1)
 	}
-	if natsConn != nil {
-		defer natsConn.Close()
-	}
+	defer cepPubClient.Close()
 
 	outboxProcessor := event.OutboxProcessor{
-		DB:       db,
-		Ctx:      ctx,
-		NatsConn: natsConn,
+		DB:        db,
+		Ctx:       ctx,
+		PubClient: cepPubClient,
 	}
 	outboxProcessor.Start()
 
-	natsDebugConsumer := event.NatsDebugConsumer{
-		NatsConn: natsConn,
+	cepSubClient, err := event.NewNatsSubClient(ctx, "events", natsURL)
+	if err != nil {
+		log.Fatalf(ctx, err, "Could not connect to events publisher")
+		os.Exit(1)
 	}
-	natsDebugConsumer.Start()
+	defer cepPubClient.Close()
+
+	eventDebugConsumer := event.EventDebugConsumer{
+		SubClient: cepSubClient,
+	}
+	eventDebugConsumer.Start()
 
 	// Initialize OIDC validator and JWT authenticator.
 	oidcIssuerURL := os.Getenv("OIDC_ISSUER_URL")
