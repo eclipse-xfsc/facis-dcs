@@ -43,7 +43,6 @@ const allSelectedUsersHaveRoles = computed(() => {
   return users.value.every((user) => !selectedUsers.value[user.id] || selectedRole.value[user.id])
 })
 const hasValidSelection = computed(() => {
-  console.log(selectedRole.value)
   return (
     users.value.filter((user) => selectedRole.value[user.id] === approveRole.value).length === 1 &&
     users.value.some((user) => selectedRole.value[user.id] === reviewRole.value) &&
@@ -76,7 +75,6 @@ async function openModal() {
         return [... new Set(acc)]
       }, []) ?? [],
   }))
-  console.log(users.value)
 
   isLoading.value = false
 }

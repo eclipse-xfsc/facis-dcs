@@ -5,7 +5,7 @@ import type { ContractNegotiation } from '@/models/contract/contract-negotiation
 import type { ContractNegotiationDecision } from '@/models/contract/contract-negotiation-decision'
 import { contractWorkflowService } from '@/services/contract-workflow-service'
 import { useAuthStore } from '@/stores/auth-store'
-import { computed, useTemplateRef } from 'vue'
+import { computed, ref, useTemplateRef } from 'vue'
 
 const props = defineProps<{
   contract: Contract
@@ -18,7 +18,7 @@ const confirmationModal = useTemplateRef<InstanceType<typeof ConfirmationModal>>
 
 const negotiations = computed(() => props.contract.negotiations ?? [])
 
-const sortedtNegotiations = computed(() =>
+const sortedNegotiations = computed(() =>
   negotiations.value.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
 )
 
@@ -26,8 +26,11 @@ const sortedDecisions = (decisions: ContractNegotiationDecision[]) => {
   return decisions.sort((a, b) => a.negotiator.localeCompare(b.negotiator))
 }
 
+const isSubmitting = ref(false)
+
 const acceptNegotiation = async (negotiation: ContractNegotiation) => {
   if (!username.value || !confirmationModal.value) return
+  isSubmitting.value = true
   try {
     const { isCanceled } = await confirmationModal.value?.reveal({ message: 'Accept this change request?' })
     if (!isCanceled) {
@@ -42,11 +45,14 @@ const acceptNegotiation = async (negotiation: ContractNegotiation) => {
     }
   } catch (err) {
     console.error('Accepting the negotiation failed', err)
+  } finally {
+    isSubmitting.value = false
   }
 }
 
 const rejectNegotiation = async (negotiation: ContractNegotiation) => {
   if (!username.value || !confirmationModal.value) return
+  isSubmitting.value = true
   try {
     const rejectResult = await confirmationModal.value.reveal({
       message: 'Reject this change request?',
@@ -71,6 +77,8 @@ const rejectNegotiation = async (negotiation: ContractNegotiation) => {
     }
   } catch (err) {
     console.error('Rejecting the negotiation failed', err)
+  } finally {
+    isSubmitting.value = false
   }
 }
 
@@ -82,15 +90,15 @@ const isBtnDisabled = (negotiation: ContractNegotiation) => {
 
 <template>
   <ul class="list">
-    <li v-for="negotiation in sortedtNegotiations" :key="negotiation.id" class="list-row">
-      <div class="card bg-base-200 card-border">
+    <li v-for="negotiation in sortedNegotiations" :key="negotiation.id" class="list-row">
+      <div class="card bg-base-200 shadow-md card-border">
         <div class="card-body">
           <h2 class="card-title">Change request proposed by: {{ negotiation.created_by }}</h2>
-          <div class="m-2 bg-base-100 rounded-box p-2">
-            <pre>{{ JSON.stringify(negotiation.change_request, null, 2) }}</pre>
+          <div class="m-2 card bg-base-100 shadow-md p-2">
+            <pre class="whitespace-pre-wrap">{{ JSON.stringify(negotiation.change_request, null, 2) }}</pre>
           </div>
           <ul class="list">
-            <li>Decisions</li>
+            <li class="text-lg">Decisions</li>
             <li
               v-for="decision in sortedDecisions(negotiation.negotiation_decisions)"
               :key="decision.negotiator"
@@ -108,16 +116,18 @@ const isBtnDisabled = (negotiation: ContractNegotiation) => {
           <div class="card-actions justify-end">
             <button
               class="btn btn-sm btn-primary"
-              :disabled="isBtnDisabled(negotiation)"
+              :disabled="isSubmitting || isBtnDisabled(negotiation)"
               @click="acceptNegotiation(negotiation)"
             >
+              <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
               Accept
             </button>
             <button
               class="btn btn-sm btn-secondary"
-              :disabled="isBtnDisabled(negotiation)"
+              :disabled="isSubmitting || isBtnDisabled(negotiation)"
               @click="rejectNegotiation(negotiation)"
             >
+              <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
               Reject
             </button>
           </div>

@@ -15,3 +15,5 @@ export interface Contract {
   contract_data?: ContractData
   negotiations?: ContractNegotiation[]
 }
+
+export type ContractChangeRequest = Pick<Contract, 'name' | 'description' | 'contract_data'>
