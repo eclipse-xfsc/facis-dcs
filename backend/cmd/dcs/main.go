@@ -13,6 +13,8 @@ import (
 	templatecatalogueintegration "digital-contracting-service/gen/template_catalogue_integration"
 	templaterepository "digital-contracting-service/gen/template_repository"
 	"digital-contracting-service/internal/auth"
+	"digital-contracting-service/internal/base/conf"
+	"digital-contracting-service/internal/base/event"
 	contractworkflowengine2 "digital-contracting-service/internal/contractworkflowengine"
 	cwerepo "digital-contracting-service/internal/contractworkflowengine/db/pg"
 	"digital-contracting-service/internal/middleware"
@@ -82,13 +84,30 @@ func main() {
 	if natsURL == "" {
 		natsURL = nats.DefaultURL
 	}
-	natsConn, err := nats.Connect(natsURL)
+
+	cepPubClient, err := event.NewNatsPubClient(conf.EventBusTopic(), natsURL)
 	if err != nil {
-		log.Printf(ctx, "Nats support will be deactivated: Could not connect to nats service: %v", err)
+		log.Fatalf(ctx, err, "Could not connect to events publisher")
 	}
-	if natsConn != nil {
-		defer natsConn.Close()
+	defer cepPubClient.Close()
+
+	outboxProcessor := event.OutboxProcessor{
+		DB:        db,
+		Ctx:       ctx,
+		PubClient: cepPubClient,
 	}
+	outboxProcessor.Start()
+
+	cepSubClient, err := event.NewNatsSubClient(conf.EventBusTopic(), natsURL)
+	if err != nil {
+		log.Fatalf(ctx, err, "Could not connect to events publisher")
+	}
+	defer cepPubClient.Close()
+
+	eventDebugConsumer := event.EventDebugConsumer{
+		SubClient: cepSubClient,
+	}
+	eventDebugConsumer.Start()
 
 	// Initialize OIDC validator and JWT authenticator.
 	oidcIssuerURL := os.Getenv("OIDC_ISSUER_URL")
@@ -105,17 +124,17 @@ func main() {
 	}
 	jwtAuth := auth.NewJWTAuthenticator(oidcValidator)
 
-	ctRepo := tplrepo.PostgresContractTemplateRepo{Ctx: ctx}
-	ctRTRepo := tplrepo.PostgresReviewTaskRepo{Ctx: ctx}
-	ctATRepo := tplrepo.PostgresApprovalTaskRepo{Ctx: ctx}
+	ctRepo := tplrepo.PostgresContractTemplateRepo{}
+	ctRTRepo := tplrepo.PostgresReviewTaskRepo{}
+	ctATRepo := tplrepo.PostgresApprovalTaskRepo{}
 
-	cweRepo := cwerepo.PostgresContractRepo{Ctx: ctx}
-	cweRTRepo := cwerepo.PostgresReviewTaskRepo{Ctx: ctx}
-	cweATRepo := cwerepo.PostgresApprovalTaskRepo{Ctx: ctx}
-	cweNTRepo := cwerepo.PostgresNegotiationTaskRepo{Ctx: ctx}
-	cweNRepo := cwerepo.PostgresNegotiationRepo{Ctx: ctx}
-	cweCTRepo := cwerepo.PostgresContractTemplateRepo{Ctx: ctx}
-	cweCronJob := contractworkflowengine2.CronJob{DB: db, Ctx: ctx}
+	cweRepo := cwerepo.PostgresContractRepo{}
+	cweRTRepo := cwerepo.PostgresReviewTaskRepo{}
+	cweATRepo := cwerepo.PostgresApprovalTaskRepo{}
+	cweNTRepo := cwerepo.PostgresNegotiationTaskRepo{}
+	cweNRepo := cwerepo.PostgresNegotiationRepo{}
+	cweCTRepo := cwerepo.PostgresContractTemplateRepo{}
+	cweCronJob := contractworkflowengine2.CronJob{DB: db}
 	cweCronJob.Start()
 
 	// Initialize the Federated Catalogue client.
