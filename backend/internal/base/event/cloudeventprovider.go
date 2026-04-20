@@ -37,9 +37,7 @@ func NewNatsPubClient(ctx context.Context, topic string, natsURL string) (*Cloud
 	client, err := cloudeventprovider.New(cloudeventprovider.Config{
 		Protocol: cloudeventprovider.ProtocolTypeNats,
 		Settings: cloudeventprovider.NatsConfig{
-			Url:          natsURL,
-			QueueGroup:   "logger",
-			TimeoutInSec: 10,
+			Url: natsURL,
 		},
 	}, cloudeventprovider.ConnectionTypePub, topic)
 	if err != nil {
@@ -66,9 +64,7 @@ func NewNatsSubClient(ctx context.Context, topic string, natsURL string) (*Cloud
 	client, err := cloudeventprovider.New(cloudeventprovider.Config{
 		Protocol: cloudeventprovider.ProtocolTypeNats,
 		Settings: cloudeventprovider.NatsConfig{
-			Url:          natsURL,
-			QueueGroup:   "logger",
-			TimeoutInSec: 10,
+			Url: natsURL,
 		},
 	}, cloudeventprovider.ConnectionTypeSub, topic)
 	if err != nil {

@@ -87,7 +87,6 @@ func main() {
 	cepPubClient, err := event.NewNatsPubClient(ctx, "events", natsURL)
 	if err != nil {
 		log.Fatalf(ctx, err, "Could not connect to events publisher")
-		os.Exit(1)
 	}
 	defer cepPubClient.Close()
 
@@ -101,7 +100,6 @@ func main() {
 	cepSubClient, err := event.NewNatsSubClient(ctx, "events", natsURL)
 	if err != nil {
 		log.Fatalf(ctx, err, "Could not connect to events publisher")
-		os.Exit(1)
 	}
 	defer cepPubClient.Close()
 
