@@ -10,7 +10,7 @@
       </header>
 
       <!-- Main Content -->
-      <main class="grow overflow-y-auto">
+      <main class="grow overflow-y-auto" ref="scrollContainer">
         <slot>
           <RouterView />
         </slot>
@@ -36,12 +36,14 @@
 <script setup lang="ts">
 import PageNavBar from '@/core/layouts/page/PageNavBar.vue';
 import PageSidebar from '@/core/layouts/page/PageSidebar.vue';
+import { useScrollStore } from '@/core/store/scroll';
 import { usePageStore } from '@core/store/page'
 import { storeToRefs } from 'pinia';
 import { RouterView } from 'vue-router'
 
 const pageStore = usePageStore()
 const { isSidebarCollapsed, pageSidebarId } = storeToRefs(pageStore)
+useScrollStore()
 
 // Functional classes for DaisyUI drawer behavior (structure/toggle), not layout or styling
 const drawerClasses = {

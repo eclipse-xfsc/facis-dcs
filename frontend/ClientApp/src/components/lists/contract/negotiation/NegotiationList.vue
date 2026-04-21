@@ -11,6 +11,8 @@ const props = defineProps<{
   contract: Contract
 }>()
 
+const emit = defineEmits<{ selectedNegotiation: [value: ContractNegotiation | null] }>()
+
 const authStore = useAuthStore()
 const username = computed(() => authStore.user?.username)
 
@@ -86,27 +88,40 @@ const isBtnDisabled = (negotiation: ContractNegotiation) => {
   const decision = negotiation.negotiation_decisions.find((decision) => decision.negotiator === username.value)
   return decision?.decision !== undefined
 }
+
+const isNegotiationShown = ref<Map<string, boolean>>(new Map())
+const handleShowBtn = (negotiation: ContractNegotiation) => {
+  if (!isNegotiationShown.value.has(negotiation.id)) {
+    isNegotiationShown.value.forEach((_, key) => isNegotiationShown.value.delete(key))
+    emit('selectedNegotiation', negotiation)
+    isNegotiationShown.value.set(negotiation.id, true)
+  } else {
+    emit('selectedNegotiation', null)
+    isNegotiationShown.value.delete(negotiation.id)
+  }
+}
 </script>
 
 <template>
   <ul class="list">
-    <li v-for="negotiation in sortedNegotiations" :key="negotiation.id" class="list-row">
-      <div class="card bg-base-200 shadow-md card-border">
+    <li v-for="negotiation in sortedNegotiations" :key="negotiation.id" class="list-row px-0">
+      <div class="card bg-base-200 shadow-sm card-border">
         <div class="card-body">
           <h2 class="card-title">Change request proposed by: {{ negotiation.created_by }}</h2>
-          <div class="m-2 card bg-base-100 shadow-md p-2">
-            <pre class="whitespace-pre-wrap">{{ JSON.stringify(negotiation.change_request, null, 2) }}</pre>
+          <div v-if="negotiation.change_request.contract_data" class="m-2 card bg-base-100 shadow-md p-2">
+            <pre class="whitespace-pre-wrap">{{
+              JSON.stringify(negotiation.change_request.contract_data, null, 2)
+            }}</pre>
           </div>
           <ul class="list">
-            <li class="text-lg">Decisions</li>
             <li
               v-for="decision in sortedDecisions(negotiation.negotiation_decisions)"
               :key="decision.negotiator"
-              class="list-row"
+              class="list-row px-0"
             >
               <div class="list-col-grow flex w-full justify-between">
                 <div>{{ decision.negotiator }}</div>
-                <div class="badge badge-sm badge-accent">{{ decision.decision ?? 'PENDING' }}</div>
+                <div class="badge badge-sm badge-secondary">{{ decision.decision ?? 'PENDING' }}</div>
               </div>
               <div v-if="decision.decision === 'REJECTED' && decision.rejection_reason" class="list-col-wrap truncate">
                 Reason: {{ decision.rejection_reason }}
@@ -115,6 +130,7 @@ const isBtnDisabled = (negotiation: ContractNegotiation) => {
           </ul>
           <div class="card-actions justify-end">
             <button
+              v-if="isNegotiationShown.get(negotiation.id)"
               class="btn btn-sm btn-primary"
               :disabled="isSubmitting || isBtnDisabled(negotiation)"
               @click="acceptNegotiation(negotiation)"
@@ -123,12 +139,16 @@ const isBtnDisabled = (negotiation: ContractNegotiation) => {
               Accept
             </button>
             <button
+              v-if="isNegotiationShown.get(negotiation.id)"
               class="btn btn-sm btn-secondary"
               :disabled="isSubmitting || isBtnDisabled(negotiation)"
               @click="rejectNegotiation(negotiation)"
             >
               <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
               Reject
+            </button>
+            <button class="btn btn-primary btn-sm" @click="handleShowBtn(negotiation)">
+              {{ !isNegotiationShown.get(negotiation.id) ? 'Show' : 'Hide' }}
             </button>
           </div>
         </div>

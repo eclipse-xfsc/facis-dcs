@@ -1,17 +1,27 @@
 <script setup lang="ts">
 import NegotiationList from '@/components/lists/contract/negotiation/NegotiationList.vue'
+import { useScrollStore } from '@/core/store/scroll'
+import type { ContractData } from '@/models/contract-data'
 import type { Contract, ContractChangeRequest } from '@/models/contract/contract'
+import type { ContractNegotiation } from '@/models/contract/contract-negotiation'
 import ContractDetailsEditor from '@/modules/contract-workflow-engine/components/ContractDetailsEditor.vue'
+import { useContractDataPreprocess } from '@/modules/contract-workflow-engine/composables/useContractDataPreprocess'
+import {
+  useSemanticValueVerification,
+  type VerificationResult,
+} from '@/modules/contract-workflow-engine/composables/useSemanticValueVerification'
+import type { SemanticConditionValueSetter } from '@/modules/contract-workflow-engine/models/contract-content-values-store'
 import { useContractContentValuesStore } from '@/modules/contract-workflow-engine/store/contractContentValuesStore'
 import { useContractEditorUiStore } from '@/modules/contract-workflow-engine/store/contractEditorUiStore'
 import TemplatePreview from '@/modules/template-repository/components/builder-editor/preview/TemplatePreview.vue'
 import { useTemplateDraftStore } from '@/modules/template-repository/store/templateDraftStore'
+import { useTemplateEditorUiStore } from '@/modules/template-repository/store/templateEditorUiStore'
 import { ROUTES } from '@/router/router'
 import { contractWorkflowService } from '@/services/contract-workflow-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { ContractState } from '@/types/contract-state'
 import { storeToRefs } from 'pinia'
-import { computed, ref, watch, type Ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 const route = useRoute()
@@ -20,21 +30,35 @@ const router = useRouter()
 const authStore = useAuthStore()
 const templateDraftStore = useTemplateDraftStore()
 const contractEditorUiStore = useContractEditorUiStore()
+const templateEditorUiStore = useTemplateEditorUiStore()
+const { hasConditionParameterForValue } = useSemanticValueVerification()
+const { preprocessContractData } = useContractDataPreprocess()
 const { activeTab } = storeToRefs(contractEditorUiStore)
 const { setActiveTab } = contractEditorUiStore
 const contractContentValuesStore = useContractContentValuesStore()
+const scrollStore = useScrollStore()
 
 const username = computed(() => authStore.user?.username)
 const isSubmitting = ref(false)
 
+const setSemanticConditionValue = computed<SemanticConditionValueSetter>(() => {
+  return (blockId: string, conditionId: string, parameterName: string, parameterValue: string | number) =>
+    contractContentValuesStore.setSemanticConditionValue({ blockId, conditionId, parameterName, parameterValue })
+})
+
 const tabs = computed(() => contractEditorUiStore.availableTabs(contract.value?.state ?? ContractState.draft))
 
+const verificationResult: Ref<VerificationResult | null> = ref(null)
+
 const contract: Ref<Contract | null> = ref(null)
-const contractData: Ref<Contract | null> = ref(null)
+const changedContractData: Ref<Contract | null> = ref(null)
+const compareChangesData: Ref<Contract | null> = ref(null)
 
 const hasChangeRequest = computed(() => {
   return (
-    contractData.value?.name !== contract.value?.name || contractData.value?.description !== contract.value?.description
+    changedContractData.value?.name !== contract.value?.name ||
+    changedContractData.value?.description !== contract.value?.description ||
+    changedContractData.value?.contract_data !== contract.value?.contract_data
   )
 })
 
@@ -46,7 +70,8 @@ watch(
         const id = route.params.did
         if (id && !Array.isArray(id)) {
           contract.value = await contractWorkflowService.retrieveById({ did: id })
-          contractData.value = !!contract.value ? { ...contract.value } : null
+          changedContractData.value = !!contract.value ? { ...contract.value } : null
+          applyContractDataToDraft(contract.value?.contract_data)
         }
       } catch (err: any) {
         console.error('Failed to load contract', err)
@@ -56,16 +81,37 @@ watch(
   { immediate: true },
 )
 
+watch(
+  () => [
+    templateDraftStore.documentBlocks,
+    templateDraftStore.semanticConditions,
+    templateDraftStore.subTemplateSnapshots,
+  ],
+  () => {
+    const invalidValues = contractContentValuesStore.semanticConditionValues.filter(
+      (conditionValue) =>
+        !hasConditionParameterForValue(
+          conditionValue,
+          templateDraftStore.documentBlocks,
+          templateDraftStore.semanticConditions,
+          templateDraftStore.subTemplateSnapshots,
+        ),
+    )
+    contractContentValuesStore.removeSemanticConditionValues(invalidValues)
+  },
+  { deep: true },
+)
+
 const negotiateContractChange = async () => {
-  if (!contract.value || !contractData.value || !username.value) return
+  if (!contract.value || !changedContractData.value || !username.value) return
   isSubmitting.value = true
   try {
     const changeRequest: ContractChangeRequest = {}
-    if (contractData.value.name !== contract.value.name) {
-      changeRequest.name = contractData.value.name
+    if (changedContractData.value.name !== contract.value.name) {
+      changeRequest.name = changedContractData.value.name
     }
-    if (contractData.value.description !== contract.value.description) {
-      changeRequest.description = contractData.value.description
+    if (changedContractData.value.description !== contract.value.description) {
+      changeRequest.description = changedContractData.value.description
     }
     console.log(changeRequest)
     const response = await contractWorkflowService.negotiate({
@@ -104,11 +150,68 @@ const hasOpenDecisions = computed(() =>
     negotiation.negotiation_decisions.every((decision) => !!decision.decision),
   ),
 )
+
+onMounted(() => {
+  templateEditorUiStore.reset({ workflow: 'contract' })
+})
+
+onUnmounted(() => {
+  templateDraftStore.reset({ workflow: 'contract' })
+  contractContentValuesStore.reset()
+  contractEditorUiStore.reset()
+  templateEditorUiStore.reset({ workflow: 'contract' })
+  verificationResult.value = null
+})
+
+// Contract data includes the template data used to fill the contract template
+function applyContractDataToDraft(contractData?: unknown) {
+  if (contractData == null) {
+    templateDraftStore.reset({ workflow: 'contract' })
+    contractContentValuesStore.reset()
+    verificationResult.value = null
+    return
+  }
+  const cd = preprocessContractData(contractData as ContractData)
+  templateDraftStore.reset({
+    workflow: 'contract',
+    documentOutline: cd.documentOutline ?? [],
+    documentBlocks: cd.documentBlocks ?? [],
+    semanticConditions: cd.semanticConditions ?? [],
+    subTemplateSnapshots: cd.subTemplateSnapshots ?? [],
+    templateDataVersion: cd.templateDataVersion,
+  })
+  contractContentValuesStore.reset({ semanticConditionValues: cd.semanticConditionValues ?? [] })
+  verificationResult.value = null
+}
+
+const handleSelectedNegotiation = (negotiation: ContractNegotiation | null, selectedContract: Contract | null) => {
+  if (!contract.value || !selectedContract) return
+  compareChangesData.value = !!negotiation ? {
+    ...contract.value,
+    name: negotiation.change_request.name
+      ? `${contract.value.name} -> ${negotiation.change_request.name}`
+      : contract.value.name,
+    description: negotiation.change_request.description
+      ? `${contract.value.description} -> ${negotiation.change_request.description}`
+      : contract.value.description,
+    contract_data: contract.value.contract_data, // TODO
+  } : null
+  if (compareChangesData.value) {
+    scrollStore.scrollToTop()
+  }
+}
+
+const shownData = computed(() => {
+  if (!!changedContractData.value) {
+    return changedContractData.value
+  }
+  return contract.value
+})
 </script>
 
 <template>
   <div class="flex flex-col min-h-full -mx-4 md:-mx-8 -my-4 md:-my-8">
-    <div v-if="!!contract && !!contractData">
+    <div v-if="!!contract && !!changedContractData && !!shownData">
       <div class="flex-1 flex flex-col">
         <!-- Tabs -->
         <div class="sticky top-0 z-10 shrink-0 bg-base-200 border-b border-base-300">
@@ -133,7 +236,10 @@ const hasOpenDecisions = computed(() =>
           <div class="max-w-4xl mx-auto p-6">
             <div class="grid grid-cols-1 gap-4">
               <div v-show="activeTab === 'details'">
-                <ContractDetailsEditor :contract="contractData" />
+                <ContractDetailsEditor
+                  :contract="shownData"
+                  :inserted="{ name: compareChangesData?.name, description: compareChangesData?.description }"
+                />
               </div>
 
               <div v-show="activeTab === 'content'">
@@ -145,7 +251,9 @@ const hasOpenDecisions = computed(() =>
                         :document-blocks="templateDraftStore.documentBlocks"
                         :semantic-conditions="templateDraftStore.semanticConditions"
                         :semantic-condition-values="contractContentValuesStore.semanticConditionValues"
+                        :verification-result="verificationResult"
                         :sub-template-snapshots="templateDraftStore.subTemplateSnapshots"
+                        :set-semantic-condition-value="setSemanticConditionValue"
                       />
                     </div>
                   </div>
@@ -155,10 +263,13 @@ const hasOpenDecisions = computed(() =>
           </div>
         </div>
       </div>
-
-      <div class="max-w-4xl mx-auto mt-8 p-6" v-if="(contract.negotiations?.length ?? -1) > 0">
-        <div>Active negotiations:</div>
-        <NegotiationList :contract="contract" />
+      <div class="divider"></div>
+      <div class="max-w-4xl mx-auto p-6" v-if="(contract.negotiations?.length ?? -1) > 0">
+        <div class="text-lg">Active negotiations</div>
+        <NegotiationList
+          :contract="contract"
+          @selected-negotiation="(negotiation) => handleSelectedNegotiation(negotiation, contract)"
+        />
       </div>
     </div>
     <div class="sticky bottom-0 shrink-0 border-t border-base-300 bg-base-100">
