@@ -8,21 +8,20 @@ import (
 	"time"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/nats-io/nats.go"
 )
 
 type OutboxProcessor struct {
-	DB       *sqlx.DB
-	Ctx      context.Context
-	NatsConn *nats.Conn
+	DB        *sqlx.DB
+	Ctx       context.Context
+	PubClient *CloudEventPubClient
 }
 
 func (j OutboxProcessor) Start() {
-	go startProcessingJob(j.DB, j.Ctx, j.NatsConn, conf.OutboxProcessorTimeOut())
+	go startProcessingJob(j.DB, j.Ctx, j.PubClient, conf.OutboxProcessorTimeOut())
 }
 
-func startProcessingJob(db *sqlx.DB, ctx context.Context, natsConn *nats.Conn, interval time.Duration) {
-	if natsConn == nil {
+func startProcessingJob(db *sqlx.DB, ctx context.Context, pubClient *CloudEventPubClient, interval time.Duration) {
+	if pubClient == nil {
 		return
 	}
 
@@ -70,9 +69,8 @@ func startProcessingJob(db *sqlx.DB, ctx context.Context, natsConn *nats.Conn, i
 		}
 
 		for _, event := range events {
-			subject := fmt.Sprintf("%s.%s", event.Component, event.EventType)
-			if err := natsConn.Publish(subject, event.EventData); err != nil {
-				return fmt.Errorf("could not publish event %d: %w", event.ID, err)
+			if err := pubClient.Publish(event.Component, event.EventType, event.EventData); err != nil {
+				return fmt.Errorf("could not publish event %d: %w", event.ID, err.(error))
 			}
 
 			_, err := tx.ExecContext(ctx, `

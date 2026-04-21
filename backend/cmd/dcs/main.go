@@ -13,6 +13,7 @@ import (
 	templatecatalogueintegration "digital-contracting-service/gen/template_catalogue_integration"
 	templaterepository "digital-contracting-service/gen/template_repository"
 	"digital-contracting-service/internal/auth"
+	"digital-contracting-service/internal/base/conf"
 	"digital-contracting-service/internal/base/event"
 	contractworkflowengine2 "digital-contracting-service/internal/contractworkflowengine"
 	cwerepo "digital-contracting-service/internal/contractworkflowengine/db/pg"
@@ -83,25 +84,30 @@ func main() {
 	if natsURL == "" {
 		natsURL = nats.DefaultURL
 	}
-	natsConn, err := nats.Connect(natsURL)
+
+	cepPubClient, err := event.NewNatsPubClient(conf.EventBusTopic(), natsURL)
 	if err != nil {
-		log.Printf(ctx, "Nats support will be deactivated: Could not connect to nats service: %v", err)
+		log.Fatalf(ctx, err, "Could not connect to events publisher")
 	}
-	if natsConn != nil {
-		defer natsConn.Close()
-	}
+	defer cepPubClient.Close()
 
 	outboxProcessor := event.OutboxProcessor{
-		DB:       db,
-		Ctx:      ctx,
-		NatsConn: natsConn,
+		DB:        db,
+		Ctx:       ctx,
+		PubClient: cepPubClient,
 	}
 	outboxProcessor.Start()
 
-	natsDebugConsumer := event.NatsDebugConsumer{
-		NatsConn: natsConn,
+	cepSubClient, err := event.NewNatsSubClient(conf.EventBusTopic(), natsURL)
+	if err != nil {
+		log.Fatalf(ctx, err, "Could not connect to events publisher")
 	}
-	natsDebugConsumer.Start()
+	defer cepPubClient.Close()
+
+	eventDebugConsumer := event.EventDebugConsumer{
+		SubClient: cepSubClient,
+	}
+	eventDebugConsumer.Start()
 
 	// Initialize OIDC validator and JWT authenticator.
 	oidcIssuerURL := os.Getenv("OIDC_ISSUER_URL")
