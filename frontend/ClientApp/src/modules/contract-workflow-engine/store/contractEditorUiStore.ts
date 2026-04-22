@@ -12,6 +12,7 @@ const defaultState: Readonly<ContractEditorUiState> = {
     { id: 'semantic', label: 'Semantic Rules' },
     { id: 'clauses', label: 'Clauses' },
     { id: 'builder', label: 'Builder' },
+    { id: 'diff', label: 'Diff View' },
   ],
 }
 
@@ -22,12 +23,12 @@ export const useContractEditorUiStore = defineStore(storeId, {
       this.activeTab = tab
     },
     availableTabs(contractState: ContractStateType) {
-      // TBD: which tabs are available in each state
       switch (contractState) {
         case ContractState.draft:
           return this.tabs.filter(tab => ['details', 'content'].includes(tab.id))
+        case ContractState.negotiation:
+          return this.tabs.filter((tab) => ['details', 'content', 'diff'].includes(tab.id))
         default:
-          // TODO: editor tabs will be added to the UI once the editor widgets are ready
           return this.tabs.filter(tab => ['details', 'content'].includes(tab.id))
       }
     },

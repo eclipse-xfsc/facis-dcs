@@ -5,6 +5,7 @@ import type { ContractData } from '@/models/contract-data'
 import type { Contract, ContractChangeRequest } from '@/models/contract/contract'
 import type { ContractNegotiation } from '@/models/contract/contract-negotiation'
 import ContractDetailsEditor from '@/modules/contract-workflow-engine/components/ContractDetailsEditor.vue'
+import DiffView from '@/modules/contract-workflow-engine/components/DiffView.vue'
 import { useContractDataPreprocess } from '@/modules/contract-workflow-engine/composables/useContractDataPreprocess'
 import {
   useSemanticValueVerification,
@@ -207,6 +208,26 @@ const shownData = computed(() => {
   }
   return contract.value
 })
+
+// TODO: The historical contract data function is not ready yet.
+// So we just return the current contract and draft data for now.
+const priorContractData = computed<ContractData | undefined>(() => {
+  const data = contract.value?.contract_data
+  if (!data) return undefined
+  return preprocessContractData(data)
+})
+
+const currentContractData = computed<ContractData | undefined>(() => {
+  const data = contract.value?.contract_data
+  if (!data) return undefined
+  const preprocessedContractData = preprocessContractData(data)
+
+  return {
+    ...preprocessedContractData,
+    semanticConditionValues: [...contractContentValuesStore.semanticConditionValues]
+  }
+})
+
 </script>
 
 <template>
@@ -258,6 +279,13 @@ const shownData = computed(() => {
                     </div>
                   </div>
                 </div>
+              </div>
+
+              <div v-show="activeTab === 'diff'">
+                <DiffView
+                  :prior-contract-data="priorContractData"
+                  :current-contract-data="currentContractData"
+                />
               </div>
             </div>
           </div>
