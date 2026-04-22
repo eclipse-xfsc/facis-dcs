@@ -10,6 +10,7 @@ import ContractTemplateListView from '@/views/contract-template-list/ContractTem
 import ContractListView from '@/views/contract/ContractListView.vue'
 import NegotiateContractView from '@/views/contract/NegotiateContractView.vue'
 import NewContractView from '@/views/contract/NewContractView.vue'
+import ReviewContractView from '@/views/contract/ReviewContractView.vue'
 import ViewContractView from '@/views/contract/ViewContractView.vue'
 import TaskListView from '@/views/task/TaskListView.vue'
 import TemplateCatalogueAdminView from '@/views/template-repository/TemplateCatalogueAdminView.vue'
@@ -50,6 +51,7 @@ const ROUTES = {
     EDIT: 'contracts.edit',
     VIEW: 'contracts.view',
     NEGOTIATE: 'contracts.negotiate',
+    REVIEW: 'contracts.review',
   },
 } as const
 
@@ -100,7 +102,13 @@ const routes: RouteRecordRaw[] = [
     path: '/templates/view/:did',
     name: ROUTES.TEMPLATES.VIEW,
     component: ViewContractTemplateView,
-    meta: { name: 'View Template', hideInSidebar: true, requiresAuth: true, title: 'DCS - View Template' },
+    meta: {
+      name: 'View Template',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - View Template',
+      roles: ['TEMPLATE_CREATOR', 'TEMPLATE_REVIEWER', 'TEMPLATE_APPROVER', 'TEMPLATE_MANAGER'],
+    },
   },
   {
     path: '/templates/review/:did',
@@ -219,7 +227,13 @@ const routes: RouteRecordRaw[] = [
     path: '/contracts/view/:did',
     name: ROUTES.CONTRACTS.VIEW,
     component: ViewContractView,
-    meta: { name: 'View Contract', hideInSidebar: true, requiresAuth: true, title: 'DCS - View Contract' },
+    meta: {
+      name: 'View Contract',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - View Contract',
+      roles: ['CONTRACT_CREATOR', 'CONTRACT_REVIEWER', 'CONTRACT_APPROVER', 'CONTRACT_MANAGER'],
+    },
   },
   {
     path: '/contracts/negotiate/:did',
@@ -231,6 +245,18 @@ const routes: RouteRecordRaw[] = [
       requiresAuth: true,
       title: 'DCS - Negotiate Contract',
       roles: ['CONTRACT_CREATOR', 'CONTRACT_REVIEWER'],
+    },
+  },
+  {
+    path: '/contracts/review/:did',
+    name: ROUTES.CONTRACTS.REVIEW,
+    component: ReviewContractView,
+    meta: {
+      name: 'Review Contract',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - Review Contract',
+      roles: ['CONTRACT_REVIEWER'],
     },
   },
   {

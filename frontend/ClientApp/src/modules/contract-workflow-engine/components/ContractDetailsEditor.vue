@@ -9,6 +9,7 @@
           class="input input-bordered w-full"
           :class="{ 'input-primary border-2': !!inserted && originalContract.name !== contract.name }"
           type="text"
+          :disabled="disabled"
           required
         />
         <input
@@ -27,6 +28,7 @@
           v-model="contract.description"
           class="textarea textarea-bordered w-full h-24"
           :class="{ 'textarea-primary border-2': originalContract.description !== contract.description }"
+          :disabled="disabled"
           required
         />
         <textarea
@@ -53,6 +55,7 @@ interface ContractDetailData {
 const props = defineProps<{
   contract: Contract
   inserted?: ContractDetailData
+  disabled?: boolean
 }>()
 
 const originalContract = ref(Object.assign({}, props.contract))

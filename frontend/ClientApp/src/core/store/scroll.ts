@@ -1,8 +1,8 @@
 import { defineStore } from 'pinia'
-import { useTemplateRef } from 'vue'
+import { ref } from 'vue'
 
 export const useScrollStore = defineStore('scroll', () => {
-  const scrollContainer = useTemplateRef<HTMLElement>('scrollContainer')
+  const scrollContainer = ref<HTMLElement | null>(null)
 
   function scrollToTop() {
     scrollContainer.value?.scrollTo({

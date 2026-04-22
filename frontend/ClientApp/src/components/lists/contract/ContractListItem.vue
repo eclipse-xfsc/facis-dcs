@@ -11,16 +11,21 @@ const props = defineProps<{
 }>()
 
 const authStore = useAuthStore()
+const contractsStore = useContractsStore()
 
 const canEdit = computed(() => {
   return props.item.created_by === authStore.user?.username && props.item.state === ContractState.draft
 })
 
-const hasNegotiationTask = computed(() => useContractsStore().hasNegotiationTask(props.item))
+const hasNegotiationTask = computed(() => contractsStore.hasNegotiationTask(props.item))
+const hasReviewTask = computed(() => contractsStore.hasReviewTask(props.item))
 
 const resolveViewRouteName = computed(() => {
   if (props.item.state === ContractState.negotiation && hasNegotiationTask.value) {
     return ROUTES.CONTRACTS.NEGOTIATE
+  }
+  if (props.item.state === ContractState.submitted && hasReviewTask.value) {
+    return ROUTES.CONTRACTS.REVIEW
   }
   return ROUTES.CONTRACTS.VIEW
 })
