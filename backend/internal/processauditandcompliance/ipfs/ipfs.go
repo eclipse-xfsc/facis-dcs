@@ -11,13 +11,15 @@ import (
 )
 
 type APIClient struct {
-	baseURL string
-	client  *http.Client
+	baseURL    string
+	mfsBaseURL *string
+	client     *http.Client
 }
 
-func NewClient(baseURL string) *APIClient {
+func NewClient(baseURL string, mfsBaseURL *string) *APIClient {
 	return &APIClient{
-		baseURL: baseURL,
+		baseURL:    baseURL,
+		mfsBaseURL: mfsBaseURL,
 		client: &http.Client{
 			Timeout: 10 * time.Second,
 		},
@@ -32,14 +34,9 @@ type IPFSResult struct {
 	Data any `json:"data"`
 }
 
-type MFSConfig struct {
-	Name       string
-	MFSBaseURL string
-}
+func (c *APIClient) CreateFile(ctx context.Context, data any) (*IPFSResult, error) {
 
-func (ipfs *APIClient) CreateFile(ctx context.Context, data any, mfsConfig *MFSConfig) (*IPFSResult, error) {
-
-	url := ipfs.baseURL + "/api/ipfs/create"
+	url := c.baseURL + "/api/ipfs/create"
 
 	jsonData, err := json.Marshal(data)
 	if err != nil {
@@ -51,7 +48,7 @@ func (ipfs *APIClient) CreateFile(ctx context.Context, data any, mfsConfig *MFSC
 		return nil, fmt.Errorf("create request: %w", err)
 	}
 
-	resp, err := ipfs.client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("do request: %w", err)
 	}
@@ -72,12 +69,8 @@ func (ipfs *APIClient) CreateFile(ctx context.Context, data any, mfsConfig *MFSC
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
 
-	if mfsConfig != nil {
-		name := mfsConfig.Name
-		if name == "" {
-			name = result.Identifier.Value
-		}
-		err := ipfs.copyToMFS(ctx, mfsConfig.MFSBaseURL, result.Identifier.Value, name)
+	if c.mfsBaseURL != nil && *c.mfsBaseURL != "" {
+		err := c.copyToMFS(ctx, *c.mfsBaseURL, result.Identifier.Value, result.Identifier.Value)
 		if err != nil {
 			return &result, err
 		}
@@ -86,9 +79,9 @@ func (ipfs *APIClient) CreateFile(ctx context.Context, data any, mfsConfig *MFSC
 	return &result, nil
 }
 
-func (ipfs *APIClient) FetchFile(cid string) ([]byte, error) {
+func (c *APIClient) FetchFile(cid string) ([]byte, error) {
 
-	url := fmt.Sprintf("%s/api/ipfs/%s", ipfs.baseURL, cid)
+	url := fmt.Sprintf("%s/api/ipfs/%s", c.baseURL, cid)
 
 	resp, err := http.Get(url)
 	if err != nil {
@@ -104,12 +97,12 @@ func (ipfs *APIClient) FetchFile(cid string) ([]byte, error) {
 	return body, nil
 }
 
-func (ipfs *APIClient) DeleteFile(cid string) error {
+func (c *APIClient) DeleteFile(cid string) error {
 
-	url := fmt.Sprintf("%s/api/ipfs/%s", ipfs.baseURL, cid)
+	url := fmt.Sprintf("%s/api/ipfs/%s", c.baseURL, cid)
 
 	req, _ := http.NewRequestWithContext(context.Background(), http.MethodDelete, url, nil)
-	resp, err := ipfs.client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return err
 	}
@@ -119,12 +112,12 @@ func (ipfs *APIClient) DeleteFile(cid string) error {
 
 }
 
-func (ipfs *APIClient) copyToMFS(ctx context.Context, baseURL string, cid string, filename string) error {
+func (c *APIClient) copyToMFS(ctx context.Context, baseURL string, cid string, filename string) error {
 
 	url := fmt.Sprintf("%s/api/v0/files/cp?arg=/ipfs/%s&arg=/%s", baseURL, cid, filename)
 
 	req, _ := http.NewRequestWithContext(ctx, http.MethodPost, url, nil)
-	resp, err := ipfs.client.Do(req)
+	resp, err := c.client.Do(req)
 	if err != nil {
 		return err
 	}
