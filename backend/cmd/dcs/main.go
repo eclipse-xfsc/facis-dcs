@@ -19,6 +19,7 @@ import (
 	cwerepo "digital-contracting-service/internal/contractworkflowengine/db/pg"
 	"digital-contracting-service/internal/middleware"
 	event2 "digital-contracting-service/internal/processauditandcompliance"
+	"digital-contracting-service/internal/processauditandcompliance/ipfs"
 	"digital-contracting-service/internal/service"
 	fcclient "digital-contracting-service/internal/templatecatalogueintegration/client"
 	tplrepo "digital-contracting-service/internal/templaterepository/db/pg"
@@ -105,8 +106,10 @@ func main() {
 	}
 	defer cepPubClient.Close()
 
+	ipfsAPIClient := ipfs.NewClient("http://localhost:8000/v1/tenants/tenant_space", "http://localhost:5001")
 	pac := event2.PACSubscriber{
-		SubClient: cepSubClient,
+		SubClient:  cepSubClient,
+		IPFSClient: ipfsAPIClient,
 	}
 	pac.Start()
 

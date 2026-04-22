@@ -12,11 +12,11 @@ import (
 
 type APIClient struct {
 	baseURL    string
-	mfsBaseURL *string
+	mfsBaseURL string
 	client     *http.Client
 }
 
-func NewClient(baseURL string, mfsBaseURL *string) *APIClient {
+func NewClient(baseURL string, mfsBaseURL string) *APIClient {
 	return &APIClient{
 		baseURL:    baseURL,
 		mfsBaseURL: mfsBaseURL,
@@ -69,8 +69,8 @@ func (c *APIClient) CreateFile(ctx context.Context, data any) (*IPFSResult, erro
 		return nil, fmt.Errorf("decode response: %w", err)
 	}
 
-	if c.mfsBaseURL != nil && *c.mfsBaseURL != "" {
-		err := c.copyToMFS(ctx, *c.mfsBaseURL, result.Identifier.Value, result.Identifier.Value)
+	if c.mfsBaseURL != "" {
+		err := c.copyToMFS(ctx, c.mfsBaseURL, result.Identifier.Value, result.Identifier.Value)
 		if err != nil {
 			return &result, err
 		}
