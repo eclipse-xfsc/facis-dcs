@@ -43,7 +43,7 @@ func TestSubmit_SubmitContractInDraftState(t *testing.T) {
 	approver := "Test User 5"
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
 		Reviewers: []string{
@@ -137,7 +137,7 @@ func TestSubmit_SubmitContractInDraftStateWithInvalidUser(t *testing.T) {
 	approver := "Test User 5"
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 6",
 		ActionFlag:  nil,
 		Reviewers: []string{
@@ -184,7 +184,7 @@ func TestSubmit_SubmitContractInNegotiationState(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: negotiators[0],
 		ActionFlag:  nil,
 	}
@@ -255,7 +255,7 @@ func TestSubmit_SubmitContractInNegotiationStateWithOpenNegotiations(t *testing.
 		DID:           *did,
 		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
 
@@ -272,7 +272,7 @@ func TestSubmit_SubmitContractInNegotiationStateWithOpenNegotiations(t *testing.
 
 	submitCmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: negotiators[0],
 	}
 	submitHandler := command.Submitter{
@@ -323,7 +323,7 @@ func TestSubmit_SubmitContractInNegotiationStateWithRejectedNegotiations(t *test
 		DID:           *did,
 		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
 
@@ -375,7 +375,7 @@ func TestSubmit_SubmitContractInNegotiationStateWithRejectedNegotiations(t *test
 
 	submitCmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: negotiators[0],
 	}
 	submitHandler := command.Submitter{
@@ -433,7 +433,7 @@ func TestSubmit_SubmitContractInNegationStateWithInvalidUser(t *testing.T) {
 	approver := "Test User 5"
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 6",
 		ActionFlag:  nil,
 		Reviewers: []string{
@@ -488,7 +488,7 @@ func TestSubmit_SubmitContractInReviewedStateWithVerifying(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 	}
@@ -555,7 +555,7 @@ func TestSubmit_OneReviewerApprovedContractInSubmittedState(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 	}
@@ -622,7 +622,7 @@ func TestSubmit_ApproveContractInSubmittedStateWithInvalidUser(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 4",
 		ActionFlag:  &actionFlag,
 	}
@@ -670,7 +670,7 @@ func TestSubmit_RejectContractInSubmittedStateWithInvalidUser(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 4",
 		ActionFlag:  &actionFlag,
 	}
@@ -719,7 +719,7 @@ func TestSubmit_AllReviewersApprovedContractInSubmittedState(t *testing.T) {
 	for _, reviewer := range reviewers {
 		cmd := command.SubmitCmd{
 			DID:         *did,
-			UpdatedAt:   time.Now(),
+			UpdatedAt:   time.Now().UTC(),
 			SubmittedBy: reviewer,
 			ActionFlag:  &actionFlag,
 		}
@@ -790,7 +790,7 @@ func TestSubmit_OneReviewerDeclinesContractInSubmittedState(t *testing.T) {
 	cmd := command.SubmitCmd{
 		DID: *did,
 
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 	}
@@ -845,7 +845,7 @@ func TestSubmit_SubmitNonExistingContract(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 1",
 	}
 	handler := command.Submitter{
@@ -883,7 +883,7 @@ func TestSubmit_SubmitContractInSubmittedStateWithoutActionFlag(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
 	}
@@ -926,7 +926,7 @@ func TestSubmit_SubmitContractInReviewedStateWithInvalidUser(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 2",
 	}
 	handler := command.Submitter{
@@ -977,7 +977,7 @@ func TestSubmit_SubmitContractInSubmittedStateWithApproverUser(t *testing.T) {
 	aFlag := actionflag.Approval
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: approver,
 		ActionFlag:  &aFlag,
 	}
@@ -1029,7 +1029,7 @@ func TestSubmit_SubmitContractReviewedState(t *testing.T) {
 	aFlag := actionflag.Approval
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: approver,
 		ActionFlag:  &aFlag,
 	}

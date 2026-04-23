@@ -69,7 +69,7 @@ func (h *GetAllMetaDataByFilterHandler) Handle(ctx context.Context, query GetAll
 
 	evt := templateevents.RetrieveAllEvent{
 		RetrievedBy: query.RetrievedBy,
-		OccurredAt:  time.Now(),
+		OccurredAt:  time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

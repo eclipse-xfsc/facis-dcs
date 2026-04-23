@@ -72,7 +72,7 @@ func (h *Approver) Handle(ctx context.Context, cmd ApproveCmd) error {
 		DID:             cmd.DID,
 		ContractVersion: processData.ContractVersion,
 		ApprovedBy:      cmd.ApprovedBy,
-		OccurredAt:      time.Now(),
+		OccurredAt:      time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

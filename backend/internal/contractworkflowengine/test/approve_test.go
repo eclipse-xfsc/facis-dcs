@@ -40,7 +40,7 @@ func TestApprove_ApproveContractInReviewedState(t *testing.T) {
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    approver,
 		DecisionNotes: []string{},
 	}
@@ -91,7 +91,7 @@ func TestApprove_ApproveNonExistingContract(t *testing.T) {
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    "Test User 1",
 		DecisionNotes: []string{},
 	}
@@ -130,7 +130,7 @@ func TestApprove_ApproveContractInReviewedStateWithInvalidUser(t *testing.T) {
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    "Test User 2",
 		DecisionNotes: []string{},
 	}
@@ -167,7 +167,7 @@ func TestApprove_ApproveContractInDraftState(t *testing.T) {
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    "Test User 1",
 		DecisionNotes: []string{},
 	}
@@ -204,7 +204,7 @@ func TestApprove_ApproveContractInApprovedState(t *testing.T) {
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    "Test User 1",
 		DecisionNotes: []string{},
 	}

@@ -82,7 +82,7 @@ func (h *Updater) Handle(ctx context.Context, cmd UpdateCmd) error {
 		OldExpirationDate:  cmd.ExpirationDate,
 		NewExpirationDate:  cmd.ExpirationDate,
 		UpdatedBy:          cmd.UpdatedBy,
-		OccurredAt:         time.Now(),
+		OccurredAt:         time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

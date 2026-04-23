@@ -40,7 +40,7 @@ func TestCreate_RejectContractTemplateInReviewedState(t *testing.T) {
 
 	cmd := command.RejectCmd{
 		DID:        *did,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 		RejectedBy: approver,
 		Reason:     "Test Reason",
 	}
@@ -97,7 +97,7 @@ func TestCreate_RejectContractTemplateInReviewedStateWithInvalidUser(t *testing.
 
 	cmd := command.RejectCmd{
 		DID:        *did,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 		RejectedBy: "Test User 2",
 		Reason:     "Test Reason",
 	}
@@ -130,7 +130,7 @@ func TestCreate_RejectNonExistingContractTemplate(t *testing.T) {
 
 	cmd := command.RejectCmd{
 		DID:        *did,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 		RejectedBy: "Test User 1",
 	}
 	handler := command.Rejecter{
@@ -165,7 +165,7 @@ func TestCreate_RejectContractTemplateInDraftState(t *testing.T) {
 
 	cmd := command.RejectCmd{
 		DID:        *did,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 		RejectedBy: rejectedBy,
 		Reason:     "Test Reason",
 	}
@@ -201,7 +201,7 @@ func TestCreate_RejectContractTemplateInApprovedState(t *testing.T) {
 
 	cmd := command.RejectCmd{
 		DID:        *did,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 		RejectedBy: rejectedBy,
 		Reason:     "Test Reason",
 	}

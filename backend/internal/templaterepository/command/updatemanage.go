@@ -162,7 +162,7 @@ func (h *UpdateManager) Handle(ctx context.Context, cmd UpdateManageCmd) error {
 		OldTemplateData:   oldData.TemplateData,
 		NewTemplateData:   cmd.TemplateData,
 		UpdatedBy:         cmd.UpdatedBy,
-		OccurredAt:        time.Now(),
+		OccurredAt:        time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractTemplateRepo)
 	if err != nil {
