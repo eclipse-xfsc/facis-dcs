@@ -21,7 +21,7 @@ const confirmationModal = useTemplateRef<InstanceType<typeof ConfirmationModal>>
 const negotiations = computed(() => props.contract.negotiations ?? [])
 
 const sortedNegotiations = computed(() =>
-  negotiations.value.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()),
+  negotiations.value.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
 )
 
 const sortedDecisions = (decisions: ContractNegotiationDecision[]) => {
@@ -108,16 +108,11 @@ const handleShowBtn = (negotiation: ContractNegotiation) => {
       <div class="card bg-base-200 shadow-sm card-border">
         <div class="card-body">
           <h2 class="card-title">Change request proposed by: {{ negotiation.created_by }}</h2>
-          <div v-if="negotiation.change_request.contract_data" class="m-2 card bg-base-100 shadow-md p-2">
-            <pre class="whitespace-pre-wrap">{{
-              JSON.stringify(negotiation.change_request.contract_data, null, 2)
-            }}</pre>
-          </div>
           <ul class="list">
             <li
               v-for="decision in sortedDecisions(negotiation.negotiation_decisions)"
               :key="decision.negotiator"
-              class="list-row px-0"
+              class="list-row px-0 py-2"
             >
               <div class="list-col-grow flex w-full justify-between">
                 <div>{{ decision.negotiator }}</div>

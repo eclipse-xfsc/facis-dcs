@@ -17,16 +17,16 @@ import { useContractEditorUiStore } from '@/modules/contract-workflow-engine/sto
 import TemplatePreview from '@/modules/template-repository/components/builder-editor/preview/TemplatePreview.vue'
 import { useTemplateDraftStore } from '@/modules/template-repository/store/templateDraftStore'
 import { useTemplateEditorUiStore } from '@/modules/template-repository/store/templateEditorUiStore'
-import { ROUTES } from '@/router/router'
 import { contractWorkflowService } from '@/services/contract-workflow-service'
 import { useAuthStore } from '@/stores/auth-store'
+import { useNavStore } from '@/stores/nav-store'
 import { ContractState } from '@/types/contract-state'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const router = useRouter()
+const navStore = useNavStore()
 
 const authStore = useAuthStore()
 const templateDraftStore = useTemplateDraftStore()
@@ -52,16 +52,29 @@ const tabs = computed(() => contractEditorUiStore.availableTabs(contract.value?.
 const verificationResult: Ref<VerificationResult | null> = ref(null)
 
 const contract: Ref<Contract | null> = ref(null)
-const changedContractData: Ref<Contract | null> = ref(null)
+const editedContract: Ref<Contract | null> = ref(null)
 const compareChangesData: Ref<Contract | null> = ref(null)
 
 const hasChangeRequest = computed(() => {
+  return changedName.value || changedDescription.value || changedContractData.value
+})
+
+const changedName = computed(() => editedContract.value?.name !== contract.value?.name)
+const changedDescription = computed(() => editedContract.value?.description !== contract.value?.description)
+const changedContractData = computed(() => {
   return (
-    changedContractData.value?.name !== contract.value?.name ||
-    changedContractData.value?.description !== contract.value?.description ||
-    changedContractData.value?.contract_data !== contract.value?.contract_data
+    contract.value?.contract_data &&
+    !arrayEqual(
+      contractContentValuesStore.semanticConditionValues.map((v) => v.parameterValue),
+      contract.value.contract_data.semanticConditionValues.map((v) => v.parameterValue),
+    )
   )
 })
+
+const arrayEqual = (a: unknown[], b: unknown[]) => {
+  if (a.length !== b.length) return false
+  return a.every((value, i) => value === b[i])
+}
 
 watch(
   () => !!route.params.did,
@@ -71,7 +84,7 @@ watch(
         const id = route.params.did
         if (id && !Array.isArray(id)) {
           contract.value = await contractWorkflowService.retrieveById({ did: id })
-          changedContractData.value = !!contract.value ? { ...contract.value } : null
+          editedContract.value = !!contract.value ? { ...contract.value } : null
           applyContractDataToDraft(contract.value?.contract_data)
         }
       } catch (err: any) {
@@ -104,17 +117,19 @@ watch(
 )
 
 const negotiateContractChange = async () => {
-  if (!contract.value || !changedContractData.value || !username.value) return
+  if (!contract.value || !editedContract.value || !username.value) return
   isSubmitting.value = true
   try {
     const changeRequest: ContractChangeRequest = {}
-    if (changedContractData.value.name !== contract.value.name) {
-      changeRequest.name = changedContractData.value.name
+    if (changedName.value) {
+      changeRequest.name = editedContract.value.name
     }
-    if (changedContractData.value.description !== contract.value.description) {
-      changeRequest.description = changedContractData.value.description
+    if (changedDescription.value) {
+      changeRequest.description = editedContract.value.description
     }
-    console.log(changeRequest)
+    if (changedContractData.value) {
+      changeRequest.contract_data = { semanticConditionValues: contractContentValuesStore.semanticConditionValues }
+    }
     const response = await contractWorkflowService.negotiate({
       did: contract.value?.did,
       updated_at: contract.value?.updated_at,
@@ -122,7 +137,7 @@ const negotiateContractChange = async () => {
       change_request: changeRequest,
     })
     if (response.did) {
-      router.push({ name: ROUTES.TASKS.NEGOTIATIONS })
+      navStore.goToPreviousRoute()
     }
   } catch (err) {
     console.error('Failed to submit change request', err)
@@ -139,7 +154,7 @@ const submitContract = async () => {
       updated_at: contract.value.updated_at,
     })
     if (response.did) {
-      router.push({ name: ROUTES.TASKS.NEGOTIATIONS })
+      navStore.goToPreviousRoute()
     }
   } catch (err) {
     console.error('Failed to submit', err)
@@ -187,24 +202,26 @@ function applyContractDataToDraft(contractData?: unknown) {
 
 const handleSelectedNegotiation = (negotiation: ContractNegotiation | null, selectedContract: Contract | null) => {
   if (!contract.value || !selectedContract) return
-  compareChangesData.value = !!negotiation ? {
-    ...contract.value,
-    name: negotiation.change_request.name
-      ? `${contract.value.name} -> ${negotiation.change_request.name}`
-      : contract.value.name,
-    description: negotiation.change_request.description
-      ? `${contract.value.description} -> ${negotiation.change_request.description}`
-      : contract.value.description,
-    contract_data: contract.value.contract_data, // TODO
-  } : null
+  compareChangesData.value = !!negotiation
+    ? {
+        ...contract.value,
+        name: negotiation.change_request.name
+          ? `${contract.value.name} -> ${negotiation.change_request.name}`
+          : contract.value.name,
+        description: negotiation.change_request.description
+          ? `${contract.value.description} -> ${negotiation.change_request.description}`
+          : contract.value.description,
+        contract_data: contract.value.contract_data, // TODO
+      }
+    : null
   if (compareChangesData.value) {
     scrollStore.scrollToTop()
   }
 }
 
 const shownData = computed(() => {
-  if (!!changedContractData.value) {
-    return changedContractData.value
+  if (!!editedContract.value) {
+    return editedContract.value
   }
   return contract.value
 })
@@ -224,15 +241,14 @@ const currentContractData = computed<ContractData | undefined>(() => {
 
   return {
     ...preprocessedContractData,
-    semanticConditionValues: [...contractContentValuesStore.semanticConditionValues]
+    semanticConditionValues: [...contractContentValuesStore.semanticConditionValues],
   }
 })
-
 </script>
 
 <template>
   <div class="flex flex-col min-h-full -mx-4 md:-mx-8 -my-4 md:-my-8">
-    <div v-if="!!contract && !!changedContractData && !!shownData">
+    <div v-if="!!contract && !!editedContract && !!shownData">
       <div class="flex-1 flex flex-col">
         <!-- Tabs -->
         <div class="sticky top-0 z-10 shrink-0 bg-base-200 border-b border-base-300">
@@ -282,10 +298,7 @@ const currentContractData = computed<ContractData | undefined>(() => {
               </div>
 
               <div v-show="activeTab === 'diff'">
-                <DiffView
-                  :prior-contract-data="priorContractData"
-                  :current-contract-data="currentContractData"
-                />
+                <DiffView :prior-contract-data="priorContractData" :current-contract-data="currentContractData" />
               </div>
             </div>
           </div>

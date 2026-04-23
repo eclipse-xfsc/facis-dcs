@@ -4,6 +4,7 @@ import ReviewContractTemplateView from '@/modules/template-repository/views/Revi
 import ViewContractTemplateView from '@/modules/template-repository/views/ViewContractTemplateView.vue'
 import { authenticationService } from '@/services/authentication-service'
 import { useAuthStore } from '@/stores/auth-store'
+import { useNavStore } from '@/stores/nav-store'
 import AuthSuccessView from '@/views/auth/AuthSuccessView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import ContractTemplateListView from '@/views/contract-template-list/ContractTemplateListView.vue'
@@ -305,6 +306,11 @@ router.beforeEach((to) => {
   if (!hasAuthorizedRole) {
     return { name: ROUTES.HOME }
   }
+})
+
+router.beforeEach((_, from) => {
+  const navStore = useNavStore()
+  navStore.previousRoute = from
 })
 
 export { router, ROUTES }

@@ -14,15 +14,15 @@ import { useContractEditorUiStore } from '@/modules/contract-workflow-engine/sto
 import TemplatePreview from '@/modules/template-repository/components/builder-editor/preview/TemplatePreview.vue'
 import { useTemplateDraftStore } from '@/modules/template-repository/store/templateDraftStore'
 import { useTemplateEditorUiStore } from '@/modules/template-repository/store/templateEditorUiStore'
-import { ROUTES } from '@/router/router'
 import { contractWorkflowService } from '@/services/contract-workflow-service'
+import { useNavStore } from '@/stores/nav-store'
 import { ContractState } from '@/types/contract-state'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref, useTemplateRef, watch, type Ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const router = useRouter()
+const navStore = useNavStore()
 
 const templateDraftStore = useTemplateDraftStore()
 const contractEditorUiStore = useContractEditorUiStore()
@@ -92,7 +92,7 @@ const forwardToApproval = async () => {
   try {
     const confirmationResult = await confirmationDialog.value?.reveal({
       message: 'Add comment?',
-      editor: { requiredText: true },
+      editor: { requiredText: false },
     })
     if (confirmationResult?.isCanceled) return
     const comment = confirmationResult?.data
@@ -103,7 +103,7 @@ const forwardToApproval = async () => {
       comments: comment ? [comment] : [],
     })
     if (response.did) {
-      router.push({ name: ROUTES.CONTRACTS.LIST })
+      navStore.goToPreviousRoute()
     }
   } catch (err) {
     console.error('Failed to submit', err)
@@ -114,8 +114,8 @@ const returnToNegotiation = async () => {
   if (!contract.value) return
   try {
     const confirmationResult = await confirmationDialog.value?.reveal({
-      message: 'Add comment?',
-      editor: { requiredText: true },
+      message: 'Comment findings',
+      editor: { requiredText: false, placeholder: 'Comments, findings...' },
     })
     if (confirmationResult?.isCanceled) return
     const comment = confirmationResult?.data
@@ -126,7 +126,7 @@ const returnToNegotiation = async () => {
       comments: comment ? [comment] : [],
     })
     if (response.did) {
-      router.push({ name: ROUTES.CONTRACTS.LIST })
+      navStore.goToPreviousRoute()
     }
   } catch (err) {
     console.error('Failed to return to negotiation', err)
@@ -229,7 +229,7 @@ function applyContractDataToDraft(contractData?: unknown) {
           :disabled="isSubmitting"
         >
           <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
-          Return to negotiation
+          Reject
         </button>
         <button
           v-if="contract?.state === ContractState.submitted"
