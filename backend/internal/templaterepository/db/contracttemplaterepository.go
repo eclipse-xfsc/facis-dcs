@@ -74,4 +74,6 @@ type ContractTemplateRepo interface {
 	ReadProcessData(ctx context.Context, tx *sqlx.Tx, did string) (*ContractTemplateProcessData, error)
 	UpdateState(ctx context.Context, tx *sqlx.Tx, did string, state string) error
 	Update(ctx context.Context, tx *sqlx.Tx, data ContractTemplateUpdateData) error
+	ReadLogCID(ctx context.Context, tx *sqlx.Tx, did string) (*string, error)
+	UpdateLogCID(ctx context.Context, tx *sqlx.Tx, did string, logCID string) error
 }

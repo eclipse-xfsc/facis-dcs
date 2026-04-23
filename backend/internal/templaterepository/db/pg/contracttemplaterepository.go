@@ -16,6 +16,31 @@ import (
 type PostgresContractTemplateRepo struct {
 }
 
+func (r *PostgresContractTemplateRepo) UpdateLogCID(ctx context.Context, tx *sqlx.Tx, did string, logCID string) error {
+	statement := `
+        UPDATE contract_templates SET log_cid = $2
+        WHERE did = $1
+    `
+	_, err := tx.ExecContext(ctx, statement, did, logCID)
+	return err
+}
+
+func (r *PostgresContractTemplateRepo) ReadLogCID(ctx context.Context, tx *sqlx.Tx, did string) (*string, error) {
+	query := `
+        SELECT log_cid
+        FROM contract_templates WHERE did = $1
+    `
+	var result *string
+	err := tx.GetContext(ctx, result, query, did)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("could not update log_cid from did %s", did)
+		}
+		return nil, err
+	}
+	return result, nil
+}
+
 func (r *PostgresContractTemplateRepo) Create(ctx context.Context, tx *sqlx.Tx, data db.ContractTemplate) (*time.Time, error) {
 	statement := `
         INSERT INTO contract_templates (

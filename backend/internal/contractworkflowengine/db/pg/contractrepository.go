@@ -21,6 +21,31 @@ func (r *PostgresContractRepo) ExpireOutdatedContracts(ctx context.Context, tx *
 	panic("implement me")
 }
 
+func (r *PostgresContractRepo) UpdateLogCID(ctx context.Context, tx *sqlx.Tx, did string, logCID string) error {
+	statement := `
+        UPDATE contracts SET log_cid = $2
+        WHERE did = $1
+    `
+	_, err := tx.ExecContext(ctx, statement, did, logCID)
+	return err
+}
+
+func (r *PostgresContractRepo) ReadLogCID(ctx context.Context, tx *sqlx.Tx, did string) (*string, error) {
+	query := `
+        SELECT log_cid
+        FROM contracts WHERE did = $1
+    `
+	var result *string
+	err := tx.GetContext(ctx, result, query, did)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, fmt.Errorf("could not update log_cid from did %s", did)
+		}
+		return nil, err
+	}
+	return result, nil
+}
+
 func (r *PostgresContractRepo) Create(ctx context.Context, tx *sqlx.Tx, data db.Contract) (*time.Time, error) {
 	statement := `
         INSERT INTO contracts (
