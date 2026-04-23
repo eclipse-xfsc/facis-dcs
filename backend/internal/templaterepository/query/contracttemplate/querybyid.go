@@ -57,7 +57,7 @@ func (h *GetByIDHandler) Handle(ctx context.Context, query GetByIDQry) (*GetByID
 		DocumentNumber: data.DocumentNumber,
 		Version:        data.Version,
 		RetrievedBy:    query.RetrievedBy,
-		OccurredAt:     time.Now(),
+		OccurredAt:     time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractTemplateRepo)
 	if err != nil {

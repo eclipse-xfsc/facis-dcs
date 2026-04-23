@@ -41,7 +41,7 @@ func TestSubmit_SubmitContractTemplateInDraftState(t *testing.T) {
 	approver := "Test User 5"
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
 		Comments:    nil,
@@ -131,7 +131,7 @@ func TestSubmit_SubmitContractTemplateInDraftStateWithInvalidUser(t *testing.T) 
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 6",
 		ActionFlag:  nil,
 		Comments:    nil,
@@ -210,7 +210,7 @@ func TestSubmit_OneReviewerApprovedContractTemplateInSubmittedState(t *testing.T
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -287,7 +287,7 @@ func TestSubmit_ApproveContractTemplateInSubmittedStateWithInvalidUser(t *testin
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 4",
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -347,7 +347,7 @@ func TestSubmit_ApproveContractTemplateInSubmittedStateWithoutVerifying(t *testi
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 1",
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -396,7 +396,7 @@ func TestSubmit_RejectContractTemplateInSubmittedStateWithInvalidUser(t *testing
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 4",
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -468,7 +468,7 @@ func TestSubmit_AllReviewersApprovedContractTemplateInSubmittedState(t *testing.
 	for _, reviewer := range reviewers {
 		cmd := command.SubmitCmd{
 			DID:         *did,
-			UpdatedAt:   time.Now(),
+			UpdatedAt:   time.Now().UTC(),
 			SubmittedBy: reviewer,
 			ActionFlag:  &actionFlag,
 			Comments:    []string{},
@@ -537,7 +537,7 @@ func TestSubmit_OneReviewerDeclinesContractTemplateInSubmittedState(t *testing.T
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -591,7 +591,7 @@ func TestSubmit_SubmitNonExistingContractTemplate(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 1",
 	}
 	handler := command.Submitter{
@@ -628,7 +628,7 @@ func TestSubmit_SubmitContractTemplateInSubmittedStateWithoutActionFlag(t *testi
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
 		Comments:    []string{},
@@ -671,7 +671,7 @@ func TestSubmit_SubmitContractTemplateInReviewedStateWithInvalidUser(t *testing.
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 2",
 	}
 	handler := command.Submitter{
@@ -721,7 +721,7 @@ func TestSubmit_SubmitContractTemplateInSubmittedStateWithApproverUser(t *testin
 	aFlag := actionflag.Approval
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: approver,
 		ActionFlag:  &aFlag,
 	}
@@ -769,7 +769,7 @@ func TestSubmit_SubmitContractTemplateWithResubmission(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
 		Comments:    nil,
@@ -870,7 +870,7 @@ func TestSubmit_SubmitContractTemplateWithResubmission(t *testing.T) {
 
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -942,7 +942,7 @@ func TestSubmit_SubmitContractTemplateWithResubmission(t *testing.T) {
 
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[2],
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -980,7 +980,7 @@ func TestSubmit_SubmitContractTemplateWithResubmission(t *testing.T) {
 	*/
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
 		Comments:    nil,
@@ -1043,7 +1043,7 @@ func TestSubmit_SubmitContractTemplateWithResubmission(t *testing.T) {
 	for _, reviewer := range reviewers {
 		cmd := command.SubmitCmd{
 			DID:         *did,
-			UpdatedAt:   time.Now(),
+			UpdatedAt:   time.Now().UTC(),
 			SubmittedBy: reviewer,
 			ActionFlag:  &actionFlag,
 			Comments:    []string{},
@@ -1082,7 +1082,7 @@ func TestSubmit_SubmitContractTemplateWithResubmission(t *testing.T) {
 	*/
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: approver,
 		ActionFlag:  nil,
 		Comments:    []string{"Test Comment"},
@@ -1145,7 +1145,7 @@ func TestSubmit_SubmitContractTemplateWithResubmission(t *testing.T) {
 	for _, reviewer := range reviewers {
 		cmd := command.SubmitCmd{
 			DID:         *did,
-			UpdatedAt:   time.Now(),
+			UpdatedAt:   time.Now().UTC(),
 			SubmittedBy: reviewer,
 			ActionFlag:  &actionFlag,
 			Comments:    []string{},
@@ -1184,7 +1184,7 @@ func TestSubmit_SubmitContractTemplateWithResubmission(t *testing.T) {
 	*/
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: approver,
 		ActionFlag:  nil,
 		Comments:    []string{"Test Comment"},
@@ -1252,7 +1252,7 @@ func TestSubmit_SubmitContractTemplateWithApproving(t *testing.T) {
 	cmd := command.SubmitCmd{
 		DID: *did,
 
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
 		Comments:    nil,
@@ -1354,7 +1354,7 @@ func TestSubmit_SubmitContractTemplateWithApproving(t *testing.T) {
 
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -1427,7 +1427,7 @@ func TestSubmit_SubmitContractTemplateWithApproving(t *testing.T) {
 
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[1],
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -1465,7 +1465,7 @@ func TestSubmit_SubmitContractTemplateWithApproving(t *testing.T) {
 	*/
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
 		Comments:    nil,
@@ -1528,7 +1528,7 @@ func TestSubmit_SubmitContractTemplateWithApproving(t *testing.T) {
 	for _, reviewer := range reviewers {
 		cmd := command.SubmitCmd{
 			DID:         *did,
-			UpdatedAt:   time.Now(),
+			UpdatedAt:   time.Now().UTC(),
 			SubmittedBy: reviewer,
 			ActionFlag:  &actionFlag,
 			Comments:    []string{},
@@ -1567,7 +1567,7 @@ func TestSubmit_SubmitContractTemplateWithApproving(t *testing.T) {
 	*/
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: approver,
 		ActionFlag:  nil,
 		Comments:    []string{"Test Comment"},
@@ -1629,7 +1629,7 @@ func TestSubmit_SubmitContractTemplateWithApproving(t *testing.T) {
 	for _, reviewer := range reviewers {
 		cmd := command.SubmitCmd{
 			DID:         *did,
-			UpdatedAt:   time.Now(),
+			UpdatedAt:   time.Now().UTC(),
 			SubmittedBy: reviewer,
 			ActionFlag:  &actionFlag,
 			Comments:    []string{},
@@ -1686,7 +1686,7 @@ func TestSubmit_SubmitContractTemplateWithApproving(t *testing.T) {
 	*/
 	approveCmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    approver,
 		DecisionNotes: []string{"Test"},
 	}
@@ -1749,7 +1749,7 @@ func TestSubmit_SubmitContractTemplateWithRejecting(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: submittedBy,
 		ActionFlag:  nil,
 		Comments:    nil,
@@ -1853,7 +1853,7 @@ func TestSubmit_SubmitContractTemplateWithRejecting(t *testing.T) {
 
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -1929,7 +1929,7 @@ func TestSubmit_SubmitContractTemplateWithRejecting(t *testing.T) {
 	cmd = command.SubmitCmd{
 		DID: *did,
 
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[1],
 		ActionFlag:  &actionFlag,
 		Comments:    []string{},
@@ -1979,7 +1979,7 @@ func TestSubmit_SubmitContractTemplateWithRejecting(t *testing.T) {
 	cmd = command.SubmitCmd{
 		DID: *did,
 
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: submittedBy,
 		ActionFlag:  nil,
 		Comments:    nil,
@@ -2044,7 +2044,7 @@ func TestSubmit_SubmitContractTemplateWithRejecting(t *testing.T) {
 	for _, reviewer := range reviewers {
 		cmd := command.SubmitCmd{
 			DID:         *did,
-			UpdatedAt:   time.Now(),
+			UpdatedAt:   time.Now().UTC(),
 			SubmittedBy: reviewer,
 			ActionFlag:  &actionFlag,
 			Comments:    []string{},
@@ -2085,7 +2085,7 @@ func TestSubmit_SubmitContractTemplateWithRejecting(t *testing.T) {
 	*/
 	cmd = command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: approver,
 		ActionFlag:  nil,
 		Comments:    []string{"Test Comment"},
@@ -2149,7 +2149,7 @@ func TestSubmit_SubmitContractTemplateWithRejecting(t *testing.T) {
 	for _, reviewer := range reviewers {
 		cmd := command.SubmitCmd{
 			DID:         *did,
-			UpdatedAt:   time.Now(),
+			UpdatedAt:   time.Now().UTC(),
 			SubmittedBy: reviewer,
 			ActionFlag:  &actionFlag,
 			Comments:    []string{},
@@ -2191,7 +2191,7 @@ func TestSubmit_SubmitContractTemplateWithRejecting(t *testing.T) {
 	*/
 	rejectCmd := command.RejectCmd{
 		DID:        *did,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 		RejectedBy: approver,
 		Reason:     "Test",
 	}

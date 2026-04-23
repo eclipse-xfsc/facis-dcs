@@ -200,7 +200,7 @@ func (h *Submitter) Handle(ctx context.Context, cmd SubmitCmd) error {
 				OldContractVersion: processData.ContractVersion,
 				NewContractVersion: &newVersion,
 				SubmittedBy:        cmd.SubmittedBy,
-				OccurredAt:         time.Now(),
+				OccurredAt:         time.Now().UTC(),
 			}
 			err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 			if err != nil {
@@ -280,7 +280,7 @@ func (h *Submitter) Handle(ctx context.Context, cmd SubmitCmd) error {
 			NewState:        nextState.String(),
 			ActionFlag:      cmd.ActionFlag,
 			Comments:        cmd.Comments,
-			OccurredAt:      time.Now(),
+			OccurredAt:      time.Now().UTC(),
 		}
 		err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 		if err != nil {

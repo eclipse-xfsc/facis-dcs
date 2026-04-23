@@ -50,7 +50,7 @@ func (h *EvidenceRecorder) Handle(ctx context.Context, cmd RecordEvidenceCmd) er
 		DID:             cmd.DID,
 		ContractVersion: processData.ContractVersion,
 		RecordedBy:      cmd.RecordedBy,
-		OccurredAt:      time.Now(),
+		OccurredAt:      time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

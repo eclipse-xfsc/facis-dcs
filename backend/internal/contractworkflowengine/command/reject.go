@@ -74,7 +74,7 @@ func (h *Rejecter) Handle(ctx context.Context, cmd RejectCmd) error {
 		ContractVersion: processData.ContractVersion,
 		RejectedBy:      cmd.RejectedBy,
 		Reason:          cmd.Reason,
-		OccurredAt:      time.Now(),
+		OccurredAt:      time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

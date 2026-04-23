@@ -36,7 +36,7 @@ func TestRegister_RegisterContractTemplateDataInValidState(t *testing.T) {
 	cmd := command.RegisterCmd{
 		DID:          *did,
 		RegisteredBy: creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 	}
 	handler := command.Registrar{
 		DB:     db,
@@ -84,7 +84,7 @@ func TestRegister_RegisterNonExistingContractTemplate(t *testing.T) {
 
 	cmd := command.RegisterCmd{
 		DID:          *did,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		RegisteredBy: "Test User 1",
 	}
 	handler := command.Registrar{
@@ -121,7 +121,7 @@ func TestRegister_RegisterContractTemplateDataInDraftState(t *testing.T) {
 	cmd := command.RegisterCmd{
 		DID:          *did,
 		RegisteredBy: creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 	}
 	handler := command.Registrar{
 		DB:     db,
@@ -157,7 +157,7 @@ func TestRegister_RegisterContractTemplateDataInSubmittedState(t *testing.T) {
 	cmd := command.RegisterCmd{
 		DID:          *did,
 		RegisteredBy: creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 	}
 	handler := command.Registrar{
 		DB:     db,
@@ -193,7 +193,7 @@ func TestRegister_RegisterContractTemplateDataInRejectedState(t *testing.T) {
 	cmd := command.RegisterCmd{
 		DID:          *did,
 		RegisteredBy: creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 	}
 	handler := command.Registrar{
 		DB:     db,
@@ -229,7 +229,7 @@ func TestRegister_RegisterContractTemplateDataInReviewedState(t *testing.T) {
 	cmd := command.RegisterCmd{
 		DID:          *did,
 		RegisteredBy: creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 	}
 	handler := command.Registrar{
 		DB:     db,
@@ -265,7 +265,7 @@ func TestRegister_RegisterContractTemplateDataInRegisteredState(t *testing.T) {
 	cmd := command.RegisterCmd{
 		DID:          *did,
 		RegisteredBy: creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 	}
 	handler := command.Registrar{
 		DB:     db,
@@ -301,7 +301,7 @@ func TestRegister_RegisterContractTemplateDataInArchivedState(t *testing.T) {
 	cmd := command.RegisterCmd{
 		DID:          *did,
 		RegisteredBy: creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 	}
 	handler := command.Registrar{
 		DB:     db,
