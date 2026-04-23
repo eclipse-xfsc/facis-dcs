@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"digital-contracting-service/internal/base/conf"
+	"digital-contracting-service/internal/processauditandcompliance/ipfs"
 	"fmt"
 	"log"
 	"time"
@@ -11,16 +12,36 @@ import (
 )
 
 type OutboxProcessor struct {
-	DB        *sqlx.DB
-	Ctx       context.Context
-	PubClient *CloudEventPubClient
+	DB         *sqlx.DB
+	Ctx        context.Context
+	PubClient  *CloudEventPubClient
+	IPFSClient *ipfs.APIClient
+}
+
+type OutboxEvent struct {
+	ID        int64     `db:"id"         json:"id"`
+	Component string    `db:"component"  json:"component"`
+	EventType string    `db:"event_type" json:"event_type"`
+	EventData []byte    `db:"event_data" json:"event_data"`
+	DID       *string   `db:"did"        json:"did"`
+	CreatedAt time.Time `db:"created_at" json:"created_at"`
+}
+
+type AuditLogEntry struct {
+	ID        int64     `json:"id"`
+	Component string    `json:"component"`
+	EventType string    `json:"event_type"`
+	EventData []byte    `json:"event_data"`
+	DID       *string   `json:"did"`
+	CreatedAt time.Time `json:"created_at"`
+	PreCID    string    `json:"pre_cid"`
 }
 
 func (j OutboxProcessor) Start() {
-	go startProcessingJob(j.DB, j.Ctx, j.PubClient, conf.OutboxProcessorTimeOut())
+	go startProcessingJob(j.DB, j.Ctx, j.PubClient, j.IPFSClient, conf.OutboxProcessorTimeOut())
 }
 
-func startProcessingJob(db *sqlx.DB, ctx context.Context, pubClient *CloudEventPubClient, interval time.Duration) {
+func startProcessingJob(db *sqlx.DB, ctx context.Context, pubClient *CloudEventPubClient, ipfsClient *ipfs.APIClient, interval time.Duration) {
 	if pubClient == nil {
 		return
 	}
@@ -44,15 +65,6 @@ func startProcessingJob(db *sqlx.DB, ctx context.Context, pubClient *CloudEventP
 			return fmt.Errorf("could not query outbox events: %w", err)
 		}
 
-		type OutboxEvent struct {
-			ID        int64     `db:"id"`
-			Component string    `db:"component"`
-			EventType string    `db:"event_type"`
-			EventData []byte    `db:"event_data"`
-			DID       *string   `db:"did"`
-			CreatedAt time.Time `db:"created_at"`
-		}
-
 		var events []OutboxEvent
 		for rows.Next() {
 			var event OutboxEvent
@@ -68,17 +80,35 @@ func startProcessingJob(db *sqlx.DB, ctx context.Context, pubClient *CloudEventP
 			log.Println("process ", len(events), " events")
 		}
 
+		var preCID string
 		for _, event := range events {
+
 			if err := pubClient.Publish(event.Component, event.EventType, event.EventData); err != nil {
-				return fmt.Errorf("could not publish event %d: %w", event.ID, err.(error))
+				return fmt.Errorf("could not publish event %d: %w", event.ID, err)
 			}
 
-			_, err := tx.ExecContext(ctx, `
+			auditLogEntry := AuditLogEntry{
+				ID:        event.ID,
+				Component: event.Component,
+				EventType: event.EventType,
+				EventData: event.EventData,
+				DID:       event.DID,
+				CreatedAt: event.CreatedAt,
+				PreCID:    preCID,
+			}
+
+			result, err := ipfsClient.CreateFile(ctx, auditLogEntry)
+			if err != nil {
+				return fmt.Errorf("could not create IPFS file for event %d: %w", event.ID, err)
+			}
+
+			preCID = result.Identifier.Value
+
+			if _, err := tx.ExecContext(ctx, `
 				UPDATE outbox_events 
 				SET processed = TRUE, processed_at = CURRENT_TIMESTAMP
 				WHERE id = $1
-			`, event.ID)
-			if err != nil {
+			`, event.ID); err != nil {
 				return fmt.Errorf("could not mark event %d as processed: %w", event.ID, err)
 			}
 		}
@@ -88,8 +118,7 @@ func startProcessingJob(db *sqlx.DB, ctx context.Context, pubClient *CloudEventP
 
 	ticker := time.NewTicker(interval)
 	for range ticker.C {
-		err := schedulerLogic()
-		if err != nil {
+		if err := schedulerLogic(); err != nil {
 			log.Printf("could not process outbox entries: %v", err)
 		}
 	}
