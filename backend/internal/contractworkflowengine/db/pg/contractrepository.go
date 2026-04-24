@@ -21,31 +21,6 @@ func (r *PostgresContractRepo) ExpireOutdatedContracts(ctx context.Context, tx *
 	panic("implement me")
 }
 
-func (r *PostgresContractRepo) UpdateLogCID(ctx context.Context, tx *sqlx.Tx, did string, logCID string) error {
-	statement := `
-        UPDATE contracts SET log_cid = $2
-        WHERE did = $1
-    `
-	_, err := tx.ExecContext(ctx, statement, did, logCID)
-	return err
-}
-
-func (r *PostgresContractRepo) ReadLogCID(ctx context.Context, tx *sqlx.Tx, did string) (*string, error) {
-	query := `
-        SELECT log_cid
-        FROM contracts WHERE did = $1
-    `
-	var result *string
-	err := tx.GetContext(ctx, result, query, did)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, fmt.Errorf("could not update log_cid from did %s", did)
-		}
-		return nil, err
-	}
-	return result, nil
-}
-
 func (r *PostgresContractRepo) Create(ctx context.Context, tx *sqlx.Tx, data db.Contract) (*time.Time, error) {
 	statement := `
         INSERT INTO contracts (
@@ -133,7 +108,7 @@ func (r *PostgresContractRepo) ReadProcessData(ctx context.Context, tx *sqlx.Tx,
 
 func (r *PostgresContractRepo) UpdateState(ctx context.Context, tx *sqlx.Tx, did string, state string) error {
 	statement := `
-        UPDATE contracts SET state = $2
+        UPDATE contracts_effective SET state = $2
         WHERE did = $1
     `
 	_, err := tx.ExecContext(ctx, statement, did, state)
@@ -194,7 +169,7 @@ func createSearchConditions(values db.SearchValues) (*string, []interface{}, err
 }
 
 func createQuery(data db.ContractUpdateData) (*string, []interface{}, error) {
-	queryBase := `UPDATE contracts SET `
+	queryBase := `UPDATE contracts_effective SET `
 	var columns []string
 	var params []interface{}
 

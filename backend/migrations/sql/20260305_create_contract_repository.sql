@@ -11,8 +11,6 @@ CREATE TABLE IF NOT EXISTS contracts (
 
     state           contract_state NOT NULL,
 
-    log_cid         VARCHAR(60),
-
     contract_version         INT,
     name            VARCHAR(255),
     description     TEXT,

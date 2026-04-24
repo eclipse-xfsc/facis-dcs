@@ -15,8 +15,6 @@ CREATE TABLE IF NOT EXISTS contract_templates
     state           contract_template_state NOT NULL,
     template_type   contract_template_type  NOT NULL,
 
-    log_cid     VARCHAR(60),
-
     document_number VARCHAR(255),
     version         INT,
     name            VARCHAR(255),

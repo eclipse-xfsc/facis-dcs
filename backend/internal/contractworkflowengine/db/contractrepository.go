@@ -70,6 +70,4 @@ type ContractRepo interface {
 	UpdateState(ctx context.Context, tx *sqlx.Tx, did string, state string) error
 	Update(ctx context.Context, tx *sqlx.Tx, data ContractUpdateData) error
 	ExpireOutdatedContracts(ctx context.Context, tx *sqlx.Tx) (int64, error)
-	ReadLogCID(ctx context.Context, tx *sqlx.Tx, did string) (*string, error)
-	UpdateLogCID(ctx context.Context, tx *sqlx.Tx, did string, logCID string) error
 }
