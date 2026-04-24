@@ -9,6 +9,7 @@ import { computed, ref, useTemplateRef } from 'vue'
 
 const props = defineProps<{
   contract: Contract
+  disabled?: boolean
 }>()
 
 const emit = defineEmits<{ selectedNegotiation: [value: ContractNegotiation | null] }>()
@@ -125,7 +126,7 @@ const handleShowBtn = (negotiation: ContractNegotiation) => {
           </ul>
           <div class="card-actions justify-end">
             <button
-              v-if="isNegotiationShown.get(negotiation.id)"
+              v-if="!disabled && isNegotiationShown.get(negotiation.id)"
               class="btn btn-sm btn-primary"
               :disabled="isSubmitting || isBtnDisabled(negotiation)"
               @click="acceptNegotiation(negotiation)"
@@ -134,7 +135,7 @@ const handleShowBtn = (negotiation: ContractNegotiation) => {
               Accept
             </button>
             <button
-              v-if="isNegotiationShown.get(negotiation.id)"
+              v-if="!disabled && isNegotiationShown.get(negotiation.id)"
               class="btn btn-sm btn-secondary"
               :disabled="isSubmitting || isBtnDisabled(negotiation)"
               @click="rejectNegotiation(negotiation)"

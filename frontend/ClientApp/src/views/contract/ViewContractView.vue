@@ -2,19 +2,22 @@
 import SubmitSelectionDialog from '@/components/SubmitSelectionDialog.vue'
 import type { Contract } from '@/models/contract/contract'
 import type { SelectedUserRole } from '@/models/user'
-import { useSemanticValueVerification, type VerificationResult } from '@/modules/contract-workflow-engine/composables/useSemanticValueVerification'
+import {
+  useSemanticValueVerification,
+  type VerificationResult,
+} from '@/modules/contract-workflow-engine/composables/useSemanticValueVerification'
 import { useContractContentValuesStore } from '@/modules/contract-workflow-engine/store/contractContentValuesStore'
 import { useContractEditorUiStore } from '@/modules/contract-workflow-engine/store/contractEditorUiStore'
 import { useTemplateDraftStore } from '@/modules/template-repository/store/templateDraftStore'
-import { ROUTES } from '@/router/router'
 import { contractWorkflowService } from '@/services/contract-workflow-service'
 import { useAuthStore } from '@/stores/auth-store'
+import { useNavStore } from '@/stores/nav-store'
 import { ContractState } from '@/types/contract-state'
 import { computed, ref, watch, type Ref } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
-const router = useRouter()
+const navStore = useNavStore()
 
 const authStore = useAuthStore()
 const templateDraftStore = useTemplateDraftStore()
@@ -24,7 +27,8 @@ const { verifySemanticValue } = useSemanticValueVerification()
 const { setActiveTab } = contractEditorUiStore
 
 const contract: Ref<Contract | null> = ref(null)
-  const verificationResult: Ref<VerificationResult | null> = ref(null)
+const verificationResult: Ref<VerificationResult | null> = ref(null)
+
 const isCreator = computed(() => {
   return contract.value?.created_by === authStore.user?.username
 })
@@ -53,18 +57,33 @@ const submitContract = async (result: SelectedUserRole[]) => {
   try {
     const reviewers = result.filter((user) => user.role === 'CONTRACT_REVIEWER').map((user) => user.user.username)
     const approver = result.find((user) => user.role === 'CONTRACT_APPROVER')?.user.username!
-    const negotiators = result
-      .filter((user) => user.role === 'CONTRACT_NEGOTIATOR')
-      .map((user) => user.user.username)
+    const negotiators = result.filter((user) => user.role === 'CONTRACT_NEGOTIATOR').map((user) => user.user.username)
     const response = await contractWorkflowService.submit({
-      did: contract.value?.did,
-      updated_at: contract.value?.updated_at,
+      did: contract.value.did,
+      updated_at: contract.value.updated_at,
       reviewers,
       approver,
       negotiators,
     })
     if (response.did) {
-      router.push({ name: ROUTES.CONTRACTS.LIST })
+      navStore.goToPreviousRoute()
+    }
+  } catch (error) {
+    console.error('Contract Submission failed', error)
+  }
+}
+
+const submitRejectedTemplate = async () => {
+  if (!contract.value) return
+  const isSemanticValueValid = verifySemanticValues()
+  if (!isSemanticValueValid) return
+  try {
+    const response = await contractWorkflowService.submit({
+      did: contract.value.did,
+      updated_at: contract.value.updated_at,
+    })
+    if (response.did) {
+      navStore.goToPreviousRoute()
     }
   } catch (error) {
     console.error('Contract Submission failed', error)
@@ -72,19 +91,19 @@ const submitContract = async (result: SelectedUserRole[]) => {
 }
 
 const verifySemanticValues = (): boolean => {
-  const subTemplateSemanticConditions = templateDraftStore?.subTemplateSnapshots?.map((subTemplate)=>{
-    return  {
+  const subTemplateSemanticConditions = templateDraftStore?.subTemplateSnapshots?.map((subTemplate) => {
+    return {
       templateId: subTemplate.did,
       version: subTemplate.version,
       document_number: subTemplate.document_number,
-      semanticConditions: subTemplate.template_data?.semanticConditions ?? []
+      semanticConditions: subTemplate.template_data?.semanticConditions ?? [],
     }
   })
   const result = verifySemanticValue(
-    templateDraftStore.semanticConditions, 
+    templateDraftStore.semanticConditions,
     subTemplateSemanticConditions,
     contractContentValuesStore.semanticConditionValues,
-    templateDraftStore.documentBlocks
+    templateDraftStore.documentBlocks,
   )
   verificationResult.value = result
   if (result.isValid) {
@@ -117,12 +136,21 @@ const verifySemanticValues = (): boolean => {
     <div class="sticky bottom-0 shrink-0 border-t border-base-300 bg-base-100">
       <div class="max-w-4xl mx-auto px-6 py-3 flex flex-col md:flex-row gap-3">
         <button class="btn btn-ghost md:w-32" @click="$router.back()">Cancel</button>
-        <SubmitSelectionDialog
-          v-if="isCreator && contract?.state === ContractState.draft"
-          dialog-type="contract"
-          @submit="submitContract"
-          class="btn btn-primary flex-1"
-        />
+        <template v-if="isCreator">
+          <SubmitSelectionDialog
+            v-if="contract?.state === ContractState.draft"
+            dialog-type="contract"
+            @submit="submitContract"
+            class="btn btn-primary flex-1"
+          />
+          <button
+            v-else-if="contract?.state === ContractState.rejected"
+            class="btn btn-primary flex-1"
+            @click="submitRejectedTemplate"
+          >
+            Submit
+          </button>
+        </template>
       </div>
     </div>
   </div>

@@ -19,6 +19,7 @@ const canEdit = computed(() => {
 
 const hasNegotiationTask = computed(() => contractsStore.hasNegotiationTask(props.item))
 const hasReviewTask = computed(() => contractsStore.hasReviewTask(props.item))
+const hasApprovalTask = computed(() => contractsStore.hasApprovalTask(props.item))
 
 const resolveViewRouteName = computed(() => {
   if (props.item.state === ContractState.negotiation && hasNegotiationTask.value) {
@@ -26,6 +27,9 @@ const resolveViewRouteName = computed(() => {
   }
   if (props.item.state === ContractState.submitted && hasReviewTask.value) {
     return ROUTES.CONTRACTS.REVIEW
+  }
+  if (props.item.state === ContractState.reviewed && hasApprovalTask.value) {
+    return ROUTES.CONTRACTS.APPROVE
   }
   return ROUTES.CONTRACTS.VIEW
 })

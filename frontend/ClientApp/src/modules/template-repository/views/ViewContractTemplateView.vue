@@ -24,9 +24,9 @@ import TemplateManagerActions from '@/components/lists/template/TemplateManagerA
 import SubmitSelectionDialog from '@/components/SubmitSelectionDialog.vue'
 import type { PartialContractTemplate } from '@/models/contract-template'
 import type { SelectedUserRole } from '@/models/user'
-import { ROUTES } from '@/router/router'
 import { contractTemplateService } from '@/services/contract-template-service'
 import { useAuthStore } from '@/stores/auth-store'
+import { useNavStore } from '@/stores/nav-store'
 import { TemplateState } from '@/types/contract-template-state'
 import TemplateEditors from '@template-repository/components/TemplateEditors.vue'
 import { useTemplateDraftStore } from '@template-repository/store/templateDraftStore'
@@ -37,6 +37,7 @@ import { useRoute, useRouter } from 'vue-router'
 
 const router = useRouter()
 const route = useRoute()
+const navStore = useNavStore()
 
 const authStore = useAuthStore()
 const templateEditorUiStore = useTemplateEditorUiStore()
@@ -107,7 +108,7 @@ const submitTemplate = async (result: SelectedUserRole[]) => {
       approver: approver,
     })
     if (response?.did) {
-      router.push({ name: ROUTES.TEMPLATES.LIST })
+      navStore.goToPreviousRoute()
     }
   } catch (error) {
     console.error('Template Submission failed', error)
@@ -122,7 +123,7 @@ const submitRejectedTemplate = async () => {
       updated_at: draftStore.updated_at
     })
     if (response.did) {
-      router.push({ name: ROUTES.TEMPLATES.LIST })
+      navStore.goToPreviousRoute()
     }
   } catch (error) {
     console.error('Template Submission failed', error)

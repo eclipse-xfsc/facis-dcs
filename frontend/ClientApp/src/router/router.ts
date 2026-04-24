@@ -8,6 +8,7 @@ import { useNavStore } from '@/stores/nav-store'
 import AuthSuccessView from '@/views/auth/AuthSuccessView.vue'
 import LoginView from '@/views/auth/LoginView.vue'
 import ContractTemplateListView from '@/views/contract-template-list/ContractTemplateListView.vue'
+import ApproveContractView from '@/views/contract/ApproveContractView.vue'
 import ContractListView from '@/views/contract/ContractListView.vue'
 import NegotiateContractView from '@/views/contract/NegotiateContractView.vue'
 import NewContractView from '@/views/contract/NewContractView.vue'
@@ -53,6 +54,7 @@ const ROUTES = {
     VIEW: 'contracts.view',
     NEGOTIATE: 'contracts.negotiate',
     REVIEW: 'contracts.review',
+    APPROVE: 'contracts.approve',
   },
 } as const
 
@@ -259,6 +261,18 @@ const routes: RouteRecordRaw[] = [
       title: 'DCS - Review Contract',
       roles: ['CONTRACT_REVIEWER'],
     },
+  },
+  {
+    path: '/contracts/approve/:did',
+    name: ROUTES.CONTRACTS.APPROVE,
+    component: ApproveContractView,
+    meta: {
+      name: 'Approve Contract',
+      hideInSidebar: true,
+      requiresAuth: true,
+      title: 'DCS - Approve Contract',
+      roles: ['CONTRACT_APPROVER'],
+    }
   },
   {
     path: '/auth/success',
