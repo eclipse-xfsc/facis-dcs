@@ -25,6 +25,7 @@ export const useContractEditorUiStore = defineStore(storeId, {
     availableTabs(contractState: ContractStateType) {
       switch (contractState) {
         case ContractState.draft:
+          // Keep the edit page simple for now, same for the negotiation states
           return this.tabs.filter(tab => ['details', 'content'].includes(tab.id))
         case ContractState.negotiation:
           return this.tabs.filter((tab) => ['details', 'content', 'diff'].includes(tab.id))

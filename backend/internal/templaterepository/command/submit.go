@@ -215,7 +215,7 @@ func (h *Submitter) Handle(ctx context.Context, cmd SubmitCmd) error {
 			NewState:       nextTemplateState.String(),
 			ActionFlag:     cmd.ActionFlag,
 			Comments:       cmd.Comments,
-			OccurredAt:     time.Now(),
+			OccurredAt:     time.Now().UTC(),
 		}
 		err = event.Create(ctx, tx, evt, componenttype.ContractTemplateRepo)
 		if err != nil {

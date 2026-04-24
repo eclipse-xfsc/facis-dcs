@@ -49,7 +49,7 @@ func TestNegotiation_CreateNegotiation(t *testing.T) {
 		DID:           *did,
 		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
 
@@ -117,7 +117,7 @@ func TestNegotiation_CreateNegotiationWithInvalidUser(t *testing.T) {
 		DID:           *did,
 		NegotiatedBy:  "Test User",
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
 
@@ -166,7 +166,7 @@ func TestNegotiation_AllNegotiatorsAcceptChangeRequest(t *testing.T) {
 		DID:           *did,
 		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
 
@@ -279,7 +279,7 @@ func TestNegotiation_OneNegotiatorRejectChangeRequest(t *testing.T) {
 		DID:           *did,
 		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
 
@@ -392,7 +392,7 @@ func TestNegotiation_OneAcceptionOneRejectionOfChangeRequest(t *testing.T) {
 		DID:           *did,
 		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
 
@@ -522,7 +522,7 @@ func TestNegotiation_TestForOpenNegotiationDecisions(t *testing.T) {
 		DID:           *did,
 		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
 

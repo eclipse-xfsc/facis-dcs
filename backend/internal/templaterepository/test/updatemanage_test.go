@@ -50,7 +50,7 @@ func TestUpdateManage_UpdateContractTemplateDataInDraftState(t *testing.T) {
 	cmd := command.UpdateManageCmd{
 		DID:          *did,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -123,7 +123,7 @@ func TestUpdateManage_UpdateContractTemplateDataInSubmitState(t *testing.T) {
 	cmd := command.UpdateManageCmd{
 		DID:          *did,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -196,7 +196,7 @@ func TestUpdateManage_UpdateContractTemplateDataInRejectedState(t *testing.T) {
 	cmd := command.UpdateManageCmd{
 		DID:          *did,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -271,7 +271,7 @@ func TestUpdateManage_UpdateContractTemplateDataInReviewedState(t *testing.T) {
 		DID: *did,
 
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -346,7 +346,7 @@ func TestUpdateManage_UpdateContractTemplateDataInApproveState(t *testing.T) {
 		DID: *did,
 
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -398,7 +398,7 @@ func TestUpdateManage_UpdateContractTemplateDataInRegisteredState(t *testing.T) 
 		DID: *did,
 
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -450,7 +450,7 @@ func TestUpdateManage_UpdateContractTemplateDataInArchiveState(t *testing.T) {
 		DID: *did,
 
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -485,7 +485,7 @@ func TestUpdateManage_UpdateNonExistingContractTemplate(t *testing.T) {
 
 	cmd := command.UpdateManageCmd{
 		DID:       *did,
-		UpdatedAt: time.Now(),
+		UpdatedAt: time.Now().UTC(),
 		UpdatedBy: "Test User 1",
 	}
 	handler := command.UpdateManager{
@@ -537,7 +537,7 @@ func TestUpdateManage_SetContractTemplateStateFromDraftToDraft(t *testing.T) {
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -612,7 +612,7 @@ func TestUpdateManage_SetContractTemplateStateFromDraftToSubmitted(t *testing.T)
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -666,7 +666,7 @@ func TestUpdateManage_SetContractTemplateStateFromDraftToRejected(t *testing.T) 
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -720,7 +720,7 @@ func TestUpdateManage_SetContractTemplateStateFromDraftToReviewed(t *testing.T) 
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -774,7 +774,7 @@ func TestUpdateManage_SetContractTemplateStateFromDraftToApproved(t *testing.T) 
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -828,7 +828,7 @@ func TestUpdateManage_SetContractTemplateStateFromDraftToRegistered(t *testing.T
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -882,7 +882,7 @@ func TestUpdateManage_SetContractTemplateStateFromDraftToArchive(t *testing.T) {
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -961,7 +961,7 @@ func TestUpdateManage_SetContractTemplateStateFromSubmittedToDraft(t *testing.T)
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1063,7 +1063,7 @@ func TestUpdateManage_SetContractTemplateStateFromReviewedToDraft(t *testing.T) 
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1165,7 +1165,7 @@ func TestUpdateManage_SetContractTemplateStateFromApprovedToDraft(t *testing.T) 
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1223,7 +1223,7 @@ func TestUpdateManage_SetContractTemplateStateFromReviewedToSubmitted(t *testing
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1328,7 +1328,7 @@ func TestUpdateManage_SetContractTemplateStateFromApprovedToSubmitted(t *testing
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1388,7 +1388,7 @@ func TestUpdateManage_SetContractTemplateStateFromApprovedToReviewed(t *testing.
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1442,7 +1442,7 @@ func TestUpdateManage_SetContractTemplateStateFromRegisteredToDraft(t *testing.T
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1496,7 +1496,7 @@ func TestUpdateManage_SetContractTemplateStateFromRegisteredToSubmitted(t *testi
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1550,7 +1550,7 @@ func TestUpdateManage_SetContractTemplateStateFromRegisteredToApproved(t *testin
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1604,7 +1604,7 @@ func TestUpdateManage_SetContractTemplateStateFromRegisteredToArchived(t *testin
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1658,7 +1658,7 @@ func TestUpdateManage_SetContractTemplateStateFromArchivedToDraft(t *testing.T) 
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1712,7 +1712,7 @@ func TestUpdateManage_SetContractTemplateStateFromArchivedToSubmitted(t *testing
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1766,7 +1766,7 @@ func TestUpdateManage_SetContractTemplateStateFromArchivedToApproved(t *testing.
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -1820,7 +1820,7 @@ func TestUpdateManage_SetContractTemplateStateFromArchivedToRegistered(t *testin
 
 		State:        &newState,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,

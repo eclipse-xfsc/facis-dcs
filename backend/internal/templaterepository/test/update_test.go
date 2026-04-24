@@ -50,7 +50,7 @@ func TestUpdate_UpdateContractTemplateDataInDraftState(t *testing.T) {
 		DID: *did,
 
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -108,7 +108,7 @@ func TestUpdate_UpdateNonExistingContractTemplate(t *testing.T) {
 
 	cmd := command.UpdateCmd{
 		DID:       *did,
-		UpdatedAt: time.Now(),
+		UpdatedAt: time.Now().UTC(),
 		UpdatedBy: "Test User 1",
 	}
 	handler := command.Updater{
@@ -161,7 +161,7 @@ func TestUpdate_UpdateContractTemplateDataInDraftStateWithInvalidUser(t *testing
 	cmd := command.UpdateCmd{
 		DID:          *did,
 		UpdatedBy:    "Test User 1",
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -213,7 +213,7 @@ func TestUpdate_UpdateContractTemplateDataInSubmittedStateAsCreator(t *testing.T
 		DID: *did,
 
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -269,7 +269,7 @@ func TestUpdate_UpdateContractTemplateDataInSubmittedStateAsReviewer(t *testing.
 		DID: *did,
 
 		UpdatedBy:    reviewers[0],
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -348,7 +348,7 @@ func TestUpdate_UpdateContractTemplateDataInSubmittedStateWithInvalidUser(t *tes
 		DID: *did,
 
 		UpdatedBy:    "Test User 1",
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -400,7 +400,7 @@ func TestUpdate_UpdateContractTemplateDataInDraftApprovedState(t *testing.T) {
 		DID: *did,
 
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -452,7 +452,7 @@ func TestUpdate_UpdateContractTemplateDataInDraftPublishedState(t *testing.T) {
 		DID: *did,
 
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -503,7 +503,7 @@ func TestUpdate_UpdateContractTemplateDataInDraftArchivedState(t *testing.T) {
 		DID: *did,
 
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -555,7 +555,7 @@ func TestUpdate_UpdateContractTemplateDataInDraftApprovedStateWithInvalidUser(t 
 		DID: *did,
 
 		UpdatedBy:    "Test User 1",
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
@@ -667,7 +667,7 @@ func TestUpdate_UpdateContractTemplateAndReopenTasks(t *testing.T) {
 		DID: *did,
 
 		UpdatedBy:    reviewers[1],
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		TemplateData: &jsonTemplateData,
