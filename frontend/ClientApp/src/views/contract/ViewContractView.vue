@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ContractManagerActions from '@/components/contract/ContractManagerActions.vue'
 import SubmitSelectionDialog from '@/components/SubmitSelectionDialog.vue'
 import type { Contract } from '@/models/contract/contract'
 import type { SelectedUserRole } from '@/models/user'
@@ -151,6 +152,7 @@ const verifySemanticValues = (): boolean => {
             Submit
           </button>
         </template>
+        <ContractManagerActions v-if="contract" :contract="contract" class="btn btn-primary flex-1" />
       </div>
     </div>
   </div>

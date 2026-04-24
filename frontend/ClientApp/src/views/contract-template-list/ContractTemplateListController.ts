@@ -5,7 +5,7 @@ import { useContractTemplatesStore } from '@/stores/contract-templates-store'
 import type { UserRole } from '@/types/user-role'
 import { computed, onMounted, ref, type Ref } from 'vue'
 
-export function useTemplateTable() {
+export function useTemplateList() {
     const templatesStore = useContractTemplatesStore()
     const templates = computed(() => templatesStore.contractTemplates)
     const reviewTasks = computed(() => templatesStore.reviewTasks)

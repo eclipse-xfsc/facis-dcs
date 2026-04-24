@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ConfirmationModal from '@/components/ConfirmationModal.vue'
+import ContractManagerActions from '@/components/contract/ContractManagerActions.vue'
 import type { ContractData } from '@/models/contract-data'
 import type { Contract } from '@/models/contract/contract'
 import ContractDetailsEditor from '@/modules/contract-workflow-engine/components/ContractDetailsEditor.vue'
@@ -27,7 +28,7 @@ const navStore = useNavStore()
 const templateDraftStore = useTemplateDraftStore()
 const contractEditorUiStore = useContractEditorUiStore()
 const templateEditorUiStore = useTemplateEditorUiStore()
-const { hasConditionParameterForValue } = useSemanticValueVerification()
+const { hasConditionParameterForValue, verifySemanticValue } = useSemanticValueVerification()
 const { preprocessContractData } = useContractDataPreprocess()
 const { activeTab } = storeToRefs(contractEditorUiStore)
 const { setActiveTab } = contractEditorUiStore
@@ -88,7 +89,7 @@ watch(
 )
 
 const forwardToApproval = async () => {
-  if (!contract.value) return
+  if (!contract.value || !isSemanticValueValid.value) return
   try {
     const confirmationResult = await confirmationDialog.value?.reveal({
       message: 'Add comment?',
@@ -165,6 +166,27 @@ function applyContractDataToDraft(contractData?: unknown) {
   contractContentValuesStore.reset({ semanticConditionValues: cd.semanticConditionValues ?? [] })
   verificationResult.value = null
 }
+
+const isSemanticValueValid = computed(() => {
+  const subTemplateSemanticConditions = templateDraftStore.subTemplateSnapshots.map((subTemplate) => ({
+    templateId: subTemplate.did,
+    version: subTemplate.version,
+    document_number: subTemplate.document_number,
+    semanticConditions: subTemplate.template_data?.semanticConditions ?? [],
+  }))
+  const result = verifySemanticValue(
+    templateDraftStore.semanticConditions,
+    subTemplateSemanticConditions,
+    contractContentValuesStore.semanticConditionValues,
+    templateDraftStore.documentBlocks,
+  )
+  verificationResult.value = result
+  if (result.isValid) {
+    return true
+  }
+  setActiveTab('content')
+  return false
+})
 </script>
 
 <template>
@@ -234,12 +256,13 @@ function applyContractDataToDraft(contractData?: unknown) {
         <button
           v-if="contract?.state === ContractState.submitted"
           class="btn btn-primary flex-1"
-          :disabled="isSubmitting"
+          :disabled="isSubmitting || !isSemanticValueValid"
           @click="forwardToApproval"
         >
           <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
           Forward to approval
         </button>
+        <ContractManagerActions v-if="contract" :contract="contract" class="btn btn-primary flex-1" />
       </div>
       <ConfirmationModal ref="confirmation-dialog" />
     </div>

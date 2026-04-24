@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import ContractManagerActions from '@/components/contract/ContractManagerActions.vue'
 import NegotiationList from '@/components/lists/contract/negotiation/NegotiationList.vue'
 import { useScrollStore } from '@/core/store/scroll'
 import type { ContractData } from '@/models/contract-data'
@@ -334,6 +335,7 @@ const currentContractData = computed<ContractData | undefined>(() => {
           <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
           Submit contract
         </button>
+        <ContractManagerActions v-if="contract" :contract="contract" class="btn btn-primary flex-1" />
       </div>
     </div>
   </div>

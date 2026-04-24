@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import ConfirmationModal from '@/components/ConfirmationModal.vue'
+import ContractManagerActions from '@/components/contract/ContractManagerActions.vue'
 import NegotiationList from '@/components/lists/contract/negotiation/NegotiationList.vue'
 import { useScrollStore } from '@/core/store/scroll'
 import type { ContractData } from '@/models/contract-data'
@@ -307,6 +308,7 @@ const handleSelectedNegotiation = (negotiation: ContractNegotiation | null, sele
           <span v-if="isSubmitting" class="loading loading-spinner loading-sm"></span>
           Approve
         </button>
+        <ContractManagerActions v-if="contract" :contract="contract" class="btn btn-primary flex-1" />
       </div>
       <ConfirmationModal ref="confirmation-dialog" />
     </div>

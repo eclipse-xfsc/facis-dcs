@@ -30,7 +30,7 @@
 import { ref, computed, watch, type Ref, useTemplateRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import ConfirmationModal from '@/components/ConfirmationModal.vue'
-import TemplateManagerActions from '@/components/lists/template/TemplateManagerActions.vue'
+import TemplateManagerActions from '@/components/template/TemplateManagerActions.vue'
 import type { PartialContractTemplate } from '@/models/contract-template'
 import { useAuthStore } from '@/stores/auth-store'
 import { useTemplateEditorUiStore } from '@template-repository/store/templateEditorUiStore.ts'
