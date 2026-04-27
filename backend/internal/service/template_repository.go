@@ -560,25 +560,38 @@ func (s *templateRepositorysrvc) Archive(ctx context.Context, req *templaterepos
 }
 
 // retrieve audit history of template actions.
-func (s *templateRepositorysrvc) Audit(ctx context.Context, req *templaterepository.ContractTemplateAuditRequest) (res *templaterepository.ContractTemplateAuditResponse, err error) {
+func (s *templateRepositorysrvc) Audit(ctx context.Context, req *templaterepository.ContractTemplateAuditRequest) (res []*templaterepository.ContractTemplateAuditResponse, err error) {
 
 	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
 	defer cancel()
 
-	cmd := contracttemplate.AuditCmd{
+	qry := contracttemplate.AuditLogQry{
 		DID:       req.Did,
 		AuditedBy: middleware.GetUsername(ctx),
 	}
 	handler := contracttemplate.Auditor{
-		DB:     s.DB,
-		CTRepo: s.CTRepo,
+		DB:           s.DB,
+		CTRepo:       s.CTRepo,
+		ATrailReader: s.ATrailReader,
 	}
-	err = handler.Handle(ctx, cmd)
+	auditLogHistory, err := handler.Handle(ctx, qry)
 	if err != nil {
 		return nil, templaterepository.MakeInternalError(err)
 	}
 
-	return &templaterepository.ContractTemplateAuditResponse{
-		Did: req.Did,
-	}, nil
+	history := make([]*templaterepository.ContractTemplateAuditResponse, 0)
+	for _, entry := range auditLogHistory {
+		history = append(history, &templaterepository.ContractTemplateAuditResponse{
+			ID:               entry.ID,
+			Component:        entry.Component,
+			EventType:        entry.EventType,
+			EventData:        entry.EventData,
+			Did:              entry.DID,
+			CreatedAt:        entry.CreatedAt.String(),
+			GlobalLogPredCid: entry.GlobalLogPredCID,
+			ResLogPredCid:    entry.ResLogPredCID,
+		})
+	}
+
+	return history, nil
 }
