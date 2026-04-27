@@ -3,6 +3,7 @@ package event
 import (
 	"context"
 	"digital-contracting-service/internal/base/datatype/componenttype"
+	"digital-contracting-service/internal/base/db"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -38,18 +39,9 @@ func Create(ctx context.Context, tx *sqlx.Tx, evt Event, component componenttype
 		return fmt.Errorf("failed to marshal event: %w", err)
 	}
 
-	_, err = tx.ExecContext(ctx,
-		`INSERT INTO outbox_events 
-		 (component, event_type, event_data, did, processed)
-		 VALUES ($1, $2, $3, $4, FALSE)`,
-		component.String(),
-		eventType,
-		eventJSON,
-		did,
-	)
-
+	err = db.PersistEvent(ctx, tx, component, eventType, eventJSON, did)
 	if err != nil {
-		return fmt.Errorf("failed to insert event into outbox: %w", err)
+		return fmt.Errorf("failed to persist event: %w", err)
 	}
 
 	return nil

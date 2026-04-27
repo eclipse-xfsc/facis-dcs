@@ -108,7 +108,7 @@ func (r *PostgresContractRepo) ReadProcessData(ctx context.Context, tx *sqlx.Tx,
 
 func (r *PostgresContractRepo) UpdateState(ctx context.Context, tx *sqlx.Tx, did string, state string) error {
 	statement := `
-        UPDATE contracts SET state = $2
+        UPDATE contracts_effective SET state = $2
         WHERE did = $1
     `
 	_, err := tx.ExecContext(ctx, statement, did, state)
@@ -169,7 +169,7 @@ func createSearchConditions(values db.SearchValues) (*string, []interface{}, err
 }
 
 func createQuery(data db.ContractUpdateData) (*string, []interface{}, error) {
-	queryBase := `UPDATE contracts SET `
+	queryBase := `UPDATE contracts_effective SET `
 	var columns []string
 	var params []interface{}
 

@@ -14,7 +14,9 @@ import (
 	templaterepository "digital-contracting-service/gen/template_repository"
 	"digital-contracting-service/internal/auth"
 	"digital-contracting-service/internal/base/conf"
+	"digital-contracting-service/internal/base/db/pq"
 	"digital-contracting-service/internal/base/event"
+	"digital-contracting-service/internal/base/ipfs"
 	contractworkflowengine2 "digital-contracting-service/internal/contractworkflowengine"
 	cwerepo "digital-contracting-service/internal/contractworkflowengine/db/pg"
 	"digital-contracting-service/internal/middleware"
@@ -91,24 +93,6 @@ func main() {
 	}
 	defer cepPubClient.Close()
 
-	outboxProcessor := event.OutboxProcessor{
-		DB:        db,
-		Ctx:       ctx,
-		PubClient: cepPubClient,
-	}
-	outboxProcessor.Start()
-
-	cepSubClient, err := event.NewNatsSubClient(conf.EventBusTopic(), natsURL)
-	if err != nil {
-		log.Fatalf(ctx, err, "Could not connect to events publisher")
-	}
-	defer cepPubClient.Close()
-
-	eventDebugConsumer := event.EventDebugConsumer{
-		SubClient: cepSubClient,
-	}
-	eventDebugConsumer.Start()
-
 	// Initialize OIDC validator and JWT authenticator.
 	oidcIssuerURL := os.Getenv("OIDC_ISSUER_URL")
 	oidcClientID := os.Getenv("OIDC_CLIENT_ID")
@@ -136,6 +120,16 @@ func main() {
 	cweCTRepo := cwerepo.PostgresContractTemplateRepo{}
 	cweCronJob := contractworkflowengine2.CronJob{DB: db}
 	cweCronJob.Start()
+
+	ipfsAPIClient := ipfs.NewClient("http://localhost:8000/v1/tenants/tenant_space", "http://localhost:5001")
+	aRepo := pq.PostgresAuditTrailRepository{}
+	outboxProcessor := event.OutboxProcessor{
+		DB:         db,
+		PubClient:  cepPubClient,
+		IPFSClient: ipfsAPIClient,
+		ARepo:      &aRepo,
+	}
+	outboxProcessor.Start(ctx)
 
 	// Initialize the Federated Catalogue client.
 	fcURL := os.Getenv("FEDERATED_CATALOGUE_API_URL")
