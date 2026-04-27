@@ -4,8 +4,8 @@ import (
 	"context"
 	"digital-contracting-service/internal/base/conf"
 	"digital-contracting-service/internal/base/datatype/componenttype"
-	"digital-contracting-service/internal/processauditandcompliance/db"
-	"digital-contracting-service/internal/processauditandcompliance/ipfs"
+	"digital-contracting-service/internal/base/db"
+	"digital-contracting-service/internal/base/ipfs"
 	"fmt"
 	"log"
 	"time"
@@ -19,7 +19,7 @@ type OutboxProcessor struct {
 	DB         *sqlx.DB
 	PubClient  *CloudEventPubClient
 	IPFSClient *ipfs.APIClient
-	Repo       db.AuditAndComplianceRepository
+	ARepo      db.AuditTrailRepository
 }
 
 type OutboxEvent struct {
@@ -120,7 +120,7 @@ func (j OutboxProcessor) processEvent(ctx context.Context, event OutboxEvent) er
 		return fmt.Errorf("could not publish event %d: %w", event.ID, err)
 	}
 
-	globalLogPredCID, err := j.Repo.ReadLogCID(ctx, tx, componenttype.AuditAndCompliance.String(), GlobalAuditTrail)
+	globalLogPredCID, err := j.ARepo.ReadLogCID(ctx, tx, componenttype.AuditAndCompliance.String(), GlobalAuditTrail)
 	if err != nil {
 		return fmt.Errorf("could not read log CID: %w", err)
 	}
@@ -129,14 +129,14 @@ func (j OutboxProcessor) processEvent(ctx context.Context, event OutboxEvent) er
 	switch event.Component {
 	case componenttype.ContractTemplateRepo.String():
 		if event.DID != nil && len(*event.DID) > 1 {
-			resLogPredCID, err = j.Repo.ReadLogCID(ctx, tx, event.Component, *event.DID)
+			resLogPredCID, err = j.ARepo.ReadLogCID(ctx, tx, event.Component, *event.DID)
 			if err != nil {
 				return fmt.Errorf("could not read log CID: %w", err)
 			}
 		}
 	case componenttype.ContractWorkflowEngine.String():
 		if event.DID != nil && len(*event.DID) > 1 {
-			resLogPredCID, err = j.Repo.ReadLogCID(ctx, tx, event.Component, *event.DID)
+			resLogPredCID, err = j.ARepo.ReadLogCID(ctx, tx, event.Component, *event.DID)
 			if err != nil {
 				return fmt.Errorf("could not read log CID: %w", err)
 			}
@@ -163,19 +163,19 @@ func (j OutboxProcessor) processEvent(ctx context.Context, event OutboxEvent) er
 	switch event.Component {
 	case componenttype.ContractTemplateRepo.String():
 		if event.DID != nil && len(*event.DID) > 1 {
-			if err = j.Repo.UpdateLogCID(ctx, tx, event.Component, *event.DID, &result.Identifier.Value); err != nil {
+			if err = j.ARepo.UpdateLogCID(ctx, tx, event.Component, *event.DID, &result.Identifier.Value); err != nil {
 				return fmt.Errorf("could not update log CID: %w", err)
 			}
 		}
 	case componenttype.ContractWorkflowEngine.String():
 		if event.DID != nil && len(*event.DID) > 1 {
-			if err = j.Repo.UpdateLogCID(ctx, tx, event.Component, *event.DID, &result.Identifier.Value); err != nil {
+			if err = j.ARepo.UpdateLogCID(ctx, tx, event.Component, *event.DID, &result.Identifier.Value); err != nil {
 				return fmt.Errorf("could not update log CID: %w", err)
 			}
 		}
 	}
 
-	if err = j.Repo.UpdateLogCID(ctx, tx, componenttype.AuditAndCompliance.String(), GlobalAuditTrail, &result.Identifier.Value); err != nil {
+	if err = j.ARepo.UpdateLogCID(ctx, tx, componenttype.AuditAndCompliance.String(), GlobalAuditTrail, &result.Identifier.Value); err != nil {
 		return fmt.Errorf("could not update log CID: %w", err)
 	}
 

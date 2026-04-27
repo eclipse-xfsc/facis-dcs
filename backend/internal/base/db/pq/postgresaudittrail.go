@@ -8,9 +8,9 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type PostgresAuditAndComplianceRepository struct{}
+type PostgresAuditTrailRepository struct{}
 
-func (r *PostgresAuditAndComplianceRepository) UpdateLogCID(ctx context.Context, tx *sqlx.Tx, component string, did string, lastLogDID *string) error {
+func (r *PostgresAuditTrailRepository) UpdateLogCID(ctx context.Context, tx *sqlx.Tx, component string, did string, lastLogDID *string) error {
 	statement := `UPDATE audit_trail_log SET last_log_cid = $2 WHERE did = $1`
 	result, err := tx.ExecContext(ctx, statement, did, lastLogDID)
 	rows, _ := result.RowsAffected()
@@ -31,7 +31,7 @@ func (r *PostgresAuditAndComplianceRepository) UpdateLogCID(ctx context.Context,
 	return err
 }
 
-func (r *PostgresAuditAndComplianceRepository) ReadLogCID(ctx context.Context, tx *sqlx.Tx, component string, did string) (*string, error) {
+func (r *PostgresAuditTrailRepository) ReadLogCID(ctx context.Context, tx *sqlx.Tx, component string, did string) (*string, error) {
 	query := `
         SELECT last_log_cid
         FROM audit_trail_log WHERE did = $1 AND component = $2;
