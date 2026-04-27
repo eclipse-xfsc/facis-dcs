@@ -369,17 +369,23 @@ var ContractAuditRequest = Type("ContractAuditRequest", func() {
 	Token("token", String, "JWT token")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
-	Attribute("updated_at", String, "Updated at")
 
-	Required("did", "updated_at")
+	Required("did")
 })
 
 var ContractAuditResponse = Type("ContractAuditResponse", func() {
 	Description("Result for auditing a contract")
 
-	Attribute("did", String, "Decentralized Identifier of the contract")
+	Attribute("id", Int64, "Identifier for the outbox event")
+	Attribute("component", String, "Name of the component")
+	Attribute("event_type", String, "Type of the event")
+	Attribute("event_data", Any, "Data of the event")
+	Attribute("did", String, "Decentralized Identifier of the contract template")
+	Attribute("created_at", String, "The creation date of the event")
+	Attribute("res_log_pred_cid", String, "Resource audit trail predecessor on the IPFS chain")
+	Attribute("global_log_pred_cid", String, "Global audit trail predecessor on the IPFS chain")
 
-	Required("did")
+	Required("id", "component", "event_type", "event_data", "created_at")
 })
 
 // Contract Workflow Engine Service  (/contract/...)
@@ -757,7 +763,7 @@ var _ = Service("ContractWorkflowEngine", func() {
 		})
 
 		Payload(ContractAuditRequest)
-		Result(ContractAuditResponse)
+		Result(ArrayOfRequired(ContractAuditResponse))
 
 		Error("bad_request", ErrorResult, "Bad request")
 		Error("internal_error", ErrorResult, "Internal server error")

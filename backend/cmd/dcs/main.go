@@ -13,6 +13,7 @@ import (
 	templatecatalogueintegration "digital-contracting-service/gen/template_catalogue_integration"
 	templaterepository "digital-contracting-service/gen/template_repository"
 	"digital-contracting-service/internal/auth"
+	"digital-contracting-service/internal/base"
 	"digital-contracting-service/internal/base/conf"
 	"digital-contracting-service/internal/base/db/pq"
 	"digital-contracting-service/internal/base/event"
@@ -131,6 +132,11 @@ func main() {
 	}
 	outboxProcessor.Start(ctx)
 
+	auditTrailReader := base.AuditTrailReader{
+		IPFSClient: ipfsAPIClient,
+		ARepo:      &aRepo,
+	}
+
 	// Initialize the Federated Catalogue client.
 	fcURL := os.Getenv("FEDERATED_CATALOGUE_API_URL")
 	templateCatalogueClient := fcclient.NewFederatedCatalogueClient(fcURL)
@@ -151,14 +157,14 @@ func main() {
 	{
 		authSvc = service.NewAuth()
 		contractStorageArchiveSvc = service.NewContractStorageArchive(jwtAuth)
-		contractWorkflowEngineSvc = service.NewContractWorkflowEngine(db, jwtAuth, &cweRepo, &cweRTRepo, &cweATRepo, &cweNTRepo, &cweNRepo, &cweCTRepo, templateCatalogueClient)
+		contractWorkflowEngineSvc = service.NewContractWorkflowEngine(db, jwtAuth, &cweRepo, &cweRTRepo, &cweATRepo, &cweNTRepo, &cweNRepo, &cweCTRepo, templateCatalogueClient, auditTrailReader)
 		dcsToDcsSvc = service.NewDcsToDcs(jwtAuth)
 		externalTargetSystemAPISvc = service.NewExternalTargetSystemAPI(jwtAuth)
 		orchestrationWebhooksSvc = service.NewOrchestrationWebhooks(jwtAuth)
 		processAuditAndComplianceSvc = service.NewProcessAuditAndCompliance(jwtAuth)
 		signatureManagementSvc = service.NewSignatureManagement(jwtAuth)
 		templateCatalogueIntegrationSvc = service.NewTemplateCatalogueIntegration(jwtAuth, templateCatalogueClient)
-		templateRepositorySvc = service.NewTemplateRepository(db, jwtAuth, &ctRepo, &ctRTRepo, &ctATRepo, templateCatalogueClient)
+		templateRepositorySvc = service.NewTemplateRepository(db, jwtAuth, &ctRepo, &ctRTRepo, &ctATRepo, templateCatalogueClient, auditTrailReader)
 	}
 
 	// Wrap the service in endpoints that can be invoked from other service
