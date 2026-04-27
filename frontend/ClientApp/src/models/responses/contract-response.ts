@@ -79,6 +79,15 @@ export interface ContractTerminateResponse {
   did: string
 }
 
-export interface ContractAuditResponse {
-  did: string
+interface ContractAuditResponseItem {
+  id: number
+  component: string
+  event_type: string
+  event_data: string
+  did?: string
+  created_at: string
+  res_log_pred_cid?: string
+  global_log_pred_cid?: string
 }
+
+export type ContractAuditResponse = ContractAuditResponseItem[]

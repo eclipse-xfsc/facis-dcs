@@ -62,7 +62,8 @@ const register = async () => {
 
 const audit = async () => {
   try {
-    await contractTemplateService.audit({ did: props.item.did })
+    const response = await contractTemplateService.audit({ did: props.item.did })
+    console.log(response)
   } catch (err) {
     console.error('Audit failed:', err)
   }

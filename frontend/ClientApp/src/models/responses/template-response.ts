@@ -78,6 +78,15 @@ export interface ContractTemplateRegisterResponse {
   did: string
 }
 
-export interface ContractTemplateAuditResponse {
-  did: string
+interface ContractTemplateAuditResponseItem {
+  id: number
+  component: string
+  event_type: string
+  event_data: unknown
+  did?: string
+  created_at: string
+  res_log_pred_cid?: string
+  global_log_pred_cid?: string
 }
+
+export type ContractTemplateAuditResponse = ContractTemplateAuditResponseItem[]

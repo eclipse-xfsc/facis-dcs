@@ -87,5 +87,4 @@ export interface ContractTerminateRequest {
 
 export interface ContractAuditRequest {
   did: string
-  updated_at: string
 }
