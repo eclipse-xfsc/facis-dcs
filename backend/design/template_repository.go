@@ -347,8 +347,6 @@ var ContractTemplateAuditRequest = Type("ContractTemplateAuditRequest", func() {
 var ContractTemplateAuditResponse = Type("ContractTemplateAuditResponse", func() {
 	Description("Result for auditing a contract template")
 
-	Token("token", String, "JWT token")
-
 	Attribute("id", Int64, "Identifier for the outbox event")
 	Attribute("component", String, "Name of the component")
 	Attribute("event_type", String, "Type of the event")

@@ -26,20 +26,21 @@ import (
 )
 
 type contractWorkflowEnginesrvc struct {
-	DB       *sqlx.DB
-	CRepo    db.ContractRepo
-	RTRepo   db.ReviewTaskRepo
-	ATRepo   db.ApprovalTaskRepo
-	NTRepo   db.NegotiationTaskRepo
-	NRepo    db.NegotiationRepo
-	CTRepo   db.ContractTemplateRepo
-	FCClient *fcclient.FederatedCatalogueClient
+	DB           *sqlx.DB
+	CRepo        db.ContractRepo
+	RTRepo       db.ReviewTaskRepo
+	ATRepo       db.ApprovalTaskRepo
+	NTRepo       db.NegotiationTaskRepo
+	NRepo        db.NegotiationRepo
+	CTRepo       db.ContractTemplateRepo
+	FCClient     *fcclient.FederatedCatalogueClient
+	ATrailReader base.AuditTrailReader
 	auth.JWTAuthenticator
 }
 
 func NewContractWorkflowEngine(db *sqlx.DB, jwtAuth auth.JWTAuthenticator,
 	cRepo db.ContractRepo, rtRepo db.ReviewTaskRepo, atRepo db.ApprovalTaskRepo,
-	ntRepo db.NegotiationTaskRepo, nRepo db.NegotiationRepo, ctRepo db.ContractTemplateRepo, fcClient *fcclient.FederatedCatalogueClient) contractworkflowengine.Service {
+	ntRepo db.NegotiationTaskRepo, nRepo db.NegotiationRepo, ctRepo db.ContractTemplateRepo, fcClient *fcclient.FederatedCatalogueClient, auditTrailReader base.AuditTrailReader) contractworkflowengine.Service {
 
 	return &contractWorkflowEnginesrvc{
 		JWTAuthenticator: jwtAuth,
@@ -51,6 +52,7 @@ func NewContractWorkflowEngine(db *sqlx.DB, jwtAuth auth.JWTAuthenticator,
 		NRepo:            nRepo,
 		CTRepo:           ctRepo,
 		FCClient:         fcClient,
+		ATrailReader:     auditTrailReader,
 	}
 }
 
@@ -596,31 +598,38 @@ func (s *contractWorkflowEnginesrvc) Terminate(ctx context.Context, req *contrac
 	}, nil
 }
 
-func (s *contractWorkflowEnginesrvc) Audit(ctx context.Context, req *contractworkflowengine.ContractAuditRequest) (res *contractworkflowengine.ContractAuditResponse, err error) {
+func (s *contractWorkflowEnginesrvc) Audit(ctx context.Context, req *contractworkflowengine.ContractAuditRequest) (res []*contractworkflowengine.ContractAuditResponse, err error) {
 
 	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
 	defer cancel()
 
-	updatedAt, err := time.Parse(time.RFC3339, req.UpdatedAt)
-	if err != nil {
-		return nil, contractworkflowengine.MakeInternalError(err)
-	}
-
-	cmd := contract.AuditCmd{
+	qry := contract.AuditLogQry{
 		DID:       req.Did,
 		AuditedBy: middleware.GetUsername(ctx),
-		UpdatedAt: updatedAt,
 	}
 	handler := contract.Auditor{
-		DB:    s.DB,
-		CRepo: s.CRepo,
+		DB:           s.DB,
+		CRepo:        s.CRepo,
+		ATrailReader: s.ATrailReader,
 	}
-	err = handler.Handle(ctx, cmd)
+	auditLogHistory, err := handler.Handle(ctx, qry)
 	if err != nil {
-		return nil, contractworkflowengine.MakeInternalError(err)
+		return nil, templaterepository.MakeInternalError(err)
 	}
 
-	return &contractworkflowengine.ContractAuditResponse{
-		Did: req.Did,
-	}, nil
+	history := make([]*contractworkflowengine.ContractAuditResponse, 0)
+	for _, entry := range auditLogHistory {
+		history = append(history, &contractworkflowengine.ContractAuditResponse{
+			ID:               entry.ID,
+			Component:        entry.Component,
+			EventType:        entry.EventType,
+			EventData:        entry.EventData,
+			Did:              entry.DID,
+			CreatedAt:        entry.CreatedAt.String(),
+			GlobalLogPredCid: entry.GlobalLogPredCID,
+			ResLogPredCid:    entry.ResLogPredCID,
+		})
+	}
+
+	return history, nil
 }
