@@ -23,17 +23,18 @@ import (
 // TemplateRepository service example implementation.
 // The example methods log the requests and return zero values.
 type templateRepositorysrvc struct {
-	DB       *sqlx.DB
-	CTRepo   db.ContractTemplateRepo
-	RTRepo   db.ReviewTaskRepo
-	ATRepo   db.ApprovalTaskRepo
-	FCClient *fcclient.FederatedCatalogueClient
+	DB           *sqlx.DB
+	CTRepo       db.ContractTemplateRepo
+	RTRepo       db.ReviewTaskRepo
+	ATRepo       db.ApprovalTaskRepo
+	FCClient     *fcclient.FederatedCatalogueClient
+	ATrailReader base.AuditTrailReader
 	auth.JWTAuthenticator
 }
 
 // NewTemplateRepository returns the TemplateRepository service implementation.
 func NewTemplateRepository(db *sqlx.DB, jwtAuth auth.JWTAuthenticator, CTRepo db.ContractTemplateRepo,
-	RTRepo db.ReviewTaskRepo, ATRepo db.ApprovalTaskRepo, fcClient *fcclient.FederatedCatalogueClient) templaterepository.Service {
+	RTRepo db.ReviewTaskRepo, ATRepo db.ApprovalTaskRepo, fcClient *fcclient.FederatedCatalogueClient, auditTrailReader base.AuditTrailReader) templaterepository.Service {
 	return &templateRepositorysrvc{
 		DB:               db,
 		JWTAuthenticator: jwtAuth,
@@ -41,6 +42,7 @@ func NewTemplateRepository(db *sqlx.DB, jwtAuth auth.JWTAuthenticator, CTRepo db
 		RTRepo:           RTRepo,
 		ATRepo:           ATRepo,
 		FCClient:         fcClient,
+		ATrailReader:     auditTrailReader,
 	}
 }
 
