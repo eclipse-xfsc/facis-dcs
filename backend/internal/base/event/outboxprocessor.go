@@ -99,7 +99,7 @@ func (j OutboxProcessor) processEvent(ctx context.Context, event datatype.Outbox
 		return fmt.Errorf("could not publish event %d: %w", event.ID, err)
 	}
 
-	globalLogPredCID, err := j.ARepo.ReadLogCID(ctx, tx, componenttype.AuditAndCompliance.String(), conf.GlobalAuditTrailName())
+	globalLogPredCID, err := j.ARepo.ReadLogCID(ctx, tx, conf.GlobalAuditTrailName(), conf.GlobalAuditTrailName())
 	if err != nil {
 		return fmt.Errorf("could not read log CID: %w", err)
 	}
@@ -154,16 +154,13 @@ func (j OutboxProcessor) processEvent(ctx context.Context, event datatype.Outbox
 		}
 	}
 
-	if err = j.ARepo.UpdateLogCID(ctx, tx, componenttype.AuditAndCompliance.String(), conf.GlobalAuditTrailName(), &result.Identifier.Value); err != nil {
+	if err = j.ARepo.UpdateLogCID(ctx, tx, conf.GlobalAuditTrailName(), conf.GlobalAuditTrailName(), &result.Identifier.Value); err != nil {
 		return fmt.Errorf("could not update log CID: %w", err)
 	}
 
-	if _, err := tx.ExecContext(ctx, `
-        UPDATE outbox_events 
-        SET processed = TRUE, processed_at = CURRENT_TIMESTAMP
-        WHERE id = $1
-    `, event.ID); err != nil {
-		return fmt.Errorf("could not mark event %d as processed: %w", event.ID, err)
+	err = db.UpdateOutboxEvent(ctx, tx, event.ID)
+	if err != nil {
+		return fmt.Errorf("could not update outbox event: %w", err)
 	}
 
 	return tx.Commit()
