@@ -8,6 +8,7 @@ import (
 	"digital-contracting-service/internal/base/event"
 	event2 "digital-contracting-service/internal/contractworkflowengine/event"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -36,7 +37,10 @@ func (h *Auditor) Handle(ctx context.Context, cmd AuditLogQry) ([]datatype.Audit
 	}
 
 	evt := event2.AuditEvent{
-		DID: cmd.DID,
+		DID:           cmd.DID,
+		ComponentType: componenttype.ContractWorkflowEngine,
+		AuditedBy:     cmd.AuditedBy,
+		OccurredAt:    time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

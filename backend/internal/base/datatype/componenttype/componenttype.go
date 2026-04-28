@@ -8,15 +8,15 @@ import (
 type ComponentType string
 
 const (
-	ContractTemplateRepo   ComponentType = "CONTRACT_TEMPLATE_REPOSITORY"
-	ContractWorkflowEngine ComponentType = "CONTRACT_WORKFLOW_ENGINE"
-	AuditAndCompliance     ComponentType = "AUDIT_AND_COMPLIANCE"
+	ContractTemplateRepo      ComponentType = "CONTRACT_TEMPLATE_REPOSITORY"
+	ContractWorkflowEngine    ComponentType = "CONTRACT_WORKFLOW_ENGINE"
+	ProcessAuditAndCompliance ComponentType = "PROCESS_AUDIT_AND_COMPLIANCE"
 )
 
 var validFlag = map[ComponentType]bool{
-	ContractTemplateRepo:   true,
-	ContractWorkflowEngine: true,
-	AuditAndCompliance:     true,
+	ContractTemplateRepo:      true,
+	ContractWorkflowEngine:    true,
+	ProcessAuditAndCompliance: true,
 }
 
 func NewComponentType(s string) (ComponentType, error) {
