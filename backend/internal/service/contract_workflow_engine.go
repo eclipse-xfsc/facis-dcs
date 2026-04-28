@@ -609,7 +609,6 @@ func (s *contractWorkflowEnginesrvc) Audit(ctx context.Context, req *contractwor
 	}
 	handler := contract.Auditor{
 		DB:           s.DB,
-		CRepo:        s.CRepo,
 		ATrailReader: s.ATrailReader,
 	}
 	auditLogHistory, err := handler.Handle(ctx, qry)

@@ -6,7 +6,6 @@ import (
 	"digital-contracting-service/internal/base/datatype"
 	"digital-contracting-service/internal/base/datatype/componenttype"
 	"digital-contracting-service/internal/base/event"
-	"digital-contracting-service/internal/templaterepository/db"
 	templateevents "digital-contracting-service/internal/templaterepository/event"
 	"fmt"
 
@@ -20,7 +19,6 @@ type AuditLogQry struct {
 
 type Auditor struct {
 	DB           *sqlx.DB
-	CTRepo       db.ContractTemplateRepo
 	ATrailReader base.AuditTrailReader
 }
 
