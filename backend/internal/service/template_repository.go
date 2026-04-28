@@ -571,7 +571,6 @@ func (s *templateRepositorysrvc) Audit(ctx context.Context, req *templatereposit
 	}
 	handler := contracttemplate.Auditor{
 		DB:           s.DB,
-		CTRepo:       s.CTRepo,
 		ATrailReader: s.ATrailReader,
 	}
 	auditLogHistory, err := handler.Handle(ctx, qry)

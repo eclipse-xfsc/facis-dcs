@@ -6,9 +6,9 @@ import (
 	"digital-contracting-service/internal/base/datatype"
 	"digital-contracting-service/internal/base/datatype/componenttype"
 	"digital-contracting-service/internal/base/event"
-	"digital-contracting-service/internal/templaterepository/db"
 	templateevents "digital-contracting-service/internal/templaterepository/event"
 	"fmt"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -20,7 +20,6 @@ type AuditLogQry struct {
 
 type Auditor struct {
 	DB           *sqlx.DB
-	CTRepo       db.ContractTemplateRepo
 	ATrailReader base.AuditTrailReader
 }
 
@@ -32,13 +31,16 @@ func (h *Auditor) Handle(ctx context.Context, cmd AuditLogQry) ([]datatype.Audit
 	}
 	defer tx.Rollback()
 
-	result, err := h.ATrailReader.ReadAllAuditLogEntriesForDID(ctx, tx, componenttype.ContractTemplateRepo, cmd.DID)
+	result, err := h.ATrailReader.ReadAuditLogEntriesByComponentAndDID(ctx, tx, componenttype.ContractTemplateRepo, cmd.DID)
 	if err != nil {
 		return nil, err
 	}
 
 	evt := templateevents.AuditEvt{
-		DID: cmd.DID,
+		DID:           cmd.DID,
+		ComponentType: componenttype.ContractTemplateRepo,
+		AuditedBy:     cmd.AuditedBy,
+		OccurredAt:    time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractTemplateRepo)
 	if err != nil {
