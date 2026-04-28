@@ -31,7 +31,7 @@ func (h *Auditor) Handle(ctx context.Context, cmd AuditLogQry) ([]datatype.Audit
 	}
 	defer tx.Rollback()
 
-	result, err := h.ATrailReader.ReadAllAuditLogEntriesForDID(ctx, tx, componenttype.ContractTemplateRepo, cmd.DID)
+	result, err := h.ATrailReader.ReadAuditLogEntriesByComponentAndDID(ctx, tx, componenttype.ContractTemplateRepo, cmd.DID)
 	if err != nil {
 		return nil, err
 	}

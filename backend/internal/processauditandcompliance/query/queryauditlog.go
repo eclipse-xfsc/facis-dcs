@@ -1,4 +1,4 @@
-package contract
+package query
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"digital-contracting-service/internal/base/datatype"
 	"digital-contracting-service/internal/base/datatype/componenttype"
 	"digital-contracting-service/internal/base/event"
-	event2 "digital-contracting-service/internal/contractworkflowengine/event"
+	event2 "digital-contracting-service/internal/processauditandcompliance/event"
 	"fmt"
 	"time"
 
@@ -14,7 +14,7 @@ import (
 )
 
 type AuditLogQry struct {
-	DID       string
+	Scope     componenttype.ComponentType
 	AuditedBy string
 }
 
@@ -23,7 +23,7 @@ type Auditor struct {
 	ATrailReader base.AuditTrailReader
 }
 
-func (h *Auditor) Handle(ctx context.Context, cmd AuditLogQry) ([]datatype.AuditLogEntry, error) {
+func (h *Auditor) Handle(ctx context.Context, cmd AuditLogQry) ([][]datatype.AuditLogEntry, error) {
 
 	tx, err := h.DB.BeginTxx(ctx, nil)
 	if err != nil {
@@ -31,18 +31,18 @@ func (h *Auditor) Handle(ctx context.Context, cmd AuditLogQry) ([]datatype.Audit
 	}
 	defer tx.Rollback()
 
-	result, err := h.ATrailReader.ReadAuditLogEntriesByComponentAndDID(ctx, tx, componenttype.ContractWorkflowEngine, cmd.DID)
+	result, err := h.ATrailReader.ReadAuditLogEntriesByComponent(ctx, tx, cmd.Scope)
 	if err != nil {
 		return nil, err
 	}
 
 	evt := event2.AuditEvent{
-		DID:           cmd.DID,
-		ComponentType: componenttype.ContractWorkflowEngine,
+		Scope:         cmd.Scope,
+		ComponentType: componenttype.ProcessAuditAndCompliance,
 		AuditedBy:     cmd.AuditedBy,
 		OccurredAt:    time.Now().UTC(),
 	}
-	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
+	err = event.Create(ctx, tx, evt, componenttype.ProcessAuditAndCompliance)
 	if err != nil {
 		return nil, fmt.Errorf("could not create event: %w", err)
 	}
