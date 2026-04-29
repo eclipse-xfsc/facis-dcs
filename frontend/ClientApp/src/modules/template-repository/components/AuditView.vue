@@ -19,7 +19,6 @@ const loadAudit = async () => {
   try {
     isLoading.value = true
     data.value = await contractTemplateService.audit({ did })
-    console.log(data.value)
   } catch (err) {
     console.error('Audit failed', err)
   } finally {

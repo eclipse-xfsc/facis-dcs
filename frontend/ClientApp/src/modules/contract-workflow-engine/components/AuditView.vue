@@ -14,12 +14,10 @@ const isLoading = ref(false)
 
 const loadAudit = async () => {
   const did = route.params.did
-  console.log(did)
   if (!did || Array.isArray(did)) return
   try {
     isLoading.value = true
     data.value = await contractWorkflowService.audit({ did })
-    console.log(data.value)
   } catch (err) {
     console.error('Audit failed', err)
   } finally {
