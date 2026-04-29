@@ -35,7 +35,7 @@ func (s *processAuditAndCompliancesrvc) Audit(ctx context.Context, req *processa
 		return nil, err
 	}
 
-	qry := query.AuditLogQry{
+	qry := query.GetAuditLogQry{
 		Scope:     scope,
 		AuditedBy: middleware.GetUsername(ctx),
 	}
