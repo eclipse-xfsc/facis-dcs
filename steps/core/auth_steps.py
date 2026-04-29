@@ -4,6 +4,7 @@ import os
 
 from behave import given
 
+from steps.support.services.template_service import TemplateService
 from support.services.auth_service import AuthService
 
 
@@ -37,7 +38,7 @@ def step_given_invalid_api_key(context):
 
 @given('template "{template_name}" is available')
 def step_given_template_available(context, template_name):
-    env_key = template_env_key(template_name)
+    env_key = TemplateService.template_env_key(template_name)
     template_did = os.getenv(env_key)
     if not template_did:
         from steps.template_management.template_workflow_steps import (  # noqa: PLC0415
