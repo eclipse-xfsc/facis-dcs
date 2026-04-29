@@ -13,7 +13,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-type AuditLogQry struct {
+type GetAuditLogQry struct {
 	Scope     componenttype.ComponentType
 	AuditedBy string
 }
@@ -23,7 +23,7 @@ type Auditor struct {
 	ATrailReader base.AuditTrailReader
 }
 
-func (h *Auditor) Handle(ctx context.Context, cmd AuditLogQry) ([][]datatype.AuditLogEntry, error) {
+func (h *Auditor) Handle(ctx context.Context, cmd GetAuditLogQry) ([][]datatype.AuditLogEntry, error) {
 
 	tx, err := h.DB.BeginTxx(ctx, nil)
 	if err != nil {

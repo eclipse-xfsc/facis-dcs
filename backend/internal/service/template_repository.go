@@ -565,7 +565,7 @@ func (s *templateRepositorysrvc) Audit(ctx context.Context, req *templatereposit
 	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
 	defer cancel()
 
-	qry := contracttemplate.AuditLogQry{
+	qry := contracttemplate.GetAuditLogQry{
 		DID:       req.Did,
 		AuditedBy: middleware.GetUsername(ctx),
 	}
