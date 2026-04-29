@@ -156,10 +156,11 @@ var ContractTemplateItem = Type("ContractTemplateItem", func() {
 	Attribute("template_type", String, "The type of the template")
 	Attribute("name", String, "Name")
 	Attribute("description", String, "Description")
+	Attribute("created_by", String, "Created by")
 	Attribute("created_at", String, "Created at")
 	Attribute("updated_at", String, "Updated at")
 
-	Required("did", "state", "template_type", "created_at", "updated_at")
+	Required("did", "state", "template_type", "created_by", "created_at", "updated_at")
 })
 
 var ReviewTaskItem = Type("ReviewTaskItem", func() {
@@ -281,19 +282,16 @@ var ContractTemplateVerifyRequest = Type("ContractTemplateVerifyRequest", func()
 
 	Attribute("did", String, "Decentralized Identifier of the contract template")
 
-	Attribute("updated_at", String, "The timestamp when the contract template was updated")
-
-	Required("did", "updated_at")
+	Required("did")
 })
 
 var ContractTemplateVerifyResponse = Type("ContractTemplateVerifyResponse", func() {
 	Description("Result for verifying a contract template")
 
 	Attribute("did", String, "Decentralized Identifier of the contract template")
-
 	Attribute("findings", ArrayOf(String), "A list of findings")
 
-	Required("did")
+	Required("did", "findings")
 })
 
 var ContractTemplateArchiveRequest = Type("ContractTemplateArchiveRequest", func() {
@@ -323,9 +321,7 @@ var ContractTemplateRegisterRequest = Type("ContractTemplateRegisterRequest", fu
 
 	Attribute("did", String, "Decentralized Identifier of the contract template")
 
-	Attribute("updated_at", String, "The timestamp when the contract template was updated")
-
-	Required("did", "updated_at")
+	Required("did")
 })
 
 var ContractTemplateRegisterResponse = Type("ContractTemplateRegisterResponse", func() {
@@ -351,9 +347,16 @@ var ContractTemplateAuditRequest = Type("ContractTemplateAuditRequest", func() {
 var ContractTemplateAuditResponse = Type("ContractTemplateAuditResponse", func() {
 	Description("Result for auditing a contract template")
 
+	Attribute("id", Int64, "Identifier for the outbox event")
+	Attribute("component", String, "Name of the component")
+	Attribute("event_type", String, "Type of the event")
+	Attribute("event_data", Any, "Data of the event")
 	Attribute("did", String, "Decentralized Identifier of the contract template")
+	Attribute("created_at", String, "The creation date of the event")
+	Attribute("res_log_pred_cid", String, "Resource audit trail predecessor on the IPFS chain")
+	Attribute("global_log_pred_cid", String, "Global audit trail predecessor on the IPFS chain")
 
-	Required("did")
+	Required("id", "component", "event_type", "event_data", "created_at")
 })
 
 // Template Repository Service  (/template/...)
@@ -556,7 +559,7 @@ var _ = Service("TemplateRepository", func() {
 		})
 	})
 
-	// POST /template/verify
+	// GET /template/verify/{did}
 	Method("verify", func() {
 		Description("run policy, schema, and semantic validations; return findings.")
 		Meta("dcs:requirements", "DCS-IR-TR-03")
@@ -574,7 +577,8 @@ var _ = Service("TemplateRepository", func() {
 		Error("internal_error", ErrorResult, "Internal server error")
 
 		HTTP(func() {
-			POST("/template/verify")
+			GET("/template/verify/{did}")
+			Param("did")
 			Response(StatusOK)
 			Response("bad_request", StatusBadRequest)
 			Response("internal_error", StatusInternalServerError)
@@ -633,7 +637,7 @@ var _ = Service("TemplateRepository", func() {
 
 	// POST /template/register
 	Method("register", func() {
-		Description("register new template into the repository.")
+		Description("register new template into the repository and the XFSC Catalogue.")
 		Meta("dcs:requirements", "DCS-IR-TR-07")
 		Meta("dcs:tr:components", "Contract Templates Storage & Provenance")
 		Meta("dcs:ui", "Template Management Dashboard")
@@ -693,13 +697,14 @@ var _ = Service("TemplateRepository", func() {
 		})
 
 		Payload(ContractTemplateAuditRequest)
-		Result(ContractTemplateAuditResponse)
+		Result(ArrayOfRequired(ContractTemplateAuditResponse))
 
 		Error("bad_request", ErrorResult, "Bad request")
 		Error("internal_error", ErrorResult, "Internal server error")
 
 		HTTP(func() {
 			GET("/template/audit")
+			Param("did")
 			Response(StatusOK)
 			Response("bad_request", StatusBadRequest)
 			Response("internal_error", StatusInternalServerError)

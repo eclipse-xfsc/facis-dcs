@@ -1,23 +1,30 @@
 import { defineStore } from 'pinia'
-import type { TemplateDraftState, AddBlockPayload, AddBlockOptions } from "@template-repository/models/template-draft-store"
+import type { TemplateDraftState, AddBlockPayload, AddBlockOptions, SubTemplateReference } from "@template-repository/models/template-draft-store"
 import type { DocumentOutline, DocumentOutlineBlock, DocumentBlock, TemplateTypeValue, SemanticCondition, MetaData } from "@template-repository/models/contract-templace"
 import { DocumentBlockType, TemplateType, isClauseBlock, isSectionBlock, isApprovedTemplateBlock } from "@template-repository/models/contract-templace"
+import type { ContractTemplate, SubTemplateSnapshot } from '@/models/contract-template'
 import type { ContractTemplateCreateRequest, ContractTemplateUpdateRequest } from '@/models/requests/template-request'
-import { TemplateState } from '@/types/contract-template-state'
+import { isSameTemplateDataRef } from '@template-repository/utils/template-data-ref'
 
 const storeId = "templateDraft"
 const defaultState: Readonly<TemplateDraftState> = {
   did: null,
   name: '',
   description: '',
+  templateDataVersion: 1,
   documentOutline: [],
   documentBlocks: [],
   semanticConditions: [],
   customMetaData: [],
+  subTemplateSnapshots: [],
   templateType: TemplateType.subContract,
   state: null,
   document_number: null,
   version: null,
+  updated_at: null,
+  created_by: '',
+  // This field is used to distinguish between contract and template workflows.
+  workflow: 'template',
 }
 
 export const useTemplateDraftStore = defineStore(storeId, {
@@ -39,12 +46,16 @@ export const useTemplateDraftStore = defineStore(storeId, {
           documentBlocks: this.documentBlocks,
           semanticConditions: this.semanticConditions,
           customMetaData: this.customMetaData,
+          subTemplateSnapshots: normalizeSubTemplateSnapshots(this.subTemplateSnapshots),
+          templateDataVersion: this.templateDataVersion,
         }
       }
     },
     templateUpdateRequestData(): ContractTemplateUpdateRequest | null {
-      if (!this.did || this.version === null || this.document_number === null) return null
+      if (!this.did || !this.updated_at) return null
       return {
+        did: this.did,
+        updated_at: this.updated_at,
         name: this.name,
         description: this.description,
         template_data: {
@@ -52,18 +63,11 @@ export const useTemplateDraftStore = defineStore(storeId, {
           documentBlocks: this.documentBlocks,
           semanticConditions: this.semanticConditions,
           customMetaData: this.customMetaData,
+          subTemplateSnapshots: normalizeSubTemplateSnapshots(this.subTemplateSnapshots),
+          templateDataVersion: this.templateDataVersion,
         },
-        updated_at: new Date().toISOString(),
-        version: this.version,
-        document_number: this.document_number,
-        did: this.did,
       }
     },
-    isEditable(): boolean {
-      if (!this.state) return true
-      const uneditableStates = [TemplateState.approved].map((s) => s.toLowerCase())
-      return !(uneditableStates.includes(this.state.toLowerCase()))
-    }
   },
   actions: {
     // Block operations: add, delete, update, move
@@ -74,15 +78,18 @@ export const useTemplateDraftStore = defineStore(storeId, {
      * 
      * @param parentBlockId - blockId of the outline node (parent) under which to insert
      * @param insertIndex - index in the parent's children array (0 = first)
+     * @param payload - block data
      * @param options.addToOutline - when false, new block is only added to documentBlocks (default true)
      * @returns The new or inserted block's blockId.
      */
     addBlock(parentBlockId: string, insertIndex: number, payload: AddBlockPayload, options?: AddBlockOptions): string {
-      if (this.templateType === TemplateType.subContract && payload.blockType === DocumentBlockType.ApprovedTemplate) {
-        throw new Error('subContract template cannot add APPROVED_TEMPLATE blocks')
-      }
-      if (this.templateType === TemplateType.frameContract && payload.blockType !== DocumentBlockType.ApprovedTemplate) {
-        throw new Error('frameContract template can only add APPROVED_TEMPLATE blocks')
+      if (this.workflow === 'template') {
+        if (this.templateType === TemplateType.subContract && payload.blockType === DocumentBlockType.ApprovedTemplate) {
+          throw new Error('subContract template cannot add APPROVED_TEMPLATE blocks')
+        }
+        if (this.templateType === TemplateType.frameContract && payload.blockType !== DocumentBlockType.ApprovedTemplate) {
+          throw new Error('frameContract template can only add APPROVED_TEMPLATE blocks')
+        }
       }
       return addBlock(this.documentOutline, this.documentBlocks, parentBlockId, insertIndex, payload, options)
     },
@@ -92,6 +99,15 @@ export const useTemplateDraftStore = defineStore(storeId, {
     },
     /** Updates block fields. */
     updateBlock(blockId: string, payload: { title?: string; text?: string; conditionIds?: string[] }): void {
+      for (const subTemplate of this.subTemplateSnapshots) {
+        if (!subTemplate.template_data) continue
+        const block = subTemplate.template_data.documentBlocks.find((block) => block.blockId === blockId)
+        if (!block || !isClauseBlock(block)) continue
+        if (payload.title !== undefined) block.title = payload.title
+        if (payload.text !== undefined) block.text = payload.text
+        block.conditionIds = payload.conditionIds ?? []
+      }
+
       const block = this.documentBlocks.find((b) => b.blockId === blockId)
       if (!block) return
       if (payload.title !== undefined) block.title = payload.title
@@ -115,15 +131,42 @@ export const useTemplateDraftStore = defineStore(storeId, {
         conditionId: crypto.randomUUID(),
       })
     },
-    deleteSemanticCondition(conditionId: string): void {
+    updateSemanticCondition(conditionId: string, payload: Omit<SemanticCondition, 'conditionId'>, subTemplateRef?: SubTemplateReference): void {
+      const conditions = subTemplateRef
+        ? findSubTemplateSnapshotByRef(this.subTemplateSnapshots, subTemplateRef)?.template_data?.semanticConditions ?? []
+        : this.semanticConditions
+      const idx = conditions.findIndex((item) => item.conditionId === conditionId)
+      if (idx < 0) return
+      conditions[idx] = {
+        ...payload,
+        conditionId,
+      }
+    },
+    deleteSemanticCondition(conditionId: string, subTemplateRef?: SubTemplateReference): void {
+      const blocks = subTemplateRef
+        ? findSubTemplateSnapshotByRef(this.subTemplateSnapshots, subTemplateRef)?.template_data?.documentBlocks ?? []
+        : this.documentBlocks
+      const conditions = subTemplateRef
+        ? findSubTemplateSnapshotByRef(this.subTemplateSnapshots, subTemplateRef)?.template_data?.semanticConditions ?? []
+        : this.semanticConditions
+      if (!blocks || !conditions) return
+
       const placeholderRegex = placeholderRegexForCondition(conditionId)
-      for (const block of this.documentBlocks) {
+      for (const block of blocks) {
         if (!isClauseBlock(block)) continue
         const hadCondition = block.conditionIds.includes(conditionId)
         block.conditionIds = block.conditionIds.filter((id) => id !== conditionId)
         if (hadCondition) block.text = block.text.replace(placeholderRegex, '')
       }
-      this.semanticConditions = this.semanticConditions.filter((c) => c.conditionId !== conditionId)
+
+      const filteredConditions = conditions.filter((c) => c.conditionId !== conditionId)
+      if (!subTemplateRef) {
+        this.semanticConditions = filteredConditions
+        return
+      }
+      const snapshot = findSubTemplateSnapshotByRef(this.subTemplateSnapshots, subTemplateRef)
+      if (!snapshot?.template_data) return
+      snapshot.template_data.semanticConditions = filteredConditions
     },
     // Clauses operations: add, delete, update
     /** Adds a clause block to documentBlocks only */
@@ -140,10 +183,14 @@ export const useTemplateDraftStore = defineStore(storeId, {
     },
     /** Removes the clause from documentBlocks and documentOutline. */
     deleteClause(blockId: string): void {
-      this.documentBlocks = this.documentBlocks.filter((b) => b.blockId !== blockId)
-      const parent = this.documentOutline.find((b) => b.children.includes(blockId))
-      if (parent) {
-        parent.children = parent.children.filter((id) => id !== blockId)
+      this.documentBlocks = removeClauseAndOutlineRefs(this.documentBlocks, this.documentOutline, blockId)
+      for (const subTemplate of this.subTemplateSnapshots) {
+        if (!subTemplate.template_data) continue
+        subTemplate.template_data.documentBlocks = removeClauseAndOutlineRefs(
+          subTemplate.template_data.documentBlocks ?? [],
+          subTemplate.template_data.documentOutline ?? [],
+          blockId,
+        )
       }
     },
     updateClause(blockId: string, payload: { title?: string; text?: string; conditionIds?: string[] }): void {
@@ -193,6 +240,23 @@ export const useTemplateDraftStore = defineStore(storeId, {
     },
     updateDescription(description: string): void {
       this.description = description
+    },
+    addSubTemplateSnapshot(template: ContractTemplate): void {
+      const snapshot: SubTemplateSnapshot = {
+        did: template.did,
+        version: template.version,
+        document_number: template.document_number,
+        name: template.name,
+        description: template.description,
+        template_data: template.template_data,
+      }
+      this.subTemplateSnapshots = [
+        ... this.subTemplateSnapshots.filter((item) => !isSameTemplate(item, snapshot)),
+        snapshot
+      ]
+    },
+    removeSubTemplateSnapshot(template: { did: string, version?: number, document_number?: string }): void {
+      this.subTemplateSnapshots = this.subTemplateSnapshots.filter((item) => !isSameTemplate(item, template))
     },
     reset(overrides?: Partial<TemplateDraftState>) {
       Object.assign(this, getInitialState())
@@ -348,11 +412,23 @@ function createBlockFromPayload(blockId: string, payload: AddBlockPayload): Docu
         text,
         templateId: payload.templateId ?? '',
         version: payload.version ?? 1,
-        document_number: payload.document_number ?? 1,
+        document_number: payload.document_number ?? '',
       }
     default:
       throw new Error(`Unknown blockType: ${payload.blockType}`)
   }
+}
+
+function removeClauseAndOutlineRefs(
+  blocks: DocumentBlock[],
+  outlineBlocks: DocumentOutlineBlock[],
+  blockId: string
+): DocumentBlock[] {
+  outlineBlocks.forEach((outlineBlock) => {
+    if (!outlineBlock.children.includes(blockId)) return
+    outlineBlock.children = outlineBlock.children.filter((id) => id !== blockId)
+  })
+  return blocks.filter((b) => b.blockId !== blockId)
 }
 
 /** Returns a Set of blockId and all descendant block ids in the outline. */
@@ -384,5 +460,48 @@ function getInitialState(): TemplateDraftState {
     documentBlocks: [...defaultState.documentBlocks],
     semanticConditions: [...defaultState.semanticConditions],
     customMetaData: [...defaultState.customMetaData],
+    subTemplateSnapshots: [...defaultState.subTemplateSnapshots],
   }
+}
+
+function isSameTemplate(
+  t1: { did: string, version?: number, document_number?: string },
+  t2: { did: string, version?: number, document_number?: string }
+): boolean {
+  return isSameTemplateDataRef(
+    {
+      templateId: t1.did,
+      version: t1.version,
+      document_number: t1.document_number,
+    },
+    {
+      templateId: t2.did,
+      version: t2.version,
+      document_number: t2.document_number,
+    },
+  )
+}
+
+function findSubTemplateSnapshotByRef(
+  subTemplates: SubTemplateSnapshot[],
+  subTemplateRef: SubTemplateReference
+): SubTemplateSnapshot | undefined {
+  return subTemplates.find((subTemplate) => isSameTemplate(subTemplate, subTemplateRef))
+}
+
+function normalizeSubTemplateSnapshots(snapshots: SubTemplateSnapshot[]): SubTemplateSnapshot[] {
+  return snapshots.map((snapshot) => {
+    if (!snapshot.template_data) return snapshot
+
+    const td = snapshot.template_data
+    return {
+      ...snapshot,
+      template_data: {
+        documentOutline: td.documentOutline,
+        semanticConditions: td.semanticConditions,
+        documentBlocks: td.documentBlocks,
+        customMetaData: td.customMetaData,
+      },
+    }
+  })
 }

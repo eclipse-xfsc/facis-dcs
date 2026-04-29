@@ -24,16 +24,16 @@ type NegotiationCmd struct {
 }
 
 type Negotiator struct {
-	Ctx    context.Context
 	DB     *sqlx.DB
 	CRepo  db.ContractRepo
 	RTRepo db.ReviewTaskRepo
-	NTRepo db.NegotiationRepo
+	NRepo  db.NegotiationRepo
+	NTRepo db.NegotiationTaskRepo
 }
 
-func (h *Negotiator) Handle(cmd NegotiationCmd) error {
+func (h *Negotiator) Handle(ctx context.Context, cmd NegotiationCmd) error {
 
-	ctx, cancel := context.WithTimeout(h.Ctx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
 	defer cancel()
 
 	tx, err := h.DB.BeginTxx(ctx, nil)
@@ -42,7 +42,7 @@ func (h *Negotiator) Handle(cmd NegotiationCmd) error {
 	}
 	defer tx.Rollback()
 
-	processData, err := h.CRepo.ReadProcessData(tx, cmd.DID)
+	processData, err := h.CRepo.ReadProcessData(ctx, tx, cmd.DID)
 	if err != nil {
 		return fmt.Errorf("could not process core data: %w", err)
 	}
@@ -51,34 +51,27 @@ func (h *Negotiator) Handle(cmd NegotiationCmd) error {
 		return errors.New("contract was updated elsewhere, please reload")
 	}
 
-	if processData.State != contractstate.Negotiation.String() {
+	if processData.State != contractstate.Negotiation.String() || processData.State == contractstate.Terminated.String() {
 		return errors.New("current contract state is invalid")
 	}
 
-	isValidReviewer, err := h.RTRepo.IsValidReviewer(tx, cmd.DID, cmd.NegotiatedBy)
+	isValidNegotiator, err := h.NTRepo.IsValidNegotiator(ctx, tx, cmd.DID, cmd.NegotiatedBy)
 	if err != nil {
-		return fmt.Errorf("could not validate negotiator as reviewer: %w", err)
+		return fmt.Errorf("could not validate negotiator: %w", err)
 	}
 
-	if cmd.NegotiatedBy != processData.CreatedBy && isValidReviewer == false {
+	if isValidNegotiator == false {
 		return errors.New("invalid user")
 	}
 
-	counterparts, err := h.RTRepo.ReadReviewersForDID(tx, cmd.DID)
-	for idx, _ := range counterparts {
-		if counterparts[idx] == cmd.NegotiatedBy {
-			counterparts[idx] = processData.CreatedBy
-			break
-		}
-	}
-
+	negotiators, err := h.NTRepo.ReadNegotiatorsForDID(ctx, tx, cmd.DID)
 	data := db.NegotiationCreateData{
 		DID:             cmd.DID,
 		ContractVersion: processData.ContractVersion,
 		ChangeRequest:   cmd.ChangeRequest,
 		CreatedBy:       cmd.NegotiatedBy,
 	}
-	_, err = h.NTRepo.Create(tx, data, counterparts)
+	_, err = h.NRepo.Create(ctx, tx, data, negotiators)
 	if err != nil {
 		return fmt.Errorf("could not create negotiation: %w", err)
 	}
@@ -88,8 +81,8 @@ func (h *Negotiator) Handle(cmd NegotiationCmd) error {
 		ContractVersion: processData.ContractVersion,
 		ChangeRequest:   cmd.ChangeRequest,
 		NegotiatedBy:    cmd.NegotiatedBy,
-		Counterparts:    counterparts,
-		OccurredAt:      time.Now(),
+		Negotiators:     negotiators,
+		OccurredAt:      time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

@@ -22,6 +22,8 @@ const defaultState: Readonly<TemplateEditorUiState> = {
   selectedBlockId: null,
   clausePlaceholderHighlight: null,
   isPreviewDialogOpen: false,
+  isTemplateEditable: false,
+  workflow: 'template',
 }
 
 export const useTemplateEditorUiStore = defineStore(storeId, {
@@ -55,8 +57,12 @@ export const useTemplateEditorUiStore = defineStore(storeId, {
       if (templateType === TemplateType.subContract) return this.tabs
       return this.tabs.filter(tab => !['semantic', 'clauses'].includes(tab.id))
     },
-    reset() {
+    setTemplateEditable(isEditable: boolean) {
+      this.isTemplateEditable = isEditable
+    },
+    reset(overrides?: Partial<TemplateEditorUiState>) {
       Object.assign(this, getInitialState())
+      if (overrides) Object.assign(this, overrides)
     }
   }
 })

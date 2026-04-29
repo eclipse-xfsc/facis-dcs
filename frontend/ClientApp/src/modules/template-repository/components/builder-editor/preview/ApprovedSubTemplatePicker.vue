@@ -1,6 +1,6 @@
 <template>
   <div>
-    <p class="text-sm text-base-content/70 mb-2">Approved sub-templates:</p>
+    <p class="text-sm text-base-content/70 mb-2">{{ title }}</p>
 
     <div v-if="templates.length" class="flex flex-col gap-2 max-h-64 overflow-y-auto">
       <div v-for="t in templates" :key="`${t.did}-${t.version}-${t.document_number}`"
@@ -58,16 +58,19 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { ContractTemplate } from '@/models/contract-template'
+import type { SubTemplateSnapshot } from '@/models/contract-template'
 import TemplatePreview from '@template-repository/components/builder-editor/preview/TemplatePreview.vue'
 
-const props = defineProps<{
-  templates: ContractTemplate[]
+const props = withDefaults(defineProps<{
+  templates: SubTemplateSnapshot[]
   referenceCountByDid?: Record<string, number>
-}>()
+  title?: string
+}>(), {
+  title: 'Approved sub-templates:',
+})
 
 const emit = defineEmits<{
-  (e: 'select', template: ContractTemplate): void
+  (e: 'select', template: SubTemplateSnapshot): void
 }>()
 
 const expandedTemplateId = ref<string | null>(null)

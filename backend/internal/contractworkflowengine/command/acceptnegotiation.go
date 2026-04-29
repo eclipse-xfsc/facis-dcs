@@ -2,7 +2,6 @@ package command
 
 import (
 	"context"
-	"digital-contracting-service/internal/base/conf"
 	"digital-contracting-service/internal/base/datatype/componenttype"
 	"digital-contracting-service/internal/base/event"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/contractstate"
@@ -22,17 +21,13 @@ type AcceptNegotiationCmd struct {
 }
 
 type NegotiationAcceptor struct {
-	Ctx    context.Context
 	DB     *sqlx.DB
 	CRepo  db.ContractRepo
-	RTRepo db.ReviewTaskRepo
 	NRepo  db.NegotiationRepo
+	NTRepo db.NegotiationTaskRepo
 }
 
-func (h *NegotiationAcceptor) Handle(cmd AcceptNegotiationCmd) error {
-
-	ctx, cancel := context.WithTimeout(h.Ctx, conf.TransactionTimeout())
-	defer cancel()
+func (h *NegotiationAcceptor) Handle(ctx context.Context, cmd AcceptNegotiationCmd) error {
 
 	tx, err := h.DB.BeginTxx(ctx, nil)
 	if err != nil {
@@ -40,25 +35,25 @@ func (h *NegotiationAcceptor) Handle(cmd AcceptNegotiationCmd) error {
 	}
 	defer tx.Rollback()
 
-	processData, err := h.CRepo.ReadProcessData(tx, cmd.DID)
+	processData, err := h.CRepo.ReadProcessData(ctx, tx, cmd.DID)
 	if err != nil {
 		return fmt.Errorf("could not process core data: %w", err)
 	}
 
-	if processData.State != contractstate.Negotiation.String() {
+	if processData.State != contractstate.Negotiation.String() || processData.State == contractstate.Terminated.String() {
 		return errors.New("current contract state is invalid")
 	}
 
-	isValidCounterpart, err := h.NRepo.IsValidCounterpart(tx, cmd.DID, processData.ContractVersion, cmd.AcceptedBy)
+	isValidNegotiator, err := h.NTRepo.IsValidNegotiator(ctx, tx, cmd.DID, cmd.AcceptedBy)
 	if err != nil {
-		return fmt.Errorf("could not validate counterpart: %w", err)
+		return fmt.Errorf("could not validate negotiator: %w", err)
 	}
 
-	if cmd.AcceptedBy != processData.CreatedBy && isValidCounterpart == false {
+	if isValidNegotiator == false {
 		return errors.New("invalid user")
 	}
 
-	err = h.NRepo.Accept(tx, cmd.ID, cmd.AcceptedBy)
+	err = h.NRepo.Accept(ctx, tx, cmd.ID, cmd.AcceptedBy)
 	if err != nil {
 		return fmt.Errorf("could not accept negotiation: %w", err)
 	}
@@ -67,7 +62,7 @@ func (h *NegotiationAcceptor) Handle(cmd AcceptNegotiationCmd) error {
 		DID:             cmd.DID,
 		ContractVersion: processData.ContractVersion,
 		AcceptedBy:      cmd.AcceptedBy,
-		OccurredAt:      time.Now(),
+		OccurredAt:      time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

@@ -9,6 +9,7 @@ import (
 	"digital-contracting-service/internal/contractworkflowengine/datatype/actionflag"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/approvaltaskstate"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/contractstate"
+	"digital-contracting-service/internal/contractworkflowengine/datatype/negotiationtaskstate"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/reviewtaskstate"
 	"digital-contracting-service/internal/contractworkflowengine/query"
 	"digital-contracting-service/internal/contractworkflowengine/query/contract"
@@ -32,21 +33,25 @@ func TestSubmit_SubmitContractInDraftState(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Draft, creator)
 
 	approver := "Test User 5"
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
-		Reviewer: []string{
+		Reviewers: []string{
+			"Test User 2",
+			"Test User 3",
+			"Test User 4",
+		},
+		Negotiators: []string{
 			"Test User 2",
 			"Test User 3",
 			"Test User 4",
@@ -54,13 +59,15 @@ func TestSubmit_SubmitContractInDraftState(t *testing.T) {
 		Approver: &approver,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NRepo:  repo.NRepo,
+		NTRepo: repo.NTRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to submit contract: %v", err)
 	}
@@ -76,7 +83,7 @@ func TestSubmit_SubmitContractInDraftState(t *testing.T) {
 		CRepo: repo.CRepo,
 		NRepo: repo.NRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
@@ -89,11 +96,11 @@ func TestSubmit_SubmitContractInDraftState(t *testing.T) {
 		RetrievedBy: creator,
 	}
 	handlerReviewTasks := query.GetAllReviewTasksForDIDHandler{
-		Ctx:    ctx,
+
 		DB:     db,
 		RTRepo: repo.RTRepo,
 	}
-	reviewTasks, err := handlerReviewTasks.Handle(queryReviewTasks)
+	reviewTasks, err := handlerReviewTasks.Handle(ctx, queryReviewTasks)
 	if err != nil {
 		t.Fatalf("Failed to query contract review tasks: %v", err)
 	}
@@ -101,7 +108,7 @@ func TestSubmit_SubmitContractInDraftState(t *testing.T) {
 	for _, reviewTask := range reviewTasks {
 		assert.Equal(t, reviewtaskstate.Open, reviewTask.State)
 
-		if !slices.Contains(cmd.Reviewer, reviewTask.Reviewer) {
+		if !slices.Contains(cmd.Reviewers, reviewTask.Reviewer) {
 			t.Fatalf("Reviewer not found in review tasks: %v", reviewTask)
 		}
 	}
@@ -120,21 +127,20 @@ func TestSubmit_SubmitContractInDraftStateWithInvalidUser(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Draft, creator)
 
 	approver := "Test User 5"
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 6",
 		ActionFlag:  nil,
-		Reviewer: []string{
+		Reviewers: []string{
 			"Test User 2",
 			"Test User 3",
 			"Test User 4",
@@ -142,18 +148,18 @@ func TestSubmit_SubmitContractInDraftStateWithInvalidUser(t *testing.T) {
 		Approver: &approver,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }
 
-func TestSubmit_SubmitContractInNegationState(t *testing.T) {
+func TestSubmit_SubmitContractInNegotiationState(t *testing.T) {
 
 	db := setupTestDB(t)
 
@@ -166,36 +172,32 @@ func TestSubmit_SubmitContractInNegationState(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Negotiation, creator)
 
-	approver := "Test User 5"
+	negotiators := []string{"Test User 1"}
+	createNegotiationTasks(t, ctx, db, repo, *did, negotiationtaskstate.Open, creator, negotiators)
+
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
-		SubmittedBy: creator,
+		UpdatedAt:   time.Now().UTC(),
+		SubmittedBy: negotiators[0],
 		ActionFlag:  nil,
-		Reviewer: []string{
-			"Test User 2",
-			"Test User 3",
-			"Test User 4",
-		},
-		Approver: &approver,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NTRepo: repo.NTRepo,
 		NRepo:  repo.NRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to submit contract: %v", err)
 	}
@@ -210,7 +212,7 @@ func TestSubmit_SubmitContractInNegationState(t *testing.T) {
 		CRepo: repo.CRepo,
 		NRepo: repo.NRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
@@ -232,56 +234,57 @@ func TestSubmit_SubmitContractInNegotiationStateWithOpenNegotiations(t *testing.
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Negotiation, creator)
 
-	reviewers := []string{
+	negotiators := []string{
 		"Test User 1",
 		"Test User 2",
 		"Test User 3",
 	}
 
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, reviewers)
+	createNegotiationTasks(t, ctx, db, repo, *did, negotiationtaskstate.Open, creator, negotiators)
 
 	var changeRequest map[string]interface{}
 	jsonChangeRequest, err := datatype.NewJSON(changeRequest)
 	cmd := command.NegotiationCmd{
 		DID:           *did,
-		NegotiatedBy:  "Test User",
+		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
-		NTRepo: repo.NRepo,
+		NTRepo: repo.NTRepo,
+		NRepo:  repo.NRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create negotiation: %v", err)
 	}
 
 	submitCmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
-		SubmittedBy: creator,
+		UpdatedAt:   time.Now().UTC(),
+		SubmittedBy: negotiators[0],
 	}
 	submitHandler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NTRepo: repo.NTRepo,
 		NRepo:  repo.NRepo,
 	}
-	err = submitHandler.Handle(submitCmd)
+	err = submitHandler.Handle(ctx, submitCmd)
 
 	assert.NotNil(t, err)
 }
@@ -299,38 +302,38 @@ func TestSubmit_SubmitContractInNegotiationStateWithRejectedNegotiations(t *test
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Negotiation, creator)
 
-	reviewers := []string{
+	negotiators := []string{
 		"Test User 1",
 		"Test User 2",
 		"Test User 3",
 	}
 
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, reviewers)
+	createNegotiationTasks(t, ctx, db, repo, *did, negotiationtaskstate.Open, creator, negotiators)
 
 	var changeRequest map[string]interface{}
 	jsonChangeRequest, err := datatype.NewJSON(changeRequest)
 	cmd := command.NegotiationCmd{
 		DID:           *did,
-		NegotiatedBy:  "Test User",
+		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
-		NTRepo: repo.NRepo,
+		NTRepo: repo.NTRepo,
+		NRepo:  repo.NRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create negotiation: %v", err)
 	}
@@ -341,7 +344,7 @@ func TestSubmit_SubmitContractInNegotiationStateWithRejectedNegotiations(t *test
 		t.Fatalf("Failed to begin transaction: %v", err)
 	}
 
-	negotiations, err := repo.NRepo.ReadAllByContractDID(tx, *did)
+	negotiations, err := repo.NRepo.ReadAllByContractDID(ctx, tx, *did)
 	if err != nil {
 		t.Fatalf("Failed to read all negotiations for did: %v", err)
 	}
@@ -356,41 +359,41 @@ func TestSubmit_SubmitContractInNegotiationStateWithRejectedNegotiations(t *test
 		DID:             *did,
 		ID:              negotiations[0].ID,
 		RejectionReason: &rejectionReason,
-		RejectedBy:      negotiations[0].Counterpart,
+		RejectedBy:      negotiations[0].Negotiator,
 	}
 	rejectionHandler := command.NegotiationRejector{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
-		RTRepo: repo.RTRepo,
+		NTRepo: repo.NTRepo,
 		NRepo:  repo.NRepo,
 	}
-	err = rejectionHandler.Handle(rejectionCmd)
+	err = rejectionHandler.Handle(ctx, rejectionCmd)
 	if err != nil {
 		t.Fatalf("Failed to reject negotiation: %v", err)
 	}
 
 	submitCmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
-		SubmittedBy: creator,
+		UpdatedAt:   time.Now().UTC(),
+		SubmittedBy: negotiators[0],
 	}
 	submitHandler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NTRepo: repo.NTRepo,
 		NRepo:  repo.NRepo,
 	}
-	err = submitHandler.Handle(submitCmd)
+	err = submitHandler.Handle(ctx, submitCmd)
 	if err != nil {
 		t.Fatalf("Failed to submit contract: %v", err)
 	}
 
 	qry := contract.GetByIDQry{
-		DID: *did,
-
+		DID:         *did,
 		RetrievedBy: creator,
 	}
 	queryHandler := contract.GetByIDHandler{
@@ -399,7 +402,7 @@ func TestSubmit_SubmitContractInNegotiationStateWithRejectedNegotiations(t *test
 		CRepo: repo.CRepo,
 		NRepo: repo.NRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
@@ -420,21 +423,20 @@ func TestSubmit_SubmitContractInNegationStateWithInvalidUser(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Negotiation, creator)
 
 	approver := "Test User 5"
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 6",
 		ActionFlag:  nil,
-		Reviewer: []string{
+		Reviewers: []string{
 			"Test User 2",
 			"Test User 3",
 			"Test User 4",
@@ -442,62 +444,14 @@ func TestSubmit_SubmitContractInNegationStateWithInvalidUser(t *testing.T) {
 		Approver: &approver,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
+		NTRepo: repo.NTRepo,
 		ATRepo: repo.ATRepo,
 	}
-	err = handler.Handle(cmd)
-
-	assert.NotNil(t, err)
-}
-
-func TestSubmit_SubmitContractInReviewedStateWithoutVerifying(t *testing.T) {
-
-	db := setupTestDB(t)
-
-	cleanupContractTable(t, db)
-
-	did, err := base.GetDID()
-	if err != nil {
-		t.Fatalf("Failed to get new DID: %v", err)
-	}
-
-	creator := "Test User"
-
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
-	defer cancel()
-
-	repo := NewTestRepo(ctx)
-
-	createContract(t, db, repo, did, contractstate.Submitted, creator)
-
-	reviewers := []string{
-		"Test User 1",
-		"Test User 2",
-		"Test User 3",
-	}
-
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, reviewers)
-
-	actionFlag := actionflag.Approval
-
-	cmd := command.SubmitCmd{
-		DID:         *did,
-		UpdatedAt:   time.Now(),
-		SubmittedBy: reviewers[0],
-		ActionFlag:  &actionFlag,
-	}
-	handler := command.Submitter{
-		Ctx:    ctx,
-		DB:     db,
-		CRepo:  repo.CRepo,
-		RTRepo: repo.RTRepo,
-		ATRepo: repo.ATRepo,
-	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }
@@ -515,11 +469,10 @@ func TestSubmit_SubmitContractInReviewedStateWithVerifying(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Submitted, creator)
 
@@ -531,41 +484,22 @@ func TestSubmit_SubmitContractInReviewedStateWithVerifying(t *testing.T) {
 
 	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, reviewers)
 
-	for _, reviewer := range reviewers {
-		verifyCmd := command.VerifyCmd{
-			DID:        *did,
-			VerifiedBy: reviewer,
-			UpdatedAt:  time.Now(),
-		}
-
-		verifyHandler := command.Verifier{
-			Ctx:    ctx,
-			DB:     db,
-			CRepo:  repo.CRepo,
-			RTRepo: repo.RTRepo,
-		}
-		err := verifyHandler.Handle(verifyCmd)
-		if err != nil {
-			t.Fatalf("Failed to verify contract: %v", err)
-		}
-	}
-
 	actionFlag := actionflag.Approval
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to submit contract: %v", err)
 	}
@@ -581,7 +515,7 @@ func TestSubmit_SubmitContractInReviewedStateWithVerifying(t *testing.T) {
 		CRepo: repo.CRepo,
 		NRepo: repo.NRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
@@ -602,11 +536,10 @@ func TestSubmit_OneReviewerApprovedContractInSubmittedState(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Submitted, creator)
 
@@ -616,24 +549,24 @@ func TestSubmit_OneReviewerApprovedContractInSubmittedState(t *testing.T) {
 		"Test User 3",
 	}
 
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Verified, creator, reviewers)
+	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, reviewers)
 
 	actionFlag := actionflag.Approval
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to submit contract: %v", err)
 	}
@@ -649,7 +582,7 @@ func TestSubmit_OneReviewerApprovedContractInSubmittedState(t *testing.T) {
 		CRepo: repo.CRepo,
 		NRepo: repo.NRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
@@ -670,11 +603,10 @@ func TestSubmit_ApproveContractInSubmittedStateWithInvalidUser(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Submitted, creator)
 
@@ -690,18 +622,18 @@ func TestSubmit_ApproveContractInSubmittedStateWithInvalidUser(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 4",
 		ActionFlag:  &actionFlag,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }
@@ -719,11 +651,10 @@ func TestSubmit_RejectContractInSubmittedStateWithInvalidUser(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Submitted, creator)
 
@@ -739,18 +670,18 @@ func TestSubmit_RejectContractInSubmittedStateWithInvalidUser(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 4",
 		ActionFlag:  &actionFlag,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }
@@ -768,11 +699,10 @@ func TestSubmit_AllReviewersApprovedContractInSubmittedState(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Submitted, creator)
 
@@ -782,25 +712,25 @@ func TestSubmit_AllReviewersApprovedContractInSubmittedState(t *testing.T) {
 		"Test User 3",
 	}
 
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Verified, creator, reviewers)
+	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, reviewers)
 
 	actionFlag := actionflag.Approval
 
 	for _, reviewer := range reviewers {
 		cmd := command.SubmitCmd{
 			DID:         *did,
-			UpdatedAt:   time.Now(),
+			UpdatedAt:   time.Now().UTC(),
 			SubmittedBy: reviewer,
 			ActionFlag:  &actionFlag,
 		}
 		handler := command.Submitter{
-			Ctx:    ctx,
+
 			DB:     db,
 			CRepo:  repo.CRepo,
 			RTRepo: repo.RTRepo,
 			ATRepo: repo.ATRepo,
 		}
-		err = handler.Handle(cmd)
+		err = handler.Handle(ctx, cmd)
 		if err != nil {
 			t.Fatalf("Failed to submit contract: %v", err)
 		}
@@ -817,7 +747,7 @@ func TestSubmit_AllReviewersApprovedContractInSubmittedState(t *testing.T) {
 		CRepo: repo.CRepo,
 		NRepo: repo.NRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
@@ -838,11 +768,10 @@ func TestSubmit_OneReviewerDeclinesContractInSubmittedState(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Submitted, creator)
 
@@ -861,18 +790,19 @@ func TestSubmit_OneReviewerDeclinesContractInSubmittedState(t *testing.T) {
 	cmd := command.SubmitCmd{
 		DID: *did,
 
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: reviewers[0],
 		ActionFlag:  &actionFlag,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
+		NTRepo: repo.NTRepo,
 		ATRepo: repo.ATRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to submit contract: %v", err)
 	}
@@ -889,7 +819,7 @@ func TestSubmit_OneReviewerDeclinesContractInSubmittedState(t *testing.T) {
 		CRepo: repo.CRepo,
 		NRepo: repo.NRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
@@ -908,25 +838,25 @@ func TestSubmit_SubmitNonExistingContract(t *testing.T) {
 		t.Fatalf("Failed to get new DID: %v", err)
 	}
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 1",
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NTRepo: repo.NTRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }
@@ -944,28 +874,28 @@ func TestSubmit_SubmitContractInSubmittedStateWithoutActionFlag(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Submitted, creator)
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: creator,
 		ActionFlag:  nil,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NTRepo: repo.NTRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }
@@ -981,11 +911,10 @@ func TestSubmit_SubmitContractInReviewedStateWithInvalidUser(t *testing.T) {
 		t.Fatalf("Failed to get new DID: %v", err)
 	}
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	creator := "Test User"
 
@@ -997,17 +926,18 @@ func TestSubmit_SubmitContractInReviewedStateWithInvalidUser(t *testing.T) {
 
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: "Test User 2",
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NTRepo: repo.NTRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.Error(t, err)
 }
@@ -1023,11 +953,10 @@ func TestSubmit_SubmitContractInSubmittedStateWithApproverUser(t *testing.T) {
 		t.Fatalf("Failed to get new DID: %v", err)
 	}
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	creator := "Test User"
 
@@ -1048,18 +977,19 @@ func TestSubmit_SubmitContractInSubmittedStateWithApproverUser(t *testing.T) {
 	aFlag := actionflag.Approval
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: approver,
 		ActionFlag:  &aFlag,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NTRepo: repo.NTRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.Error(t, err)
 }
@@ -1075,11 +1005,10 @@ func TestSubmit_SubmitContractReviewedState(t *testing.T) {
 		t.Fatalf("Failed to get new DID: %v", err)
 	}
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	creator := "Test User"
 
@@ -1100,18 +1029,19 @@ func TestSubmit_SubmitContractReviewedState(t *testing.T) {
 	aFlag := actionflag.Approval
 	cmd := command.SubmitCmd{
 		DID:         *did,
-		UpdatedAt:   time.Now(),
+		UpdatedAt:   time.Now().UTC(),
 		SubmittedBy: approver,
 		ActionFlag:  &aFlag,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NTRepo: repo.NTRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.Error(t, err)
 }
@@ -1127,11 +1057,10 @@ func TestSubmit_SubmitContractTemplateAfterUpdate(t *testing.T) {
 		t.Fatalf("Failed to get new DID: %v", err)
 	}
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Draft, "Test User")
 
@@ -1143,7 +1072,7 @@ func TestSubmit_SubmitContractTemplateAfterUpdate(t *testing.T) {
 		UpdatedAt:   time.Now().Add(-5 * time.Minute),
 		SubmittedBy: submittedBy,
 		ActionFlag:  nil,
-		Reviewer: []string{
+		Reviewers: []string{
 			"Test User 2",
 			"Test User 3",
 			"Test User 4",
@@ -1151,13 +1080,14 @@ func TestSubmit_SubmitContractTemplateAfterUpdate(t *testing.T) {
 		Approver: &approver,
 	}
 	handler := command.Submitter{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
 		ATRepo: repo.ATRepo,
+		NTRepo: repo.NTRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }

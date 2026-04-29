@@ -2,6 +2,7 @@ package event
 
 import (
 	"digital-contracting-service/internal/base/datatype"
+	"digital-contracting-service/internal/base/datatype/componenttype"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/actionflag"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/eventtype"
 	"time"
@@ -41,6 +42,8 @@ type UpdateEvent struct {
 	OldContractData    *datatype.JSON `json:"old_contract_data,omitempty"`
 	NewContractData    *datatype.JSON `json:"new_contract_data,omitempty"`
 	OccurredAt         time.Time      `json:"occurred_at"`
+	OldExpirationDate  *time.Time     `json:"old_expiration_date,omitempty"`
+	NewExpirationDate  *time.Time     `json:"new_expiration_date,omitempty"`
 }
 
 // EventType implements the Event interface.
@@ -133,7 +136,7 @@ type NegotiationEvent struct {
 	ChangeRequest   *datatype.JSON `json:"change_request,omitempty"`
 	NegotiatedBy    string         `json:"negotiated_by"`
 	OccurredAt      time.Time      `json:"occurred_at"`
-	Counterparts    []string       `json:"counterparts"`
+	Negotiators     []string       `json:"negotiators"`
 }
 
 // EventType implements the Event interface.
@@ -224,6 +227,7 @@ func (e RejectEvent) GetDID() string {
 type TerminateEvent struct {
 	DID             string    `json:"did"`
 	ContractVersion *int      `json:"contract_version,omitempty"`
+	Reason          string    `json:"reason"`
 	TerminatedBy    string    `json:"terminated_by"`
 	OccurredAt      time.Time `json:"occurred_at"`
 }
@@ -258,10 +262,10 @@ func (e RecordEvidenceEvent) GetDID() string {
 
 // AuditEvent is emitted when the contract is audited
 type AuditEvent struct {
-	DID             string    `json:"did"`
-	ContractVersion *int      `json:"contract_version,omitempty"`
-	AuditedBy       string    `json:"audited_by"`
-	OccurredAt      time.Time `json:"occurred_at"`
+	DID           string                      `json:"did"`
+	AuditedBy     string                      `json:"audited_by"`
+	OccurredAt    time.Time                   `json:"occurred_at"`
+	ComponentType componenttype.ComponentType `json:"component_type"`
 }
 
 // EventType implements the Event interface.

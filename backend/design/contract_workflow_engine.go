@@ -31,6 +31,8 @@ var ContractUpdateRequest = Type("ContractUpdateRequest", func() {
 
 	Attribute("updated_at", String, "The timestamp when the contract was updated")
 
+	Attribute("expiration_date", String, "The timestamp when the contract expired")
+
 	Attribute("contract_version", Int, "The version of the contract")
 
 	Attribute("name", String, "The name of the contract")
@@ -62,6 +64,7 @@ var ContractSubmitRequest = Type("ContractSubmitRequest", func() {
 
 	Attribute("reviewers", ArrayOf(String), "A list of reviewers for that contract")
 	Attribute("approver", String, "The approver for that contract")
+	Attribute("negotiators", ArrayOf(String), "A list of negotiators for that contract")
 
 	Required("did", "updated_at")
 })
@@ -86,10 +89,11 @@ var ContractItem = Type("ContractItem", func() {
 	Attribute("state", String, "Current state of the contract")
 	Attribute("name", String, "The name of the contract")
 	Attribute("description", String, "The description of the contract")
+	Attribute("created_by", String, "Identifier of who created the contract negotiation")
 	Attribute("created_at", String, "Created at")
 	Attribute("updated_at", String, "Updated at")
 
-	Required("did", "state", "created_at", "updated_at")
+	Required("did", "state", "created_by", "created_at", "updated_at")
 })
 
 var ContractReviewTaskItem = Type("ContractReviewTaskItem", func() {
@@ -112,6 +116,16 @@ var ContractApprovalTaskItem = Type("ContractApprovalTaskItem", func() {
 	Required("did", "state", "approver", "created_at")
 })
 
+var ContractNegotiationTaskItem = Type("ContractNegotiationTaskItem", func() {
+	Attribute("did", String, "DID of the contract ")
+	Attribute("contract_version", Int, "The version of the contract")
+	Attribute("state", String, "State of the approval task")
+	Attribute("negotiator", String, "The negotiator for the contract")
+	Attribute("created_at", String, "Created at")
+
+	Required("did", "state", "negotiator", "created_at")
+})
+
 var ContractRetrieveResponse = Type("ContractRetrieveResponse", func() {
 	Description("Result for retrieving a contract by id")
 
@@ -121,7 +135,9 @@ var ContractRetrieveResponse = Type("ContractRetrieveResponse", func() {
 
 	Attribute("approval_tasks", ArrayOf(ContractApprovalTaskItem), "A list of approval tasks")
 
-	Required("contracts", "review_tasks", "approval_tasks")
+	Attribute("negotiation_tasks", ArrayOf(ContractNegotiationTaskItem), "A list of negotiation tasks")
+
+	Required("contracts", "review_tasks", "approval_tasks", "negotiation_tasks")
 })
 
 var ContractRetrieveByIDRequest = Type("ContractRetrieveByIDRequest", func() {
@@ -135,11 +151,12 @@ var ContractRetrieveByIDRequest = Type("ContractRetrieveByIDRequest", func() {
 })
 
 var ContractNegotiationDecisionItem = Type("ContractNegotiationDecisionItem", func() {
-	Attribute("counterpart", String, "Counterpart who has to decide this negotiation decision")
+
+	Attribute("negotiator", String, "Negotiator who has to decide this negotiation decision")
 	Attribute("decision", String, "Decision that was taken")
 	Attribute("rejection_reason", String, "Reason why it was rejected")
 
-	Required("counterpart")
+	Required("negotiator")
 })
 
 var ContractNegotiationItem = Type("ContractNegotiationItem", func() {
@@ -185,28 +202,6 @@ var ContractReviewResponse = Type("ContractReviewResponse", func() {
 	Description("Result for reviewing contract")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
-
-	Required("did")
-})
-
-var ContractVerifyRequest = Type("ContractVerifyRequest", func() {
-	Description("Contract verify request")
-
-	Token("token", String, "JWT token")
-
-	Attribute("did", String, "Decentralized Identifier of the contract")
-
-	Attribute("updated_at", String, "The timestamp when the contract was updated")
-
-	Required("did", "updated_at")
-})
-
-var ContractVerifyResponse = Type("ContractVerifyResponse", func() {
-	Description("Result for verifying a contract")
-
-	Attribute("did", String, "Decentralized Identifier of the contract")
-
-	Attribute("findings", ArrayOf(String), "A list of findings")
 
 	Required("did")
 })
@@ -271,11 +266,13 @@ var ContractNegotiationRespondRequest = Type("ContractNegotiationRespondRequest"
 
 	Attribute("id", String, "ID of the negotiation")
 
+	Attribute("did", String, "Decentralized Identifier of the contract")
+
 	Attribute("action_flag", String, "Decision for that negotiation (ACCEPTING | REJECTING)")
 	Attribute("responded_by", String, "The user who responded to that negotiation")
-	Attribute("RejectionReason", String, "The reason for that rejection")
+	Attribute("rejection_reason", String, "The reason for that rejection")
 
-	Required("id", "action_flag", "responded_by")
+	Required("id", "did", "action_flag", "responded_by")
 })
 
 var ContractNegotiationRespondResponse = Type("ContractNegotiationRespondResponse", func() {
@@ -353,9 +350,9 @@ var ContractTerminateRequest = Type("ContractTerminateRequest", func() {
 	Token("token", String, "JWT token")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
-	Attribute("updated_at", String, "Updated at")
+	Attribute("reason", String, "Reason for terminating contract")
 
-	Required("did", "updated_at")
+	Required("did", "reason")
 })
 
 var ContractTerminateResponse = Type("ContractTerminateResponse", func() {
@@ -372,17 +369,23 @@ var ContractAuditRequest = Type("ContractAuditRequest", func() {
 	Token("token", String, "JWT token")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
-	Attribute("updated_at", String, "Updated at")
 
-	Required("did", "updated_at")
+	Required("did")
 })
 
 var ContractAuditResponse = Type("ContractAuditResponse", func() {
 	Description("Result for auditing a contract")
 
-	Attribute("did", String, "Decentralized Identifier of the contract")
+	Attribute("id", Int64, "Identifier for the outbox event")
+	Attribute("component", String, "Name of the component")
+	Attribute("event_type", String, "Type of the event")
+	Attribute("event_data", Any, "Data of the event")
+	Attribute("did", String, "Decentralized Identifier of the contract template")
+	Attribute("created_at", String, "The creation date of the event")
+	Attribute("res_log_pred_cid", String, "Resource audit trail predecessor on the IPFS chain")
+	Attribute("global_log_pred_cid", String, "Global audit trail predecessor on the IPFS chain")
 
-	Required("did")
+	Required("id", "component", "event_type", "event_data", "created_at")
 })
 
 // Contract Workflow Engine Service  (/contract/...)
@@ -444,12 +447,11 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:requirements", "DCS-IR-CWE-01", "DCS-IR-CWE-03", "DCS-IR-CWE-06", "DCS-IR-CWE-09")
 		Meta("dcs:cwe:components", "")
 		Meta("dcs:downstream:sm:component", "Signer Authorization & PoA application")
-		Meta("dcs:ui", "Contract Creation", "Contract Negotiation", "Contract Review", "Contract Approval")
+		Meta("dcs:ui", "Contract Creation", "Contract Review", "Contract Approval")
 
 		Security(JWTAuth, func() {
 			Scope("Contract Creator")
 			Scope("Sys. Contract Creator")
-			Scope("Contract Negotiator")
 			Scope("Contract Reviewer")
 			Scope("Sys. Contract Reviewer")
 			Scope("Contract Approver")
@@ -477,7 +479,9 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:ui", "Contract Negotiation")
 
 		Security(JWTAuth, func() {
-			Scope("Contract Negotiator")
+			Scope("Contract Creator")
+			Scope("Contract Reviewer")
+			Scope("Sys. Contract Reviewer")
 		})
 
 		Payload(ContractNegotiationRequest)
@@ -498,10 +502,10 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Description("provide feedback/findings. respond to counterpart changes.")
 		Meta("dcs:requirements", "DCS-IR-CWE-03", "DCS-IR-CWE-05", "DCS-IR-CWE-06")
 		Meta("dcs:cwe:components", "Contract Versioning")
-		Meta("dcs:ui", "Contract Negotiation", "Contract Review")
+		Meta("dcs:ui", "Contract Creator", "Contract Review")
 
 		Security(JWTAuth, func() {
-			Scope("Contract Negotiator")
+			Scope("Contract Creator")
 			Scope("Contract Reviewer")
 			Scope("Sys. Contract Reviewer")
 		})
@@ -527,7 +531,9 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:ui", "Contract Negotiation", "Contract Review")
 
 		Security(JWTAuth, func() {
-			Scope("Contract Negotiator")
+			Scope("Contract Creator")
+			Scope("Contract Reviewer")
+			Scope("Contract Approver")
 		})
 
 		Payload(ContractReviewRequest)
@@ -554,8 +560,11 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Security(JWTAuth, func() {
 			Scope("Contract Creator")
 			Scope("Contract Reviewer")
+			Scope("Sys. Contract Reviewer")
 			Scope("Contract Approver")
+			Scope("Sys. Contract Approver")
 			Scope("Contract Manager")
+			Scope("Sys. Contract Manager")
 		})
 
 		Payload(ContractRetrieveRequest)
@@ -601,35 +610,6 @@ var _ = Service("ContractWorkflowEngine", func() {
 			GET("/contract/retrieve/{did}")
 			Param("did")
 
-			Response(StatusOK)
-			Response("bad_request", StatusBadRequest)
-			Response("internal_error", StatusInternalServerError)
-		})
-	})
-
-	// POST /contract/verify
-	Method("verify", func() {
-		Description("run policy, schema, and semantic validations; return findings.")
-		Meta("dcs:ui", "Contract Negotiation", "Contract Review", "Contract Approval", "Contract Management Dashboard")
-
-		Security(JWTAuth, func() {
-			Scope("Contract Creator")
-			Scope("Contract Reviewer")
-			Scope("Sys. Contract Reviewer")
-			Scope("Contract Approver")
-			Scope("Sys. Contract Approver")
-			Scope("Contract Manager")
-			Scope("Sys. Contract Manager")
-		})
-
-		Payload(ContractVerifyRequest)
-		Result(ContractVerifyResponse)
-
-		Error("bad_request", ErrorResult, "Bad request")
-		Error("internal_error", ErrorResult, "Internal server error")
-
-		HTTP(func() {
-			POST("/contract/verify")
 			Response(StatusOK)
 			Response("bad_request", StatusBadRequest)
 			Response("internal_error", StatusInternalServerError)
@@ -783,7 +763,7 @@ var _ = Service("ContractWorkflowEngine", func() {
 		})
 
 		Payload(ContractAuditRequest)
-		Result(ContractAuditResponse)
+		Result(ArrayOfRequired(ContractAuditResponse))
 
 		Error("bad_request", ErrorResult, "Bad request")
 		Error("internal_error", ErrorResult, "Internal server error")

@@ -6,6 +6,7 @@ import (
 	"digital-contracting-service/internal/contractworkflowengine/command"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/approvaltaskstate"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/contractstate"
+	"digital-contracting-service/internal/contractworkflowengine/datatype/negotiationtaskstate"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/reviewtaskstate"
 	"digital-contracting-service/internal/contractworkflowengine/db"
 	database "digital-contracting-service/internal/contractworkflowengine/db"
@@ -22,6 +23,7 @@ type TestRepo struct {
 	CRepo  db.ContractRepo
 	RTRepo db.ReviewTaskRepo
 	ATRepo db.ApprovalTaskRepo
+	NTRepo db.NegotiationTaskRepo
 	NRepo  db.NegotiationRepo
 }
 
@@ -41,12 +43,13 @@ func setupTestDB(t *testing.T) *sqlx.DB {
 	return database
 }
 
-func NewTestRepo(ctx context.Context) *TestRepo {
+func NewTestRepo() *TestRepo {
 	return &TestRepo{
-		CRepo:  &pg.PostgresContractRepo{Ctx: ctx},
-		RTRepo: &pg.PostgresReviewTaskRepo{Ctx: ctx},
-		ATRepo: &pg.PostgresApprovalTaskRepo{Ctx: ctx},
-		NRepo:  &pg.PostgresNegotiationRepo{Ctx: ctx},
+		CRepo:  &pg.PostgresContractRepo{},
+		RTRepo: &pg.PostgresReviewTaskRepo{},
+		ATRepo: &pg.PostgresApprovalTaskRepo{},
+		NTRepo: &pg.PostgresNegotiationTaskRepo{},
+		NRepo:  &pg.PostgresNegotiationRepo{},
 	}
 }
 
@@ -65,6 +68,15 @@ func cleanupContractTable(t *testing.T, db *sqlx.DB) {
 	DELETE FROM contract_review_task;
 `
 	_, err = db.Exec(cleanReviewTasksStatement)
+	if err != nil {
+		t.Fatalf("Failed to clean table: %v", err)
+	}
+
+	cleanNegotiationTasksStatement := `
+	-- noinspection SqlWithoutWhere
+	DELETE FROM contract_negotiation_task;
+`
+	_, err = db.Exec(cleanNegotiationTasksStatement)
 	if err != nil {
 		t.Fatalf("Failed to clean table: %v", err)
 	}
@@ -110,11 +122,10 @@ func createContract(t *testing.T, db *sqlx.DB, repo *TestRepo, did *string, stat
 		ContractData: &jsonContractData,
 	}
 	createHandler := command.Creator{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	err = createHandler.Handle(cmd)
+	err = createHandler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create contract: %v", err)
 	}
@@ -146,11 +157,10 @@ func createTestContractWithData(t *testing.T, db *sqlx.DB, repo *TestRepo, did *
 		ContractData: &jsonContractData,
 	}
 	createHandler := command.Creator{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	err = createHandler.Handle(cmd)
+	err = createHandler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create contract: %v", err)
 	}
@@ -163,6 +173,32 @@ func createTestContractWithData(t *testing.T, db *sqlx.DB, repo *TestRepo, did *
 	_, err = db.Exec(updateStatement, *did, state)
 	if err != nil {
 		t.Fatalf("Failed to update template state: %v", err)
+	}
+}
+
+func createNegotiationTasks(t *testing.T, ctx context.Context, db *sqlx.DB, repo *TestRepo, did string, state negotiationtaskstate.NegotiationTaskState, submittedBy string, negotiators []string) {
+	tx, err := db.BeginTxx(ctx, nil)
+	defer tx.Rollback()
+	if err != nil {
+		t.Fatalf("Failed to begin transaction: %v", err)
+	}
+
+	for _, negotiator := range negotiators {
+		negotiationTask := database.NegotiationTaskData{
+			DID:        did,
+			Negotiator: negotiator,
+			State:      state.String(),
+			CreatedBy:  submittedBy,
+		}
+		_, err = repo.NTRepo.Create(ctx, tx, negotiationTask)
+		if err != nil {
+			t.Fatalf("Failed to create negotiation task: %v", err)
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		t.Fatalf("Failed to commit transaction: %v", err)
 	}
 }
 
@@ -180,7 +216,7 @@ func createReviewTasks(t *testing.T, ctx context.Context, db *sqlx.DB, repo *Tes
 			State:     state.String(),
 			CreatedBy: submittedBy,
 		}
-		_, err = repo.RTRepo.Create(tx, reviewTask)
+		_, err = repo.RTRepo.Create(ctx, tx, reviewTask)
 		if err != nil {
 			t.Fatalf("Failed to create review task: %v", err)
 		}
@@ -205,7 +241,7 @@ func createApprovalTasks(t *testing.T, ctx context.Context, db *sqlx.DB, repo *T
 		State:     state.String(),
 		CreatedBy: submittedBy,
 	}
-	_, err = repo.ATRepo.Create(tx, approvalTask)
+	_, err = repo.ATRepo.Create(ctx, tx, approvalTask)
 	if err != nil {
 		t.Fatalf("Failed to create review task: %v", err)
 	}

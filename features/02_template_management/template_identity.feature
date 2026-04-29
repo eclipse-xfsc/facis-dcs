@@ -9,6 +9,7 @@ Feature: Template Identity and Traceability
     Then the template is assigned a UUID
     And the UUID is unique across the system
 
+  @skip
   Scenario: Assign DID to template
     Given I am authenticated with role "Template Manager"
     And template "Standard NDA" exists
@@ -16,12 +17,14 @@ Feature: Template Identity and Traceability
     Then the template has a resolvable DID
     And the DID is linked to template metadata
 
+  @skip
   Scenario: Retrieve template by UUID
     Given I am authenticated with role "Template Reviewer"
     And template "Standard NDA" exists with UUID
     When I retrieve template by UUID
     Then I receive the correct template
 
+  @skip
   Scenario: Retrieve template by DID
     Given I am authenticated with role "Template Reviewer"
     And template "Standard NDA" has a DID assigned

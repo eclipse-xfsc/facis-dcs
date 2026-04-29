@@ -6,8 +6,8 @@
         class="bg-base-100 rounded-2xl shadow-xl w-full max-w-2xl mx-4 flex flex-col gap-4 p-6 max-h-[85vh] overflow-y-auto"
         @click.stop>
         <h2 id="add-block-title" class="text-lg font-bold">Add block</h2>
-        <template v-if="isFrameContract">
-          <ApprovedSubTemplatePicker :templates="approvedSubTemplates" @select="handleAddApprovedTemplate"
+        <template v-if="!isContractWorkflow && isFrameContract">
+          <ApprovedSubTemplatePicker :templates="subTemplateSnapshots" @select="handleAddApprovedTemplate"
             :reference-count-by-did="referenceCountByDid" />
         </template>
         <template v-else>
@@ -47,9 +47,8 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useTemplateDraftStore } from '@template-repository/store/templateDraftStore'
 import { useTemplateEditorUiStore } from '@template-repository/store/templateEditorUiStore'
-import { useApprovedSubTemplateStore } from '@template-repository/store/approvedSubTemplateStore'
 import { DocumentBlockType, isClauseBlock, isApprovedTemplateBlock, TemplateType, type ClauseBlock } from '@template-repository/models/contract-templace'
-import type { ContractTemplate } from '@/models/contract-template'
+import type { SubTemplateSnapshot } from '@/models/contract-template'
 import BlockPaletteItem from './document-block/BlockPaletteItem.vue'
 import { parseSegments, getPlaceholderLabelFromConditions, type Segment } from '@template-repository/composables/useClauseTextChips'
 import ClauseSegmentsPreview from '@template-repository/components/clauses-editor/ClauseSegmentsPreview.vue'
@@ -57,18 +56,16 @@ import ApprovedSubTemplatePicker from '@template-repository/components/builder-e
 
 const draftStore = useTemplateDraftStore()
 const uiStore = useTemplateEditorUiStore()
-const approvedSubTemplateStore = useApprovedSubTemplateStore()
 const { addBlockModalContext } = storeToRefs(uiStore)
-const { documentBlocks, semanticConditions } = storeToRefs(draftStore)
+const { documentBlocks, semanticConditions, subTemplateSnapshots } = storeToRefs(draftStore)
 
+const isContractWorkflow = computed(() => uiStore.workflow === 'contract')
 const paletteBlockTypes = [
   { blockType: DocumentBlockType.Section, label: 'Section' },
   { blockType: DocumentBlockType.Text, label: 'Text' },
 ] as const
 
 const isFrameContract = computed(() => draftStore.templateType === TemplateType.frameContract)
-
-const approvedSubTemplates = computed(() => approvedSubTemplateStore.templates)
 
 // For each template did, number of ApprovedTemplate blocks in the outline that reference it.
 const referenceCountByDid = computed(() => {
@@ -101,14 +98,14 @@ function handleCancel() {
   uiStore.closeAddBlockModal()
 }
 
-function handleAddBlock(blockType: (typeof paletteBlockTypes)[number]['blockType']) {
+function handleAddBlock(blockType: DocumentBlockType) {
   const ctx = addBlockModalContext.value
   if (ctx === null) return
   draftStore.addBlock(ctx.parentBlockId, ctx.insertIndex, { blockType, text: '' })
   uiStore.closeAddBlockModal()
 }
 
-function handleAddApprovedTemplate(template: ContractTemplate) {
+function handleAddApprovedTemplate(template: SubTemplateSnapshot) {
   const ctx = addBlockModalContext.value
   if (ctx === null) return
   draftStore.addBlock(ctx.parentBlockId, ctx.insertIndex, {

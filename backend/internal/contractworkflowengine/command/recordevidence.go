@@ -2,9 +2,9 @@ package command
 
 import (
 	"context"
-	"digital-contracting-service/internal/base/conf"
 	"digital-contracting-service/internal/base/datatype/componenttype"
 	"digital-contracting-service/internal/base/event"
+	"digital-contracting-service/internal/contractworkflowengine/datatype/contractstate"
 	"digital-contracting-service/internal/contractworkflowengine/db"
 	contractevents "digital-contracting-service/internal/contractworkflowengine/event"
 	"errors"
@@ -21,15 +21,11 @@ type RecordEvidenceCmd struct {
 }
 
 type EvidenceRecorder struct {
-	Ctx   context.Context
 	DB    *sqlx.DB
 	CRepo db.ContractRepo
 }
 
-func (h *EvidenceRecorder) Handle(cmd RecordEvidenceCmd) error {
-
-	ctx, cancel := context.WithTimeout(h.Ctx, conf.TransactionTimeout())
-	defer cancel()
+func (h *EvidenceRecorder) Handle(ctx context.Context, cmd RecordEvidenceCmd) error {
 
 	tx, err := h.DB.BeginTxx(ctx, nil)
 	if err != nil {
@@ -37,7 +33,7 @@ func (h *EvidenceRecorder) Handle(cmd RecordEvidenceCmd) error {
 	}
 	defer tx.Rollback()
 
-	processData, err := h.CRepo.ReadProcessData(tx, cmd.DID)
+	processData, err := h.CRepo.ReadProcessData(ctx, tx, cmd.DID)
 	if err != nil {
 		return fmt.Errorf("could not read process data: %w", err)
 	}
@@ -46,11 +42,15 @@ func (h *EvidenceRecorder) Handle(cmd RecordEvidenceCmd) error {
 		return errors.New("contract was updated elsewhere, please reload")
 	}
 
+	if processData.State == contractstate.Terminated.String() {
+		return errors.New("current contract state is invalid")
+	}
+
 	evt := contractevents.RecordEvidenceEvent{
 		DID:             cmd.DID,
 		ContractVersion: processData.ContractVersion,
 		RecordedBy:      cmd.RecordedBy,
-		OccurredAt:      time.Now(),
+		OccurredAt:      time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

@@ -27,11 +27,10 @@ func TestUpdate_UpdateContractDataInDraftState(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Draft, creator)
 
@@ -49,17 +48,16 @@ func TestUpdate_UpdateContractDataInDraftState(t *testing.T) {
 	cmd := command.UpdateCmd{
 		DID:          *did,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		ContractData: &jsonContractData,
 	}
 	handler := command.Updater{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to submit contract: %v", err)
 	}
@@ -76,7 +74,7 @@ func TestUpdate_UpdateContractDataInDraftState(t *testing.T) {
 		CRepo: repo.CRepo,
 		NRepo: repo.NRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
@@ -98,23 +96,21 @@ func TestUpdate_UpdateNonExistingContract(t *testing.T) {
 		t.Fatalf("Failed to get new DID: %v", err)
 	}
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	cmd := command.UpdateCmd{
 		DID:       *did,
-		UpdatedAt: time.Now(),
+		UpdatedAt: time.Now().UTC(),
 		UpdatedBy: "Test User 1",
 	}
 	handler := command.Updater{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }
@@ -132,11 +128,10 @@ func TestUpdate_UpdateContractDataInDraftStateWithInvalidUser(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Draft, creator)
 
@@ -154,17 +149,16 @@ func TestUpdate_UpdateContractDataInDraftStateWithInvalidUser(t *testing.T) {
 	cmd := command.UpdateCmd{
 		DID:          *did,
 		UpdatedBy:    "Test User 1",
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		ContractData: &jsonContractData,
 	}
 	handler := command.Updater{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }
@@ -182,11 +176,10 @@ func TestUpdate_UpdateContractDataInInvalidState(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Submitted, creator)
 
@@ -204,17 +197,16 @@ func TestUpdate_UpdateContractDataInInvalidState(t *testing.T) {
 	cmd := command.UpdateCmd{
 		DID:          *did,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		ContractData: &jsonContractData,
 	}
 	handler := command.Updater{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 
 	assert.NotNil(t, err)
 }

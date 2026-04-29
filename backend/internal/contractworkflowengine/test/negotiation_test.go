@@ -8,7 +8,7 @@ import (
 	"digital-contracting-service/internal/contractworkflowengine/command"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/contractstate"
 	"digital-contracting-service/internal/contractworkflowengine/datatype/negotiationaction"
-	"digital-contracting-service/internal/contractworkflowengine/datatype/reviewtaskstate"
+	"digital-contracting-service/internal/contractworkflowengine/datatype/negotiationtaskstate"
 	"testing"
 	"time"
 
@@ -28,36 +28,38 @@ func TestNegotiation_CreateNegotiation(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Negotiation, creator)
 
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, []string{
+	negotiators := []string{
 		"Test User 1",
 		"Test User 2",
 		"Test User 3",
-	})
+	}
+
+	createNegotiationTasks(t, ctx, db, repo, *did, negotiationtaskstate.Open, creator, negotiators)
 
 	var changeRequest map[string]interface{}
 	jsonChangeRequest, err := datatype.NewJSON(changeRequest)
 	cmd := command.NegotiationCmd{
 		DID:           *did,
-		NegotiatedBy:  "Test User",
+		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
-		NTRepo: repo.NRepo,
+		NTRepo: repo.NTRepo,
+		NRepo:  repo.NRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create negotiation: %v", err)
 	}
@@ -68,7 +70,7 @@ func TestNegotiation_CreateNegotiation(t *testing.T) {
 		t.Fatalf("Failed to begin transaction: %v", err)
 	}
 
-	result, err := repo.NRepo.ReadAllByContractDID(tx, *did)
+	result, err := repo.NRepo.ReadAllByContractDID(ctx, tx, *did)
 	if err != nil {
 		t.Fatalf("Failed to read all negotiations for did: %v", err)
 	}
@@ -81,7 +83,7 @@ func TestNegotiation_CreateNegotiation(t *testing.T) {
 	assert.Equal(t, len(result), 3)
 }
 
-func TestNegotiation_CreateNegotiationAndCounterpartSet(t *testing.T) {
+func TestNegotiation_CreateNegotiationWithInvalidUser(t *testing.T) {
 
 	db := setupTestDB(t)
 
@@ -94,94 +96,20 @@ func TestNegotiation_CreateNegotiationAndCounterpartSet(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Negotiation, creator)
 
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, []string{
+	negotiators := []string{
 		"Test User 1",
 		"Test User 2",
 		"Test User 3",
-	})
-
-	var changeRequest map[string]interface{}
-	jsonChangeRequest, err := datatype.NewJSON(changeRequest)
-	cmd := command.NegotiationCmd{
-		DID:           *did,
-		NegotiatedBy:  "Test User 2",
-		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
-	}
-	handler := command.Negotiator{
-		Ctx:    ctx,
-		DB:     db,
-		CRepo:  repo.CRepo,
-		RTRepo: repo.RTRepo,
-		NTRepo: repo.NRepo,
-	}
-	err = handler.Handle(cmd)
-	if err != nil {
-		t.Fatalf("Failed to create negotiation: %v", err)
 	}
 
-	tx, err := db.BeginTxx(ctx, nil)
-	defer tx.Rollback()
-	if err != nil {
-		t.Fatalf("Failed to begin transaction: %v", err)
-	}
-
-	result, err := repo.NRepo.ReadAllByContractDID(tx, *did)
-	if err != nil {
-		t.Fatalf("Failed to read all negotiations for did: %v", err)
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		t.Fatalf("Failed to commit transaction: %v", err)
-	}
-
-	correctCounterParts := []string{
-		"Test User 1",
-		"Test User",
-		"Test User 3",
-	}
-	for idx, _ := range result {
-		assert.Equal(t, result[idx].Counterpart, correctCounterParts[idx])
-	}
-
-	assert.Equal(t, len(result), 3)
-}
-
-func TestNegotiation_AllCounterpartsAcceptChangeRequest(t *testing.T) {
-
-	db := setupTestDB(t)
-
-	cleanupContractTable(t, db)
-
-	did, err := base.GetDID()
-	if err != nil {
-		t.Fatalf("Failed to get new DID: %v", err)
-	}
-
-	creator := "Test User"
-
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
-	defer cancel()
-
-	repo := NewTestRepo(ctx)
-
-	createContract(t, db, repo, did, contractstate.Negotiation, creator)
-
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, []string{
-		"Test User 1",
-		"Test User 2",
-		"Test User 3",
-	})
+	createNegotiationTasks(t, ctx, db, repo, *did, negotiationtaskstate.Open, creator, negotiators)
 
 	var changeRequest map[string]interface{}
 	jsonChangeRequest, err := datatype.NewJSON(changeRequest)
@@ -189,16 +117,66 @@ func TestNegotiation_AllCounterpartsAcceptChangeRequest(t *testing.T) {
 		DID:           *did,
 		NegotiatedBy:  "Test User",
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
-		NTRepo: repo.NRepo,
+		NTRepo: repo.NTRepo,
+		NRepo:  repo.NRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
+
+	assert.NotNil(t, err)
+}
+
+func TestNegotiation_AllNegotiatorsAcceptChangeRequest(t *testing.T) {
+
+	db := setupTestDB(t)
+
+	cleanupContractTable(t, db)
+
+	did, err := base.GetDID()
+	if err != nil {
+		t.Fatalf("Failed to get new DID: %v", err)
+	}
+
+	creator := "Test User"
+
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
+	defer cancel()
+
+	repo := NewTestRepo()
+
+	createContract(t, db, repo, did, contractstate.Negotiation, creator)
+
+	negotiators := []string{
+		"Test User 1",
+		"Test User 2",
+		"Test User 3",
+	}
+
+	createNegotiationTasks(t, ctx, db, repo, *did, negotiationtaskstate.Open, creator, negotiators)
+
+	var changeRequest map[string]interface{}
+	jsonChangeRequest, err := datatype.NewJSON(changeRequest)
+	cmd := command.NegotiationCmd{
+		DID:           *did,
+		NegotiatedBy:  negotiators[0],
+		ChangeRequest: &jsonChangeRequest,
+		UpdatedAt:     time.Now().UTC(),
+	}
+	handler := command.Negotiator{
+
+		DB:     db,
+		CRepo:  repo.CRepo,
+		RTRepo: repo.RTRepo,
+		NTRepo: repo.NTRepo,
+		NRepo:  repo.NRepo,
+	}
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create negotiation: %v", err)
 	}
@@ -209,7 +187,7 @@ func TestNegotiation_AllCounterpartsAcceptChangeRequest(t *testing.T) {
 		t.Fatalf("Failed to begin transaction: %v", err)
 	}
 
-	negotiations, err := repo.NRepo.ReadAllByContractDID(tx, *did)
+	negotiations, err := repo.NRepo.ReadAllByContractDID(ctx, tx, *did)
 	if err != nil {
 		t.Fatalf("Failed to read all negotiations for did: %v", err)
 	}
@@ -223,16 +201,16 @@ func TestNegotiation_AllCounterpartsAcceptChangeRequest(t *testing.T) {
 		acceptCmd := command.AcceptNegotiationCmd{
 			DID:        *did,
 			ID:         negotiation.ID,
-			AcceptedBy: negotiation.Counterpart,
+			AcceptedBy: negotiation.Negotiator,
 		}
 		acceptHandler := command.NegotiationAcceptor{
-			Ctx:    ctx,
+
 			DB:     db,
 			CRepo:  repo.CRepo,
-			RTRepo: repo.RTRepo,
+			NTRepo: repo.NTRepo,
 			NRepo:  repo.NRepo,
 		}
-		err := acceptHandler.Handle(acceptCmd)
+		err := acceptHandler.Handle(ctx, acceptCmd)
 		if err != nil {
 			t.Fatalf("Failed to accept negotiation: %v", err)
 		}
@@ -247,7 +225,7 @@ func TestNegotiation_AllCounterpartsAcceptChangeRequest(t *testing.T) {
 	acceptAmount := 0
 	rejectAmount := 0
 	closeAmount := 0
-	negotiations, err = repo.NRepo.ReadAllByContractDID(tx, *did)
+	negotiations, err = repo.NRepo.ReadAllByContractDID(ctx, tx, *did)
 	for _, negotiation := range negotiations {
 		if *negotiation.Decision == negotiationdescision.Accepted.String() {
 			acceptAmount++
@@ -267,7 +245,7 @@ func TestNegotiation_AllCounterpartsAcceptChangeRequest(t *testing.T) {
 	assert.Equal(t, closeAmount, 0)
 }
 
-func TestNegotiation_OneCounterpartRejectChangeRequest(t *testing.T) {
+func TestNegotiation_OneNegotiatorRejectChangeRequest(t *testing.T) {
 
 	db := setupTestDB(t)
 
@@ -280,36 +258,38 @@ func TestNegotiation_OneCounterpartRejectChangeRequest(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Negotiation, creator)
 
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, []string{
+	negotiators := []string{
 		"Test User 1",
 		"Test User 2",
 		"Test User 3",
-	})
+	}
+
+	createNegotiationTasks(t, ctx, db, repo, *did, negotiationtaskstate.Open, creator, negotiators)
 
 	var changeRequest map[string]interface{}
 	jsonChangeRequest, err := datatype.NewJSON(changeRequest)
 	cmd := command.NegotiationCmd{
 		DID:           *did,
-		NegotiatedBy:  "Test User",
+		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
-		NTRepo: repo.NRepo,
+		NTRepo: repo.NTRepo,
+		NRepo:  repo.NRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create negotiation: %v", err)
 	}
@@ -320,7 +300,7 @@ func TestNegotiation_OneCounterpartRejectChangeRequest(t *testing.T) {
 		t.Fatalf("Failed to begin transaction: %v", err)
 	}
 
-	negotiations, err := repo.NRepo.ReadAllByContractDID(tx, *did)
+	negotiations, err := repo.NRepo.ReadAllByContractDID(ctx, tx, *did)
 	if err != nil {
 		t.Fatalf("Failed to read all negotiations for did: %v", err)
 	}
@@ -335,16 +315,16 @@ func TestNegotiation_OneCounterpartRejectChangeRequest(t *testing.T) {
 		DID:             *did,
 		ID:              negotiations[0].ID,
 		RejectionReason: &rejectionReason,
-		RejectedBy:      negotiations[0].Counterpart,
+		RejectedBy:      negotiations[0].Negotiator,
 	}
 	rejectionHandler := command.NegotiationRejector{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
-		RTRepo: repo.RTRepo,
+		NTRepo: repo.NTRepo,
 		NRepo:  repo.NRepo,
 	}
-	err = rejectionHandler.Handle(rejectionCmd)
+	err = rejectionHandler.Handle(ctx, rejectionCmd)
 	if err != nil {
 		t.Fatalf("Failed to reject negotiation: %v", err)
 	}
@@ -358,7 +338,7 @@ func TestNegotiation_OneCounterpartRejectChangeRequest(t *testing.T) {
 	acceptAmount := 0
 	rejectAmount := 0
 	closeAmount := 0
-	negotiations, err = repo.NRepo.ReadAllByContractDID(tx, *did)
+	negotiations, err = repo.NRepo.ReadAllByContractDID(ctx, tx, *did)
 	for _, negotiation := range negotiations {
 		if *negotiation.Decision == negotiationdescision.Accepted.String() {
 			acceptAmount++
@@ -391,36 +371,38 @@ func TestNegotiation_OneAcceptionOneRejectionOfChangeRequest(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Negotiation, creator)
 
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, []string{
+	negotiators := []string{
 		"Test User 1",
 		"Test User 2",
 		"Test User 3",
-	})
+	}
+
+	createNegotiationTasks(t, ctx, db, repo, *did, negotiationtaskstate.Open, creator, negotiators)
 
 	var changeRequest map[string]interface{}
 	jsonChangeRequest, err := datatype.NewJSON(changeRequest)
 	cmd := command.NegotiationCmd{
 		DID:           *did,
-		NegotiatedBy:  "Test User",
+		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
-		NTRepo: repo.NRepo,
+		NTRepo: repo.NTRepo,
+		NRepo:  repo.NRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create negotiation: %v", err)
 	}
@@ -431,7 +413,7 @@ func TestNegotiation_OneAcceptionOneRejectionOfChangeRequest(t *testing.T) {
 		t.Fatalf("Failed to begin transaction: %v", err)
 	}
 
-	negotiations, err := repo.NRepo.ReadAllByContractDID(tx, *did)
+	negotiations, err := repo.NRepo.ReadAllByContractDID(ctx, tx, *did)
 	if err != nil {
 		t.Fatalf("Failed to read all negotiations for did: %v", err)
 	}
@@ -444,16 +426,16 @@ func TestNegotiation_OneAcceptionOneRejectionOfChangeRequest(t *testing.T) {
 	acceptCmd := command.AcceptNegotiationCmd{
 		DID:        *did,
 		ID:         negotiations[0].ID,
-		AcceptedBy: negotiations[0].Counterpart,
+		AcceptedBy: negotiations[0].Negotiator,
 	}
 	acceptHandler := command.NegotiationAcceptor{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
-		RTRepo: repo.RTRepo,
+		NTRepo: repo.NTRepo,
 		NRepo:  repo.NRepo,
 	}
-	err = acceptHandler.Handle(acceptCmd)
+	err = acceptHandler.Handle(ctx, acceptCmd)
 	if err != nil {
 		t.Fatalf("Failed to accept negotiation: %v", err)
 	}
@@ -463,16 +445,16 @@ func TestNegotiation_OneAcceptionOneRejectionOfChangeRequest(t *testing.T) {
 		DID:             *did,
 		ID:              negotiations[1].ID,
 		RejectionReason: &rejectionReason,
-		RejectedBy:      negotiations[1].Counterpart,
+		RejectedBy:      negotiations[1].Negotiator,
 	}
 	rejectionHandler := command.NegotiationRejector{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
-		RTRepo: repo.RTRepo,
+		NTRepo: repo.NTRepo,
 		NRepo:  repo.NRepo,
 	}
-	err = rejectionHandler.Handle(rejectionCmd)
+	err = rejectionHandler.Handle(ctx, rejectionCmd)
 	if err != nil {
 		t.Fatalf("Failed to reject negotiation: %v", err)
 	}
@@ -486,7 +468,7 @@ func TestNegotiation_OneAcceptionOneRejectionOfChangeRequest(t *testing.T) {
 	acceptAmount := 0
 	rejectAmount := 0
 	closeAmount := 0
-	negotiations, err = repo.NRepo.ReadAllByContractDID(tx, *did)
+	negotiations, err = repo.NRepo.ReadAllByContractDID(ctx, tx, *did)
 	for _, negotiation := range negotiations {
 		if *negotiation.Decision == negotiationdescision.Accepted.String() {
 			acceptAmount++
@@ -519,36 +501,38 @@ func TestNegotiation_TestForOpenNegotiationDecisions(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Negotiation, creator)
 
-	createReviewTasks(t, ctx, db, repo, *did, reviewtaskstate.Open, creator, []string{
+	negotiators := []string{
 		"Test User 1",
 		"Test User 2",
 		"Test User 3",
-	})
+	}
+
+	createNegotiationTasks(t, ctx, db, repo, *did, negotiationtaskstate.Open, creator, negotiators)
 
 	var changeRequest map[string]interface{}
 	jsonChangeRequest, err := datatype.NewJSON(changeRequest)
 	cmd := command.NegotiationCmd{
 		DID:           *did,
-		NegotiatedBy:  "Test User",
+		NegotiatedBy:  negotiators[0],
 		ChangeRequest: &jsonChangeRequest,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 	}
 	handler := command.Negotiator{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
 		RTRepo: repo.RTRepo,
-		NTRepo: repo.NRepo,
+		NTRepo: repo.NTRepo,
+		NRepo:  repo.NRepo,
 	}
-	err = handler.Handle(cmd)
+	err = handler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create negotiation: %v", err)
 	}
@@ -559,7 +543,7 @@ func TestNegotiation_TestForOpenNegotiationDecisions(t *testing.T) {
 		t.Fatalf("Failed to begin transaction: %v", err)
 	}
 
-	negotiations, err := repo.NRepo.ReadAllByContractDID(tx, *did)
+	negotiations, err := repo.NRepo.ReadAllByContractDID(ctx, tx, *did)
 	if err != nil {
 		t.Fatalf("Failed to read all negotiations for did: %v", err)
 	}
@@ -572,16 +556,16 @@ func TestNegotiation_TestForOpenNegotiationDecisions(t *testing.T) {
 	acceptCmd := command.AcceptNegotiationCmd{
 		DID:        *did,
 		ID:         negotiations[0].ID,
-		AcceptedBy: negotiations[0].Counterpart,
+		AcceptedBy: negotiations[0].Negotiator,
 	}
 	acceptHandler := command.NegotiationAcceptor{
-		Ctx:    ctx,
+
 		DB:     db,
 		CRepo:  repo.CRepo,
-		RTRepo: repo.RTRepo,
+		NTRepo: repo.NTRepo,
 		NRepo:  repo.NRepo,
 	}
-	err = acceptHandler.Handle(acceptCmd)
+	err = acceptHandler.Handle(ctx, acceptCmd)
 	if err != nil {
 		t.Fatalf("Failed to accept negotiation: %v", err)
 	}
@@ -592,7 +576,7 @@ func TestNegotiation_TestForOpenNegotiationDecisions(t *testing.T) {
 		t.Fatalf("Failed to begin transaction: %v", err)
 	}
 
-	hasOpenNegotiationDecisions, err := repo.NRepo.HasOpenNegotiationDecisions(tx, *did, nil)
+	hasOpenNegotiationDecisions, err := repo.NRepo.HasOpenNegotiationDecisions(ctx, tx, *did, nil)
 	if err != nil {
 		t.Fatalf("Failed to check for open negotiation decisions %v", err)
 	}
