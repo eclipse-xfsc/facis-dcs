@@ -603,7 +603,7 @@ func (s *contractWorkflowEnginesrvc) Audit(ctx context.Context, req *contractwor
 	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
 	defer cancel()
 
-	qry := contract.AuditLogQry{
+	qry := contract.GetAuditLogQry{
 		DID:       req.Did,
 		AuditedBy: middleware.GetUsername(ctx),
 	}
