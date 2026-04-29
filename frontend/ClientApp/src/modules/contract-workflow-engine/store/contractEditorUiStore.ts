@@ -12,6 +12,7 @@ const defaultState: Readonly<ContractEditorUiState> = {
     { id: 'semantic', label: 'Semantic Rules' },
     { id: 'clauses', label: 'Clauses' },
     { id: 'builder', label: 'Builder' },
+    { id: 'diff', label: 'Diff View' },
   ],
 }
 
@@ -26,7 +27,9 @@ export const useContractEditorUiStore = defineStore(storeId, {
         case ContractState.draft:
           // Keep the edit page simple for now, same for the negotiation states
           return this.tabs.filter(tab => ['details', 'content'].includes(tab.id))
-          default:
+        case ContractState.negotiation:
+          return this.tabs.filter((tab) => ['details', 'content', 'diff'].includes(tab.id))
+        default:
           return this.tabs.filter(tab => ['details', 'content'].includes(tab.id))
       }
     },
