@@ -59,20 +59,10 @@ const register = async () => {
     console.error('Registration failed:', err)
   }
 }
-
-const audit = async () => {
-  try {
-    const response = await contractTemplateService.audit({ did: props.item.did })
-    console.log(response)
-  } catch (err) {
-    console.error('Audit failed:', err)
-  }
-}
 </script>
 
 <template>
   <button v-if="canRegister" :class="$attrs.class" @click="register">Register</button>
   <button v-if="canArchive" :class="[$attrs.class, 'hover:btn-error']" @click="archive">Archive</button>
-  <button v-if="isManager" :class="$attrs.class" @click="audit">Audit</button>
   <ConfirmationModal ref="confirmation-modal" />
 </template>
