@@ -37,14 +37,13 @@ type GetAllMetadataByFilterResult struct {
 }
 
 type GetAllMetaDataByFilterHandler struct {
-	Ctx   context.Context
 	DB    *sqlx.DB
 	CRepo db.ContractRepo
 }
 
-func (h *GetAllMetaDataByFilterHandler) Handle(query GetAllMetadataByFilterQry) ([]GetAllMetadataByFilterResult, error) {
+func (h *GetAllMetaDataByFilterHandler) Handle(ctx context.Context, query GetAllMetadataByFilterQry) ([]GetAllMetadataByFilterResult, error) {
 
-	ctx, cancel := context.WithTimeout(h.Ctx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
 	defer cancel()
 
 	tx, err := h.DB.BeginTxx(ctx, nil)
@@ -70,7 +69,7 @@ func (h *GetAllMetaDataByFilterHandler) Handle(query GetAllMetadataByFilterQry) 
 		RetrievedBy: query.RetrievedBy,
 		OccurredAt:  time.Now(),
 	}
-	err = event.Create(h.Ctx, tx, evt, componenttype.SignatureManagement)
+	err = event.Create(ctx, tx, evt, componenttype.SignatureManagement)
 	if err != nil {
 		return nil, fmt.Errorf("could not create event: %w", err)
 	}

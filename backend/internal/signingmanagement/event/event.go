@@ -1,6 +1,7 @@
 package event
 
 import (
+	"digital-contracting-service/internal/base/datatype/componenttype"
 	"digital-contracting-service/internal/signingmanagement/datatype/eventtype"
 	"time"
 )
@@ -56,21 +57,21 @@ func (e ValidateEvent) GetDID() string {
 	return e.DID
 }
 
-// RetrieveAuditLogEvent is emitted when the audit log is retrieved
-type RetrieveAuditLogEvent struct {
-	DID             string    `json:"did"`
-	ContractVersion *int      `json:"contract_version,omitempty"`
-	RetrievedBy     string    `json:"retrieved_by"`
-	OccurredAt      time.Time `json:"occurred_at"`
+// AuditEvt is emitted when template data is registered.
+type AuditEvt struct {
+	DID           string                      `json:"did"`
+	AuditedBy     string                      `json:"audited_by"`
+	OccurredAt    time.Time                   `json:"occurred_at"`
+	ComponentType componenttype.ComponentType `json:"component_type"`
 }
 
 // EventType implements the Event interface.
-func (e RetrieveAuditLogEvent) EventType() string {
-	return eventtype.RetrieveAuditLog.String()
+func (e AuditEvt) EventType() string {
+	return eventtype.Audit.String()
 }
 
 // GetDID implements the Event interface.
-func (e RetrieveAuditLogEvent) GetDID() string {
+func (e AuditEvt) GetDID() string {
 	return e.DID
 }
 

@@ -2,10 +2,10 @@ package query
 
 import (
 	"context"
-	"digital-contracting-service/internal/base/conf"
+	"digital-contracting-service/internal/base"
+	"digital-contracting-service/internal/base/datatype"
 	"digital-contracting-service/internal/base/datatype/componenttype"
 	"digital-contracting-service/internal/base/event"
-	"digital-contracting-service/internal/signingmanagement/db"
 	signingmanagementevents "digital-contracting-service/internal/signingmanagement/event"
 	"fmt"
 	"time"
@@ -14,40 +14,35 @@ import (
 )
 
 type GetAuditLogQry struct {
-	DID         string
-	RetrievedBy string
+	DID       string
+	AuditedBy string
 }
 
-type GetAuditLogResult struct {
+type Auditor struct {
+	DB           *sqlx.DB
+	ATrailReader base.AuditTrailReader
 }
 
-type GetAuditLogHandler struct {
-	Ctx   context.Context
-	DB    *sqlx.DB
-	CRepo db.ContractRepo
-}
-
-func (h *GetAuditLogHandler) Handle(query GetAuditLogQry) (*GetAuditLogResult, error) {
-
-	ctx, cancel := context.WithTimeout(h.Ctx, conf.TransactionTimeout())
-	defer cancel()
+func (h *Auditor) Handle(ctx context.Context, qry GetAuditLogQry) ([]datatype.AuditLogEntry, error) {
 
 	tx, err := h.DB.BeginTxx(ctx, nil)
 	if err != nil {
-		return nil, fmt.Errorf("could not create transaction: %w", err)
+		return nil, fmt.Errorf("could not start transaction: %w", err)
 	}
 	defer tx.Rollback()
 
-	_, err = h.CRepo.ReadAllMetaData(tx)
+	result, err := h.ATrailReader.ReadAuditLogEntriesByComponentAndDID(ctx, tx, componenttype.ContractTemplateRepo, qry.DID)
 	if err != nil {
-		return nil, fmt.Errorf("could not read all contracts: %w", err)
+		return nil, err
 	}
 
-	evt := signingmanagementevents.RetrieveAuditLogEvent{
-		RetrievedBy: query.RetrievedBy,
-		OccurredAt:  time.Now(),
+	evt := signingmanagementevents.AuditEvt{
+		DID:           qry.DID,
+		ComponentType: componenttype.ContractTemplateRepo,
+		AuditedBy:     qry.AuditedBy,
+		OccurredAt:    time.Now().UTC(),
 	}
-	err = event.Create(h.Ctx, tx, evt, componenttype.SignatureManagement)
+	err = event.Create(ctx, tx, evt, componenttype.ContractTemplateRepo)
 	if err != nil {
 		return nil, fmt.Errorf("could not create event: %w", err)
 	}
@@ -57,5 +52,5 @@ func (h *GetAuditLogHandler) Handle(query GetAuditLogQry) (*GetAuditLogResult, e
 		return nil, fmt.Errorf("could not commit transaction: %w", err)
 	}
 
-	return &GetAuditLogResult{}, nil
+	return result, nil
 }

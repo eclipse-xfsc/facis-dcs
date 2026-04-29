@@ -22,12 +22,23 @@ var SMContractListItem = Type("SMContractListItem", func() {
 	Required("did", "state", "created_at", "updated_at")
 })
 
+var SMContractSigningTaskItem = Type("SMContractSigningTaskItem", func() {
+	Attribute("did", String, "DID of the contract")
+	Attribute("contract_version", Int, "The version of the contract")
+	Attribute("state", String, "State of the review task")
+	Attribute("reviewer", String, "The reviewer of the contract")
+	Attribute("created_at", String, "Created at")
+
+	Required("did", "state", "reviewer", "created_at")
+})
+
 var SMContractRetrieveResponse = Type("SMContractRetrieveResponse", func() {
 	Description("Result for retrieving a contract by id")
 
 	Attribute("contracts", ArrayOf(SMContractListItem), "A list of contracts")
+	Attribute("signing_tasks", ArrayOf(SMContractSigningTaskItem), "A list of signing tasks")
 
-	Required("contracts")
+	Required("contracts", "signing_tasks")
 })
 
 var SMContractRetrieveByIDRequest = Type("SMContractRetrieveByIDRequest", func() {
@@ -69,23 +80,20 @@ var SMContractVerifyRequest = Type("SMContractVerifyRequest", func() {
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
 
-	Attribute("updated_at", String, "The timestamp when the contract was updated")
-
-	Required("did", "updated_at")
+	Required("did")
 })
 
 var SMContractVerifyResponse = Type("SMContractVerifyResponse", func() {
 	Description("Result for verifying a contract")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
-
 	Attribute("findings", ArrayOf(String), "A list of findings")
 
 	Required("did")
 })
 
 var SMContractApplyRequest = Type("SMContractApplyRequest", func() {
-	Description("Contract verify request")
+	Description("Contract apply request")
 
 	Token("token", String, "JWT token")
 
@@ -105,39 +113,36 @@ var SMContractApplyResponse = Type("SMContractApplyResponse", func() {
 })
 
 var SMContractValidateRequest = Type("SMContractValidateRequest", func() {
-	Description("Contract verify request")
+	Description("Contract validate request")
 
 	Token("token", String, "JWT token")
-
-	Attribute("did", String, "Decentralized Identifier of the contract")
-
-	Attribute("updated_at", String, "The timestamp when the contract was updated")
-
-	Required("did", "updated_at")
-})
-
-var SMContractValidateResponse = Type("SMContractValidateResponse", func() {
-	Description("Result for verifying a contract")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
 
 	Required("did")
 })
 
+var SMContractValidateResponse = Type("SMContractValidateResponse", func() {
+	Description("Result for verifying a contract")
+
+	Attribute("did", String, "Decentralized Identifier of the contract")
+	Attribute("findings", ArrayOf(String), "A list of findings")
+
+	Required("did")
+})
+
 var SMContractRevokeRequest = Type("SMContractRevokeRequest", func() {
-	Description("Contract verify request")
+	Description("Contract revoke request")
 
 	Token("token", String, "JWT token")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
 
-	Attribute("updated_at", String, "The timestamp when the contract was updated")
-
-	Required("did", "updated_at")
+	Required("did")
 })
 
 var SMContractRevokeResponse = Type("SMContractRevokeResponse", func() {
-	Description("Result for verifying a contract")
+	Description("Result for revoking a contract")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
 
@@ -150,34 +155,40 @@ var SMContractAuditRequest = Type("SMContractAuditRequest", func() {
 	Token("token", String, "JWT token")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
-	Attribute("updated_at", String, "Updated at")
 
-	Required("did", "updated_at")
+	Required("did")
 })
 
 var SMContractAuditResponse = Type("SMContractAuditResponse", func() {
 	Description("Result for auditing a contract")
+
+	Attribute("id", Int64, "Identifier for the outbox event")
+	Attribute("component", String, "Name of the component")
+	Attribute("event_type", String, "Type of the event")
+	Attribute("event_data", Any, "Data of the event")
+	Attribute("did", String, "Decentralized Identifier of the contract template")
+	Attribute("created_at", String, "The creation date of the event")
+	Attribute("res_log_pred_cid", String, "Resource audit trail predecessor on the IPFS chain")
+	Attribute("global_log_pred_cid", String, "Global audit trail predecessor on the IPFS chain")
+
+	Required("id", "component", "event_type", "event_data", "created_at")
+})
+
+var SMContractComplianceRequest = Type("SMContractComplianceRequest", func() {
+	Description("Contract check compliance request")
+
+	Token("token", String, "JWT token")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
 
 	Required("did")
 })
 
-var SMContractComplianceRequest = Type("SMContractComplianceRequest", func() {
-	Description("Contract audit request")
-
-	Token("token", String, "JWT token")
-
-	Attribute("did", String, "Decentralized Identifier of the contract")
-	Attribute("updated_at", String, "Updated at")
-
-	Required("did", "updated_at")
-})
-
 var SMContractComplianceResponse = Type("SMContractComplianceResponse", func() {
-	Description("Result for auditing a contract")
+	Description("Result for contract compliance checking")
 
 	Attribute("did", String, "Decentralized Identifier of the contract")
+	Attribute("findings", ArrayOf(String), "A list of findings")
 
 	Required("did")
 })
@@ -351,7 +362,7 @@ var _ = Service("SignatureManagement", func() {
 		})
 
 		Payload(SMContractAuditRequest)
-		Result(SMContractAuditResponse)
+		Result(ArrayOfRequired(SMContractAuditResponse))
 
 		Error("bad_request", ErrorResult, "Bad request")
 		Error("internal_error", ErrorResult, "Internal server error")

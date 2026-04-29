@@ -11,18 +11,18 @@ const (
 	Validate             EventType = "VALIDATE_SIGNATURE"
 	RetrieveAll          EventType = "RETRIEVE_ALL_CONTRACTS"
 	RetrieveByID         EventType = "RETRIEVE_CONTRACT_BY_ID"
-	RetrieveAuditLog     EventType = "RETRIEVE_AUDIT_LOG"
 	Revoke               EventType = "REVOKE_SIGNATURE"
 	ComplianceValidation EventType = "COMPLIANCE_VALIDATION"
+	Audit                EventType = "AUDIT_CONTRACT_TEMPLATE"
 )
 
 var validStates = map[EventType]bool{
 	Validate:             true,
 	RetrieveAll:          true,
 	RetrieveByID:         true,
-	RetrieveAuditLog:     true,
 	Revoke:               true,
 	ComplianceValidation: true,
+	Audit:                true,
 }
 
 func NewEventType(s string) (EventType, error) {

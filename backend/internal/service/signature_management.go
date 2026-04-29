@@ -2,9 +2,10 @@ package service
 
 import (
 	"context"
-	contractworkflowengine "digital-contracting-service/gen/contract_workflow_engine"
 	signaturemanagement "digital-contracting-service/gen/signature_management"
 	"digital-contracting-service/internal/auth"
+	"digital-contracting-service/internal/base"
+	"digital-contracting-service/internal/base/conf"
 	"digital-contracting-service/internal/middleware"
 	"digital-contracting-service/internal/signingmanagement/command"
 	db "digital-contracting-service/internal/signingmanagement/db"
@@ -16,17 +17,19 @@ import (
 )
 
 type signatureManagementsrvc struct {
-	DB    *sqlx.DB
-	CRepo db.ContractRepo
+	DB           *sqlx.DB
+	CRepo        db.ContractRepo
+	ATrailReader base.AuditTrailReader
 	auth.JWTAuthenticator
 }
 
-func NewSignatureManagement(db *sqlx.DB, jwtAuth auth.JWTAuthenticator, cRepo db.ContractRepo) signaturemanagement.Service {
+func NewSignatureManagement(db *sqlx.DB, jwtAuth auth.JWTAuthenticator, cRepo db.ContractRepo, auditTrailReader base.AuditTrailReader) signaturemanagement.Service {
 
 	return &signatureManagementsrvc{
 		JWTAuthenticator: jwtAuth,
 		DB:               db,
 		CRepo:            cRepo,
+		ATrailReader:     auditTrailReader,
 	}
 }
 
@@ -36,11 +39,10 @@ func (s *signatureManagementsrvc) Retrieve(ctx context.Context, req *signaturema
 		RetrievedBy: middleware.GetUsername(ctx),
 	}
 	queryHandler := query.GetAllMetadataHandler{
-		Ctx:   ctx,
 		DB:    s.DB,
 		CRepo: s.CRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		return nil, signaturemanagement.MakeInternalError(err)
 	}
@@ -70,12 +72,11 @@ func (s *signatureManagementsrvc) RetrieveByID(ctx context.Context, req *signatu
 		RetrievedBy: middleware.GetUsername(ctx),
 	}
 	queryHandler := query.GetByIDHandler{
-		Ctx:   ctx,
 		DB:    s.DB,
 		CRepo: s.CRepo,
 	}
 
-	contractResult, err := queryHandler.Handle(qry)
+	contractResult, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		return nil, signaturemanagement.MakeInternalError(err)
 	}
@@ -110,23 +111,16 @@ func (s *signatureManagementsrvc) Apply(ctx context.Context, req *signaturemanag
 
 func (s *signatureManagementsrvc) Validate(ctx context.Context, req *signaturemanagement.SMContractValidateRequest) (res *signaturemanagement.SMContractValidateResponse, err error) {
 
-	updatedAt, err := time.Parse(time.RFC3339, req.UpdatedAt)
-	if err != nil {
-		return nil, contractworkflowengine.MakeInternalError(err)
-	}
-
 	qry := command.RevokeCmd{
 		DID:       req.Did,
 		RevokedBy: middleware.GetUsername(ctx),
-		UpdatedAt: updatedAt,
 	}
 	queryHandler := command.Revoker{
-		Ctx:   ctx,
 		DB:    s.DB,
 		CRepo: s.CRepo,
 	}
 
-	err = queryHandler.Handle(qry)
+	err = queryHandler.Handle(ctx, qry)
 	if err != nil {
 		return nil, signaturemanagement.MakeInternalError(err)
 
@@ -140,48 +134,53 @@ func (s *signatureManagementsrvc) Revoke(ctx context.Context, request *signature
 	return
 }
 
-func (s *signatureManagementsrvc) Audit(ctx context.Context, req *signaturemanagement.SMContractAuditRequest) (res *signaturemanagement.SMContractAuditResponse, err error) {
+func (s *signatureManagementsrvc) Audit(ctx context.Context, req *signaturemanagement.SMContractAuditRequest) (res []*signaturemanagement.SMContractAuditResponse, err error) {
+
+	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
+	defer cancel()
 
 	qry := query.GetAuditLogQry{
-		DID:         req.Did,
-		RetrievedBy: middleware.GetUsername(ctx),
+		DID:       req.Did,
+		AuditedBy: middleware.GetUsername(ctx),
 	}
-	queryHandler := query.GetAuditLogHandler{
-		Ctx:   ctx,
-		DB:    s.DB,
-		CRepo: s.CRepo,
+	handler := query.Auditor{
+		DB:           s.DB,
+		ATrailReader: s.ATrailReader,
 	}
-
-	_, err = queryHandler.Handle(qry)
+	auditLogHistory, err := handler.Handle(ctx, qry)
 	if err != nil {
 		return nil, signaturemanagement.MakeInternalError(err)
-
 	}
 
-	return &signaturemanagement.SMContractAuditResponse{
-		Did: req.Did,
-	}, nil
+	history := make([]*signaturemanagement.SMContractAuditResponse, 0)
+	for _, entry := range auditLogHistory {
+		history = append(history, &signaturemanagement.SMContractAuditResponse{
+			ID:               entry.ID,
+			Component:        entry.Component,
+			EventType:        entry.EventType,
+			EventData:        entry.EventData,
+			Did:              entry.DID,
+			CreatedAt:        entry.CreatedAt.String(),
+			GlobalLogPredCid: entry.GlobalLogPredCID,
+			ResLogPredCid:    entry.ResLogPredCID,
+		})
+	}
+
+	return history, nil
 }
 
 func (s *signatureManagementsrvc) Compliance(ctx context.Context, req *signaturemanagement.SMContractComplianceRequest) (res *signaturemanagement.SMContractComplianceResponse, err error) {
 
-	updatedAt, err := time.Parse(time.RFC3339, req.UpdatedAt)
-	if err != nil {
-		return nil, contractworkflowengine.MakeInternalError(err)
-	}
-
 	qry := command.ComplianceCmd{
 		DID:         req.Did,
 		ValidatedBy: middleware.GetUsername(ctx),
-		UpdatedAt:   updatedAt,
 	}
 	queryHandler := command.ComplianceValidator{
-		Ctx:   ctx,
 		DB:    s.DB,
 		CRepo: s.CRepo,
 	}
 
-	err = queryHandler.Handle(qry)
+	err = queryHandler.Handle(ctx, qry)
 	if err != nil {
 		return nil, signaturemanagement.MakeInternalError(err)
 

@@ -39,10 +39,10 @@ func setupTestDB(t *testing.T) *sqlx.DB {
 	return database
 }
 
-func NewTestRepo(ctx context.Context) *TestRepo {
+func NewTestRepo() *TestRepo {
 	return &TestRepo{
-		CRepo:    &pg.PostgresContractRepo{Ctx: ctx},
-		CWECRepo: &cwepg.PostgresContractRepo{Ctx: ctx},
+		CRepo:    &pg.PostgresContractRepo{},
+		CWECRepo: &cwepg.PostgresContractRepo{},
 	}
 }
 
@@ -106,11 +106,10 @@ func createContract(t *testing.T, db *sqlx.DB, repo *TestRepo, did *string, stat
 		ContractData: &jsonContractData,
 	}
 	createHandler := cwecommands.Creator{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CWECRepo,
 	}
-	err = createHandler.Handle(cmd)
+	err = createHandler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create contract: %v", err)
 	}
@@ -142,11 +141,10 @@ func createTestContractWithData(t *testing.T, db *sqlx.DB, repo *TestRepo, did *
 		ContractData: &jsonContractData,
 	}
 	createHandler := command.Creator{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CWECRepo,
 	}
-	err = createHandler.Handle(cmd)
+	err = createHandler.Handle(ctx, cmd)
 	if err != nil {
 		t.Fatalf("Failed to create contract: %v", err)
 	}

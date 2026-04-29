@@ -7,7 +7,6 @@ import (
 	"digital-contracting-service/internal/base/event"
 	"digital-contracting-service/internal/signingmanagement/db"
 	signingmanagementevents "digital-contracting-service/internal/signingmanagement/event"
-	"errors"
 	"fmt"
 	"time"
 
@@ -16,19 +15,17 @@ import (
 
 type ComplianceCmd struct {
 	DID         string
-	UpdatedAt   time.Time
 	ValidatedBy string
 }
 
 type ComplianceValidator struct {
-	Ctx   context.Context
 	DB    *sqlx.DB
 	CRepo db.ContractRepo
 }
 
-func (h *ComplianceValidator) Handle(cmd ComplianceCmd) error {
+func (h *ComplianceValidator) Handle(ctx context.Context, cmd ComplianceCmd) error {
 
-	ctx, cancel := context.WithTimeout(h.Ctx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
 	defer cancel()
 
 	tx, err := h.DB.BeginTxx(ctx, nil)
@@ -40,10 +37,6 @@ func (h *ComplianceValidator) Handle(cmd ComplianceCmd) error {
 	processData, err := h.CRepo.ReadProcessData(tx, cmd.DID)
 	if err != nil {
 		return fmt.Errorf("could not read process data: %w", err)
-	}
-
-	if cmd.UpdatedAt.Unix() < processData.UpdatedAt.Unix() {
-		return errors.New("contract was updated elsewhere, please reload")
 	}
 
 	evt := signingmanagementevents.ComplianceValidationEvent{

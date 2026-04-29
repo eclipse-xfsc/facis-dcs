@@ -33,14 +33,13 @@ type GetByIDResult struct {
 }
 
 type GetByIDHandler struct {
-	Ctx   context.Context
 	DB    *sqlx.DB
 	CRepo db.ContractRepo
 }
 
-func (h *GetByIDHandler) Handle(query GetByIDQry) (*GetByIDResult, error) {
+func (h *GetByIDHandler) Handle(ctx context.Context, query GetByIDQry) (*GetByIDResult, error) {
 
-	ctx, cancel := context.WithTimeout(h.Ctx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
 	defer cancel()
 
 	tx, err := h.DB.BeginTxx(ctx, nil)
@@ -59,7 +58,7 @@ func (h *GetByIDHandler) Handle(query GetByIDQry) (*GetByIDResult, error) {
 		RetrievedBy: query.RetrievedBy,
 		OccurredAt:  time.Now(),
 	}
-	err = event.Create(h.Ctx, tx, evt, componenttype.SignatureManagement)
+	err = event.Create(ctx, tx, evt, componenttype.SignatureManagement)
 	if err != nil {
 		return nil, fmt.Errorf("could not create event: %w", err)
 	}

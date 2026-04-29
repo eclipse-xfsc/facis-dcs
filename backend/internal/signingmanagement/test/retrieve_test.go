@@ -26,11 +26,10 @@ func TestRetrieve_RetrieveContractById(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Approved, creator)
 
@@ -39,11 +38,10 @@ func TestRetrieve_RetrieveContractById(t *testing.T) {
 		RetrievedBy: creator,
 	}
 	queryHandler := query.GetByIDHandler{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	contractItem, err := queryHandler.Handle(qry)
+	contractItem, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
@@ -65,11 +63,10 @@ func TestRetrieve_RetrieveContractByIdInInvalidState(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Draft, creator)
 
@@ -78,11 +75,10 @@ func TestRetrieve_RetrieveContractByIdInInvalidState(t *testing.T) {
 		RetrievedBy: creator,
 	}
 	queryHandler := query.GetByIDHandler{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	_, err = queryHandler.Handle(qry)
+	_, err = queryHandler.Handle(ctx, qry)
 
 	assert.NotNil(t, err)
 }
@@ -100,11 +96,10 @@ func TestRetrieve_RetrieveNonExistingContractById(t *testing.T) {
 
 	creator := "Test User"
 
-	tmpCtx := context.Background()
-	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
+	ctx, cancel := context.WithTimeout(context.Background(), conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	createContract(t, db, repo, did, contractstate.Approved, creator)
 
@@ -117,11 +112,10 @@ func TestRetrieve_RetrieveNonExistingContractById(t *testing.T) {
 		RetrievedBy: creator,
 	}
 	queryHandler := query.GetByIDHandler{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	_, err = queryHandler.Handle(qry)
+	_, err = queryHandler.Handle(ctx, qry)
 
 	assert.NotNil(t, err)
 }
@@ -138,7 +132,7 @@ func TestRetrieve_RetrieveAllContracts(t *testing.T) {
 	ctx, cancel := context.WithTimeout(tmpCtx, conf.TransactionTimeout())
 	defer cancel()
 
-	repo := NewTestRepo(ctx)
+	repo := NewTestRepo()
 
 	dids := make([]string, 0, 10)
 	for i := 0; i < 10; i++ {
@@ -160,11 +154,10 @@ func TestRetrieve_RetrieveAllContracts(t *testing.T) {
 		RetrievedBy: creator,
 	}
 	queryHandler := query.GetAllMetadataHandler{
-		Ctx:   ctx,
 		DB:    db,
 		CRepo: repo.CRepo,
 	}
-	result, err := queryHandler.Handle(qry)
+	result, err := queryHandler.Handle(ctx, qry)
 	if err != nil {
 		t.Fatalf("Failed to query contract: %v", err)
 	}
