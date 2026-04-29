@@ -69,7 +69,7 @@ func (h *Archiver) Handle(ctx context.Context, cmd ArchiveCmd) error {
 		DocumentNumber: processData.DocumentNumber,
 		Version:        processData.Version,
 		ArchivedBy:     cmd.ArchivedBy,
-		OccurredAt:     time.Now(),
+		OccurredAt:     time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractTemplateRepo)
 	if err != nil {

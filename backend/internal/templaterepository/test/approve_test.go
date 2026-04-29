@@ -54,7 +54,7 @@ func TestApprove_ApproveContractTemplateInReviewedState(t *testing.T) {
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    approver,
 		DecisionNotes: []string{},
 	}
@@ -102,7 +102,7 @@ func TestApprove_ApproveNonExistingContractTemplate(t *testing.T) {
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    "Test User 1",
 		DecisionNotes: []string{},
 	}
@@ -140,7 +140,7 @@ func TestApprove_ApproveContractTemplateInReviewedStateWithInvalidUser(t *testin
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    "Test User 2",
 		DecisionNotes: []string{},
 	}
@@ -176,7 +176,7 @@ func TestApprove_ApproveContractTemplateInDraftState(t *testing.T) {
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    "Test User 1",
 		DecisionNotes: []string{},
 	}
@@ -212,7 +212,7 @@ func TestApprove_ApproveContractTemplateInApprovedState(t *testing.T) {
 
 	cmd := command.ApproveCmd{
 		DID:           *did,
-		UpdatedAt:     time.Now(),
+		UpdatedAt:     time.Now().UTC(),
 		ApprovedBy:    "Test User 1",
 		DecisionNotes: []string{},
 	}

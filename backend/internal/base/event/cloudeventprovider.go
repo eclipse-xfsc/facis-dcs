@@ -63,6 +63,10 @@ func (c CloudEventSubClient) Close() error {
 	return c.client.Close()
 }
 
+func (c CloudEventSubClient) Cancel() {
+	c.cancel()
+}
+
 func (c CloudEventSubClient) Subscribe(f func(evt event.Event)) error {
 	return c.client.SubCtx(c.ctx, f)
 }

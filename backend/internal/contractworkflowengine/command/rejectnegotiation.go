@@ -64,7 +64,7 @@ func (h *NegotiationRejector) Handle(ctx context.Context, cmd RejectNegotiationC
 		ContractVersion: processData.ContractVersion,
 		RejectedBy:      cmd.RejectedBy,
 		RejectionReason: cmd.RejectionReason,
-		OccurredAt:      time.Now(),
+		OccurredAt:      time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

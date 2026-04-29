@@ -36,7 +36,7 @@ func TestArchive_ArchiveContractTemplateDataInDraftState(t *testing.T) {
 	cmd := command.ArchiveCmd{
 		DID:        *did,
 		ArchivedBy: creator,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 	}
 	handler := command.Archiver{
 		DB:     db,
@@ -84,7 +84,7 @@ func TestArchive_ArchiveNonExistingContractTemplate(t *testing.T) {
 
 	cmd := command.ArchiveCmd{
 		DID:        *did,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 		ArchivedBy: "Test User 1",
 	}
 	handler := command.Archiver{
@@ -120,7 +120,7 @@ func TestArchive_ArchiveContractTemplateDataInSubmittedState(t *testing.T) {
 	cmd := command.ArchiveCmd{
 		DID:        *did,
 		ArchivedBy: creator,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 	}
 	handler := command.Archiver{
 		DB:     db,
@@ -173,7 +173,7 @@ func TestArchive_ArchiveContractTemplateDataInRejectedState(t *testing.T) {
 	cmd := command.ArchiveCmd{
 		DID:        *did,
 		ArchivedBy: creator,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 	}
 	handler := command.Archiver{
 		DB:     db,
@@ -226,7 +226,7 @@ func TestArchive_ArchiveContractTemplateDataInReviewedState(t *testing.T) {
 	cmd := command.ArchiveCmd{
 		DID:        *did,
 		ArchivedBy: creator,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 	}
 	handler := command.Archiver{
 		DB:     db,
@@ -279,7 +279,7 @@ func TestArchive_ArchiveContractTemplateDataInApprovedState(t *testing.T) {
 	cmd := command.ArchiveCmd{
 		DID:        *did,
 		ArchivedBy: creator,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 	}
 	handler := command.Archiver{
 		DB:     db,
@@ -332,7 +332,7 @@ func TestArchive_ArchiveContractTemplateDataInRegisteredState(t *testing.T) {
 	cmd := command.ArchiveCmd{
 		DID:        *did,
 		ArchivedBy: creator,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 	}
 	handler := command.Archiver{
 		DB:     db,
@@ -385,7 +385,7 @@ func TestArchive_ArchiveContractTemplateDataInDeletedState(t *testing.T) {
 	cmd := command.ArchiveCmd{
 		DID:        *did,
 		ArchivedBy: creator,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 	}
 	handler := command.Archiver{
 		DB:     db,
@@ -421,7 +421,7 @@ func TestArchive_ArchiveContractTemplateDataInDeprecatedState(t *testing.T) {
 	cmd := command.ArchiveCmd{
 		DID:        *did,
 		ArchivedBy: creator,
-		UpdatedAt:  time.Now(),
+		UpdatedAt:  time.Now().UTC(),
 	}
 	handler := command.Archiver{
 		DB:     db,

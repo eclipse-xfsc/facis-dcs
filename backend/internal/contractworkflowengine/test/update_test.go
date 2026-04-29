@@ -48,7 +48,7 @@ func TestUpdate_UpdateContractDataInDraftState(t *testing.T) {
 	cmd := command.UpdateCmd{
 		DID:          *did,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		ContractData: &jsonContractData,
@@ -103,7 +103,7 @@ func TestUpdate_UpdateNonExistingContract(t *testing.T) {
 
 	cmd := command.UpdateCmd{
 		DID:       *did,
-		UpdatedAt: time.Now(),
+		UpdatedAt: time.Now().UTC(),
 		UpdatedBy: "Test User 1",
 	}
 	handler := command.Updater{
@@ -149,7 +149,7 @@ func TestUpdate_UpdateContractDataInDraftStateWithInvalidUser(t *testing.T) {
 	cmd := command.UpdateCmd{
 		DID:          *did,
 		UpdatedBy:    "Test User 1",
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		ContractData: &jsonContractData,
@@ -197,7 +197,7 @@ func TestUpdate_UpdateContractDataInInvalidState(t *testing.T) {
 	cmd := command.UpdateCmd{
 		DID:          *did,
 		UpdatedBy:    creator,
-		UpdatedAt:    time.Now(),
+		UpdatedAt:    time.Now().UTC(),
 		Name:         &name,
 		Description:  &description,
 		ContractData: &jsonContractData,

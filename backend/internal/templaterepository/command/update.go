@@ -116,7 +116,7 @@ func (h *Updater) Handle(ctx context.Context, cmd UpdateCmd) error {
 		OldTemplateData:   oldData.TemplateData,
 		NewTemplateData:   cmd.TemplateData,
 		UpdatedBy:         cmd.UpdatedBy,
-		OccurredAt:        time.Now(),
+		OccurredAt:        time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractTemplateRepo)
 	if err != nil {

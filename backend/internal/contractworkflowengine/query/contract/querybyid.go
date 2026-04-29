@@ -60,7 +60,7 @@ func (h *GetByIDHandler) Handle(ctx context.Context, query GetByIDQry) (*GetByID
 	evt := contractevents.RetrieveByIDEvent{
 		DID:         query.DID,
 		RetrievedBy: query.RetrievedBy,
-		OccurredAt:  time.Now(),
+		OccurredAt:  time.Now().UTC(),
 	}
 	err = event.Create(h.Ctx, tx, evt, componenttype.ContractWorkflowEngine)
 	if err != nil {

@@ -76,7 +76,7 @@ func (h *Registrar) Handle(ctx context.Context, cmd RegisterCmd) error {
 		DocumentNumber: processData.DocumentNumber,
 		Version:        processData.Version,
 		RegisteredBy:   cmd.RegisteredBy,
-		OccurredAt:     time.Now(),
+		OccurredAt:     time.Now().UTC(),
 	}
 	err = event.Create(ctx, tx, evt, componenttype.ContractTemplateRepo)
 	if err != nil {
