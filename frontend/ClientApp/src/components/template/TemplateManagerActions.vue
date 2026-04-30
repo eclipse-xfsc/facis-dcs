@@ -72,6 +72,5 @@ const audit = async () => {
 <template>
   <button v-if="canRegister" :class="$attrs.class" @click="register">Register</button>
   <button v-if="canArchive" :class="[$attrs.class, 'hover:btn-error']" @click="archive">Archive</button>
-  <button v-if="isManager" :class="$attrs.class" @click="audit">Audit</button>
   <ConfirmationModal ref="confirmation-modal" />
 </template>
