@@ -52,7 +52,7 @@ const register = async () => {
     if (!confirmationModal.value) return
     const { isCanceled } = await confirmationModal.value.reveal({ message: 'Proceed with registration?' })
     if (!isCanceled) {
-      await contractTemplateService.register({ did: props.item.did })
+      await contractTemplateService.register({ did: props.item.did, updated_at: props.item.updated_at })
       router.push({ name: ROUTES.TEMPLATES.LIST })
     }
   } catch (err) {
@@ -62,7 +62,7 @@ const register = async () => {
 
 const audit = async () => {
   try {
-    await contractTemplateService.audit({ did: props.item.did })
+    await contractTemplateService.audit({ did: props.item.did, updated_at: props.item.updated_at })
   } catch (err) {
     console.error('Audit failed:', err)
   }
