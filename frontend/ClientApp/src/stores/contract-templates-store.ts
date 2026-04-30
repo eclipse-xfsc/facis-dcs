@@ -15,11 +15,11 @@ export const useContractTemplatesStore = defineStore('contractTemplates', () => 
   const error = ref<string | null>(null)
 
   const hasTemplates = computed(() => contractTemplates.value.length > 0)
-  const hasApprovedTemplates = computed(() =>
-    contractTemplates.value.some((template) => template.state === TemplateState.approved),
+  const hasApprovedOrRegisteredTemplates = computed(() =>
+    contractTemplates.value.some((template) => template.state === TemplateState.approved || template.state === TemplateState.registered),
   )
-  const approvedTemplates = computed(() =>
-    contractTemplates.value.filter((template) => template.state === TemplateState.approved),
+  const approvedOrRegisteredTemplates = computed(() =>
+    contractTemplates.value.filter((template) => template.state === TemplateState.approved || template.state === TemplateState.registered),
   )
 
   async function loadTemplates() {
@@ -42,8 +42,8 @@ export const useContractTemplatesStore = defineStore('contractTemplates', () => 
     reviewTasks,
     approvalTasks,
     hasTemplates,
-    hasApprovedTemplates,
-    approvedTemplates,
+    hasApprovedOrRegisteredTemplates,
+    approvedOrRegisteredTemplates,
     loadTemplates,
     loading,
     error,
