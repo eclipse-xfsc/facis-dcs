@@ -177,7 +177,7 @@ func (h *Submitter) Handle(ctx context.Context, cmd SubmitCmd) error {
 
 		if existOpenTasks == false {
 
-			err = contractworkflowengine.MergeChangeRequests(tx, h.CRepo, h.NRepo, cmd.DID, processData.ContractVersion)
+			err = contractworkflowengine.MergeChangeRequests(ctx, tx, h.CRepo, h.NRepo, cmd.DID, processData.ContractVersion)
 			if err != nil {
 				return fmt.Errorf("could not merge change requests: %w", err)
 			}
