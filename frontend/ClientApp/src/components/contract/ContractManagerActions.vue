@@ -43,6 +43,7 @@ const terminate = async () => {
     if (!isCanceled) {
       const response = await contractWorkflowService.terminate({
         did: props.contract.did,
+        updated_at: props.contract.updated_at,
         reason: reason,
       })
       if (response.did) {

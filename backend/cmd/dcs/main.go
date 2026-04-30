@@ -148,7 +148,10 @@ func main() {
 
 	// Initialize the Federated Catalogue client.
 	fcURL := os.Getenv("FEDERATED_CATALOGUE_API_URL")
-	templateCatalogueClient := fcclient.NewFederatedCatalogueClient(fcURL)
+	var templateCatalogueClient *fcclient.FederatedCatalogueClient
+	if fcURL != "" {
+		templateCatalogueClient = fcclient.NewFederatedCatalogueClient(fcURL)
+	}
 
 	// Initialize the service.
 	var (

@@ -575,8 +575,14 @@ func (s *contractWorkflowEnginesrvc) Terminate(ctx context.Context, req *contrac
 	ctx, cancel := context.WithTimeout(ctx, conf.TransactionTimeout())
 	defer cancel()
 
+	updatedAt, err := time.Parse(time.RFC3339, req.UpdatedAt)
+	if err != nil {
+		return nil, contractworkflowengine.MakeInternalError(err)
+	}
+
 	cmd := command.TerminateCmd{
 		DID:          req.Did,
+		UpdatedAt:    updatedAt,
 		TerminatedBy: middleware.GetUsername(ctx),
 		Reason:       req.Reason,
 	}
