@@ -134,6 +134,10 @@ const submitRejectedTemplate = async () => {
 }
 
 const verifySemanticValues = (): boolean => {
+
+alert("ViewContractView.vue: the method verifySemanticValues is deactivated, because it does not work with multiple subtemplates\nToDo: please fix that method")
+
+return true
   const subTemplateSemanticConditions = templateDraftStore?.subTemplateSnapshots?.map((subTemplate) => {
     return {
       templateId: subTemplate.did,
