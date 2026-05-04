@@ -24,6 +24,7 @@ import (
 	"digital-contracting-service/internal/service"
 	fcclient "digital-contracting-service/internal/templatecatalogueintegration/client"
 	tplrepo "digital-contracting-service/internal/templaterepository/db/pg"
+	"digital-contracting-service/internal/webhookplatform"
 	"digital-contracting-service/migrations"
 	"flag"
 	"fmt"
@@ -147,6 +148,22 @@ func main() {
 	fcURL := os.Getenv("FEDERATED_CATALOGUE_API_URL")
 	templateCatalogueClient := fcclient.NewFederatedCatalogueClient(fcURL)
 
+	// Initialize the webhook platform (ORCE integration).
+	webhookStore := webhookplatform.NewSubscriptionStore()
+	webhookDispatcher := webhookplatform.NewDispatcher(webhookStore)
+	webhookPlatform := webhookplatform.New(
+		webhookStore,
+		webhookDispatcher,
+		func(ctx context.Context, token string) (string, error) {
+			info, err := oidcValidator.ValidateToken(ctx, token)
+			if err != nil {
+				return "", err
+			}
+			return info.Username, nil
+		},
+		nil,
+	)
+
 	// Initialize the service.
 	var (
 		authSvc                         genauth.Service
@@ -170,7 +187,7 @@ func main() {
 		processAuditAndComplianceSvc = service.NewProcessAuditAndCompliance(db, jwtAuth, auditTrailReader)
 		signatureManagementSvc = service.NewSignatureManagement(jwtAuth)
 		templateCatalogueIntegrationSvc = service.NewTemplateCatalogueIntegration(jwtAuth, templateCatalogueClient)
-		templateRepositorySvc = service.NewTemplateRepository(db, jwtAuth, &ctRepo, &ctRTRepo, &ctATRepo, templateCatalogueClient, auditTrailReader)
+		templateRepositorySvc = service.NewTemplateRepository(db, jwtAuth, &ctRepo, &ctRTRepo, &ctATRepo, templateCatalogueClient, auditTrailReader, webhookDispatcher)
 	}
 
 	// Wrap the service in endpoints that can be invoked from other service
@@ -259,7 +276,7 @@ func main() {
 			} else if u.Port() == "" {
 				u.Host = net.JoinHostPort(u.Host, "80")
 			}
-			handleHTTPServer(ctx, u, authEndpoints, contractStorageArchiveEndpoints, contractWorkflowEngineEndpoints, dcsToDcsEndpoints, externalTargetSystemAPIEndpoints, orchestrationWebhooksEndpoints, processAuditAndComplianceEndpoints, signatureManagementEndpoints, templateCatalogueIntegrationEndpoints, templateRepositoryEndpoints, &wg, errc, *dbgF)
+			handleHTTPServer(ctx, u, authEndpoints, contractStorageArchiveEndpoints, contractWorkflowEngineEndpoints, dcsToDcsEndpoints, externalTargetSystemAPIEndpoints, orchestrationWebhooksEndpoints, processAuditAndComplianceEndpoints, signatureManagementEndpoints, templateCatalogueIntegrationEndpoints, templateRepositoryEndpoints, webhookPlatform, &wg, errc, *dbgF)
 		}
 
 	default:
