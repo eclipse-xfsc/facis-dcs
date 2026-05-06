@@ -33,6 +33,13 @@ Feature: Template Approval Workflow
     And my approval task is in "Rejected" status
     And the rejection reason is recorded
 
+  Scenario: Resubmit reviewd template
+    Given I am authenticated with role "Template Approver"
+    And template "Standard NDA" is in "Reviewed" status
+    When I resubmit template "Standard NDA"
+    Then the template status is "Submitted"
+    And all tasks are in "Open" status
+
   Scenario: Submit to Draft template with comment
     Given I am authenticated with roles: "Template Reviewer"
     And template "Standard NDA" is in "Submitted" status
