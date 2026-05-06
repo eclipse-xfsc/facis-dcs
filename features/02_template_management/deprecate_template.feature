@@ -5,7 +5,7 @@ Feature: Deprecate Contract Template
   to prevent new contract generation.
 
   Background:
-    Given I am authenticated with role "Template Manager"
+    Given I am authenticated with roles: "Template Manager"
 
   Scenario: Deprecate an active template
     And template "Old NDA" is in "Approved" status
@@ -14,7 +14,7 @@ Feature: Deprecate Contract Template
     And new contracts cannot be generated from this template
 
   Scenario: Unauthorized role cannot deprecate template
-    Given I am authenticated with role "Template Reviewer"
+    Given I am authenticated with roles: "Template Reviewer"
     And template "Old NDA" is in "Approved" status
     When I attempt to deprecate template "Old NDA"
     Then the request is denied with an authorization error

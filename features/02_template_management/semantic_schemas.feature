@@ -1,22 +1,21 @@
-------------------------------- FC roles and error response -------------------------------
+# ------------------------------- FC roles and error response -------------------------------
 # Federated Catalogue Roles
-[
-  "Ro-MU-A",
-  "Ro-PA-A",
-  "Ro-SD-A",
-  "Ro-MU-CA",
-  "uma_protection"
-]
+# [
+#   "Ro-MU-A",
+#   "Ro-PA-A",
+#   "Ro-SD-A",
+#   "Ro-MU-CA",
+#   "uma_protection"
+# ]
 
 # Call FC APIs without FC role:
-{
-  "code": "forbidden_error",
-  "message": "User does not have permission to execute this request."
-}
+# {
+#   "code": "forbidden_error",
+#   "message": "User does not have permission to execute this request."
+# }
 
-------------------------------- scenarios -------------------------------
+# ------------------------------- scenarios -------------------------------
 @UC-02-08 @FR-TR-03
-@skip
 Feature: Create and Maintain Semantic Schemas
   Template Managers create and manage semantic schemas
   used for template validation, including version control
@@ -24,16 +23,16 @@ Feature: Create and Maintain Semantic Schemas
 
   # UC-02-08, page 61, 75
   Scenario: Create a semantic schema
+    Given I am authenticated with roles: "Ro-MU-CA"
     # section 4.2.2, stimulus 8
     # ⚠️ Also need FC roles, otherwise request will be rejected
-    Given I am authenticated with role "Template Manager"
     When I create a schema "contract-base-v1"
     # Implement check: can be verified via FC GET /schemas
     Then the schema is available for template linking
 
   # UC-02-08, page 61, 75
   Scenario: Link schema to template
-    Given I am authenticated with role "Template Manager"
+    Given I am authenticated with roles: "Template Creator"
     And schema "contract-base-v1" exists
     # Use fctemplatebuilder.go and FC POST /verification
     When I link schema "contract-base-v1" to template "Standard NDA"
@@ -41,14 +40,14 @@ Feature: Create and Maintain Semantic Schemas
     Then the template enforces schema conformity
 
   Scenario: Unauthorized role cannot create schema
-    Given I am authenticated with role "Template Creator"
+    Given I am authenticated with roles: "Template Creator"
     When I attempt to create a schema "contract-base-v1"
     # ⚠️ FC checks only FC roles and doesn't consider DCS roles
     Then the request is denied with an authorization error
 
   # FR-TR-03: Semantic Hub for Schema Storage with Versioning
   Scenario: Create versioned semantic schema
-    Given I am authenticated with role "Template Manager"
+    Given I am authenticated with roles: "Template Manager"
     When I create schema "contract-base" version "1.0"
     Then the schema is created with version "1.0"
     And the schema version is tracked in the Semantic Hub
@@ -58,7 +57,7 @@ Feature: Create and Maintain Semantic Schemas
 
   # schema versioning, page 75
   Scenario: Update schema with new version
-    Given I am authenticated with role "Template Manager"
+    Given I am authenticated with roles: "Template Manager"
     And schema "contract-base" version "1.0" exists
     When I create schema "contract-base" version "2.0"
     Then the new version "2.0" is created
@@ -69,14 +68,14 @@ Feature: Create and Maintain Semantic Schemas
 
   # ⚠️ Inferred from page 75 (schema versioning), not explicitly defiend
   Scenario: Access previous schema versions
-    Given I am authenticated with role "Template Manager"
+    Given I am authenticated with roles: "Template Manager"
     And schema "contract-base" has versions "1.0", "1.1", and "2.0"
     When I retrieve schema "contract-base" version "1.1"
     Then I receive the schema content for version "1.1"
     And I can see the full version history
 
   Scenario: Template references specific schema version
-    Given I am authenticated with role "Template Manager"
+    Given I am authenticated with roles: "Template Manager"
     And schema "contract-base" has versions "1.0" and "2.0"
     When I link schema "contract-base" version "1.0" to template "Legacy NDA"
     Then the template is validated against schema version "1.0"
@@ -84,7 +83,7 @@ Feature: Create and Maintain Semantic Schemas
 
   # ❌ This goes beyond the SRS.
   Scenario: Deprecate schema version
-    Given I am authenticated with role "Template Manager"
+    Given I am authenticated with roles: "Template Manager"
     And schema "contract-base" version "1.0" is in use
     When I deprecate schema "contract-base" version "1.0"
     Then the schema version is marked as deprecated
@@ -95,7 +94,7 @@ Feature: Create and Maintain Semantic Schemas
 
   # I feel a bit over deisigned here, the UC-02-08 (page 75) doesn't explicitly require this.
   Scenario: Schema version compatibility check
-    Given I am authenticated with role "Template Manager"
+    Given I am authenticated with roles: "Template Manager"
     And template "Standard NDA" uses schema "contract-base" version "1.0"
     When I check compatibility with schema "contract-base" version "2.0"
     Then the system analyzes schema differences
@@ -103,7 +102,7 @@ Feature: Create and Maintain Semantic Schemas
 
   # ❌ This goes beyond the SRS.
   Scenario: Migrate template to new schema version
-    Given I am authenticated with role "Template Manager"
+    Given I am authenticated with roles: "Template Manager"
     And template "Standard NDA" uses schema "contract-base" version "1.0"
     And schema "contract-base" version "2.0" is backward compatible
     When I migrate template "Standard NDA" to schema version "2.0"
@@ -111,7 +110,7 @@ Feature: Create and Maintain Semantic Schemas
     And the migration is logged with old and new versions
 
   Scenario: Schema version history audit
-    Given I am authenticated with role "Auditor"
+    Given I am authenticated with roles: "Auditor"
     And schema "contract-base" has multiple versions
     When I retrieve the version history for schema "contract-base"
     Then I see all versions with creation timestamps
