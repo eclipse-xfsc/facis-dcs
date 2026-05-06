@@ -57,7 +57,7 @@ func (s *templateRepositorysrvc) Create(ctx context.Context, req *templatereposi
 		return nil, templaterepository.MakeInternalError(err)
 	}
 
-	jsonMetaData, err := datatype.NewJSON(req.TemplateData)
+	templateData, err := datatype.NewJSON(req.TemplateData)
 	if err != nil {
 		return nil, templaterepository.MakeInternalError(err)
 	}
@@ -73,7 +73,7 @@ func (s *templateRepositorysrvc) Create(ctx context.Context, req *templatereposi
 		TemplateType: templateType,
 		Name:         req.Name,
 		Description:  req.Description,
-		TemplateData: &jsonMetaData,
+		TemplateData: &templateData,
 	}
 	createHandler := command.Creator{
 		DB:     s.DB,
