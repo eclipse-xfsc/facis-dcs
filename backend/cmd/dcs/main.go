@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	genauth "digital-contracting-service/gen/auth"
 	contractstoragearchive "digital-contracting-service/gen/contract_storage_archive"
 	contractworkflowengine "digital-contracting-service/gen/contract_workflow_engine"
 	dcstodcs "digital-contracting-service/gen/dcs_to_dcs"
@@ -11,7 +12,20 @@ import (
 	signaturemanagement "digital-contracting-service/gen/signature_management"
 	templatecatalogueintegration "digital-contracting-service/gen/template_catalogue_integration"
 	templaterepository "digital-contracting-service/gen/template_repository"
+	"digital-contracting-service/internal/auth"
+	"digital-contracting-service/internal/base"
+	"digital-contracting-service/internal/base/conf"
+	"digital-contracting-service/internal/base/db/pq"
+	"digital-contracting-service/internal/base/event"
+	"digital-contracting-service/internal/base/ipfs"
+	contractworkflowengine2 "digital-contracting-service/internal/contractworkflowengine"
+	cwerepo "digital-contracting-service/internal/contractworkflowengine/db/pg"
+	"digital-contracting-service/internal/middleware"
 	"digital-contracting-service/internal/service"
+	smrepo "digital-contracting-service/internal/signingmanagement/db/pg"
+	fcclient "digital-contracting-service/internal/templatecatalogueintegration/client"
+	tplrepo "digital-contracting-service/internal/templaterepository/db/pg"
+	"digital-contracting-service/migrations"
 	"flag"
 	"fmt"
 	"net"
@@ -21,11 +35,17 @@ import (
 	"sync"
 	"syscall"
 
+	"github.com/nats-io/nats.go"
 	"goa.design/clue/debug"
 	"goa.design/clue/log"
 )
 
 func main() {
+	if err := loadDotenvIfPresent(); err != nil {
+		fmt.Fprintf(os.Stderr, "startup configuration error: %v\n", err)
+		os.Exit(1)
+	}
+
 	// Define command line flags, add any other flag required to configure the
 	// service.
 	var (
@@ -49,8 +69,93 @@ func main() {
 	}
 	log.Print(ctx, log.KV{K: "http-port", V: *httpPortF})
 
+	db, err := NewDatabaseConnection()
+	if err != nil {
+		log.Fatalf(ctx, err, "Could not connect to database")
+	}
+	defer db.Close()
+
+	log.Printf(ctx, "Connecting to database")
+
+	// Run database migrations
+	if err := migrations.Run(db); err != nil {
+		log.Fatalf(ctx, err, "Could not run database migrations")
+		os.Exit(1)
+	}
+
+	// Connect to NATS (use NATS_URL env var or default)
+	natsURL := os.Getenv("NATS_URL")
+	if natsURL == "" {
+		natsURL = nats.DefaultURL
+	}
+
+	cepPubClient, err := event.NewNatsPubClient(conf.EventBusTopic(), natsURL)
+	if err != nil {
+		log.Fatalf(ctx, err, "Could not connect to events publisher")
+	}
+	defer cepPubClient.Close()
+
+	// Initialize OIDC validator and JWT authenticator.
+	oidcIssuerURL := os.Getenv("OIDC_ISSUER_URL")
+	oidcClientID := os.Getenv("OIDC_CLIENT_ID")
+	if oidcIssuerURL == "" || oidcClientID == "" {
+		log.Fatalf(ctx, nil, "OIDC configuration missing: OIDC_ISSUER_URL and OIDC_CLIENT_ID environment variables must be specified")
+	}
+	oidcValidator, err := middleware.NewOIDCValidator(ctx, middleware.OIDCConfig{
+		IssuerURL: oidcIssuerURL,
+		ClientID:  oidcClientID,
+	})
+	if err != nil {
+		log.Fatalf(ctx, err, "failed to initialize OIDC validator")
+	}
+	jwtAuth := auth.NewJWTAuthenticator(oidcValidator)
+
+	ctRepo := tplrepo.PostgresContractTemplateRepo{}
+	ctRTRepo := tplrepo.PostgresReviewTaskRepo{}
+	ctATRepo := tplrepo.PostgresApprovalTaskRepo{}
+
+	cweRepo := cwerepo.PostgresContractRepo{}
+	cweRTRepo := cwerepo.PostgresReviewTaskRepo{}
+	cweATRepo := cwerepo.PostgresApprovalTaskRepo{}
+	cweNTRepo := cwerepo.PostgresNegotiationTaskRepo{}
+	cweNRepo := cwerepo.PostgresNegotiationRepo{}
+	cweCTRepo := cwerepo.PostgresContractTemplateRepo{}
+	cweCronJob := contractworkflowengine2.CronJob{DB: db}
+	cweCronJob.Start()
+
+	smCRepo := smrepo.PostgresContractRepo{Ctx: ctx}
+
+	// Initialize IPFS client
+	ipfsTenantBaseURL := os.Getenv("IPFS_TENANT_BASE_URL")
+	mfsBaseURL := os.Getenv("IPFS_MFS_BASE_URL")
+	if oidcIssuerURL == "" || oidcClientID == "" {
+		log.Fatalf(ctx, nil, "IPFS configuration missing: IPFS_TENANT_BASE_URL and IPFS_MFS_BASE_URL environment variables must be specified")
+	}
+	ipfsAPIClient := ipfs.NewClient(ipfsTenantBaseURL, mfsBaseURL)
+	aRepo := pq.PostgresAuditTrailRepository{}
+	outboxProcessor := event.OutboxProcessor{
+		DB:         db,
+		PubClient:  cepPubClient,
+		IPFSClient: ipfsAPIClient,
+		ARepo:      &aRepo,
+	}
+	outboxProcessor.Start(ctx)
+
+	auditTrailReader := base.AuditTrailReader{
+		IPFSClient: ipfsAPIClient,
+		ARepo:      &aRepo,
+	}
+
+	// Initialize the Federated Catalogue client.
+	fcURL := os.Getenv("FEDERATED_CATALOGUE_API_URL")
+	var templateCatalogueClient *fcclient.FederatedCatalogueClient
+	if fcURL != "" {
+		templateCatalogueClient = fcclient.NewFederatedCatalogueClient(fcURL)
+	}
+
 	// Initialize the service.
 	var (
+		authSvc                         genauth.Service
 		contractStorageArchiveSvc       contractstoragearchive.Service
 		contractWorkflowEngineSvc       contractworkflowengine.Service
 		dcsToDcsSvc                     dcstodcs.Service
@@ -62,20 +167,22 @@ func main() {
 		templateRepositorySvc           templaterepository.Service
 	)
 	{
-		contractStorageArchiveSvc = service.NewContractStorageArchive()
-		contractWorkflowEngineSvc = service.NewContractWorkflowEngine()
-		dcsToDcsSvc = service.NewDcsToDcs()
-		externalTargetSystemAPISvc = service.NewExternalTargetSystemAPI()
-		orchestrationWebhooksSvc = service.NewOrchestrationWebhooks()
-		processAuditAndComplianceSvc = service.NewProcessAuditAndCompliance()
-		signatureManagementSvc = service.NewSignatureManagement()
-		templateCatalogueIntegrationSvc = service.NewTemplateCatalogueIntegration()
-		templateRepositorySvc = service.NewTemplateRepository()
+		authSvc = service.NewAuth()
+		contractStorageArchiveSvc = service.NewContractStorageArchive(jwtAuth)
+		contractWorkflowEngineSvc = service.NewContractWorkflowEngine(db, jwtAuth, &cweRepo, &cweRTRepo, &cweATRepo, &cweNTRepo, &cweNRepo, &cweCTRepo, templateCatalogueClient, auditTrailReader)
+		dcsToDcsSvc = service.NewDcsToDcs(jwtAuth)
+		externalTargetSystemAPISvc = service.NewExternalTargetSystemAPI(jwtAuth)
+		orchestrationWebhooksSvc = service.NewOrchestrationWebhooks(jwtAuth)
+		processAuditAndComplianceSvc = service.NewProcessAuditAndCompliance(db, jwtAuth, auditTrailReader)
+		signatureManagementSvc = service.NewSignatureManagement(db, jwtAuth, &smCRepo, auditTrailReader)
+		templateCatalogueIntegrationSvc = service.NewTemplateCatalogueIntegration(jwtAuth, templateCatalogueClient)
+		templateRepositorySvc = service.NewTemplateRepository(db, jwtAuth, &ctRepo, &ctRTRepo, &ctATRepo, templateCatalogueClient, auditTrailReader)
 	}
 
 	// Wrap the service in endpoints that can be invoked from other service
 	// potentially running in different processes.
 	var (
+		authEndpoints                         *genauth.Endpoints
 		contractStorageArchiveEndpoints       *contractstoragearchive.Endpoints
 		contractWorkflowEngineEndpoints       *contractworkflowengine.Endpoints
 		dcsToDcsEndpoints                     *dcstodcs.Endpoints
@@ -87,6 +194,9 @@ func main() {
 		templateRepositoryEndpoints           *templaterepository.Endpoints
 	)
 	{
+		authEndpoints = genauth.NewEndpoints(authSvc)
+		authEndpoints.Use(debug.LogPayloads())
+		authEndpoints.Use(log.Endpoint)
 		contractStorageArchiveEndpoints = contractstoragearchive.NewEndpoints(contractStorageArchiveSvc)
 		contractStorageArchiveEndpoints.Use(debug.LogPayloads())
 		contractStorageArchiveEndpoints.Use(log.Endpoint)
@@ -155,7 +265,7 @@ func main() {
 			} else if u.Port() == "" {
 				u.Host = net.JoinHostPort(u.Host, "80")
 			}
-			handleHTTPServer(ctx, u, contractStorageArchiveEndpoints, contractWorkflowEngineEndpoints, dcsToDcsEndpoints, externalTargetSystemAPIEndpoints, orchestrationWebhooksEndpoints, processAuditAndComplianceEndpoints, signatureManagementEndpoints, templateCatalogueIntegrationEndpoints, templateRepositoryEndpoints, &wg, errc, *dbgF)
+			handleHTTPServer(ctx, u, authEndpoints, contractStorageArchiveEndpoints, contractWorkflowEngineEndpoints, dcsToDcsEndpoints, externalTargetSystemAPIEndpoints, orchestrationWebhooksEndpoints, processAuditAndComplianceEndpoints, signatureManagementEndpoints, templateCatalogueIntegrationEndpoints, templateRepositoryEndpoints, &wg, errc, *dbgF)
 		}
 
 	default:
