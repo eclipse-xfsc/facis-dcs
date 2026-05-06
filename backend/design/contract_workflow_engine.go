@@ -760,8 +760,9 @@ var _ = Service("ContractWorkflowEngine", func() {
 		Meta("dcs:ui", "Contract Management Dashboard")
 
 		Security(JWTAuth, func() {
-			Scope("Contract Manager")
-			Scope("Sys. Contract Manager")
+			Scope("Auditor")
+			Scope("Compliance Officer")
+			Scope("System Administrator")
 		})
 
 		Payload(ContractAuditRequest)

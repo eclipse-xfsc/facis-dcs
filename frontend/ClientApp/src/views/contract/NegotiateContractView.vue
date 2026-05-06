@@ -23,6 +23,7 @@ import { contractWorkflowService } from '@/services/contract-workflow-service'
 import { useAuthStore } from '@/stores/auth-store'
 import { useNavStore } from '@/stores/nav-store'
 import { ContractState } from '@/types/contract-state'
+import type { UserRole } from '@/types/user-role'
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, onMounted, onUnmounted, ref, useTemplateRef, watch, type Ref } from 'vue'
 import { useRoute } from 'vue-router'
@@ -49,7 +50,9 @@ const setSemanticConditionValue = computed<SemanticConditionValueSetter>(() => {
     contractContentValuesStore.setSemanticConditionValue({ blockId, conditionId, parameterName, parameterValue })
 })
 
-const isManager = computed(() => useAuthStore().user?.roles?.includes('CONTRACT_MANAGER') ?? false)
+const isAuditingAuthorized = computed(() => 
+  (['AUDITOR', 'COMPLIANCE_OFFICER', 'SYSTEM_ADMINISTRATOR'] as UserRole[]).some(role => authStore.user?.roles?.includes(role)) ?? false
+)
 
 const tabs = computed(() => contractEditorUiStore.availableTabs(contract.value?.state ?? ContractState.draft))
 
@@ -366,7 +369,7 @@ const currentContractData = computed<ContractData | undefined>(() => {
                 <DiffView :prior-contract-data="priorContractData" :current-contract-data="currentContractData" />
               </div>
 
-              <template v-if="isManager">
+              <template v-if="isAuditingAuthorized">
                 <div v-show="activeTab === 'audit'">
                   <div class="card bg-base-100 border border-base-300 shadow-sm">
                     <div class="card-body">

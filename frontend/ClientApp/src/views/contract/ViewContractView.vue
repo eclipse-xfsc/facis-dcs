@@ -22,9 +22,10 @@ import { useAuthStore } from '@/stores/auth-store'
 import { useErrorStore } from '@/stores/error-store'
 import { useNavStore } from '@/stores/nav-store'
 import { ContractState } from '@/types/contract-state'
+import type { UserRole } from '@/types/user-role'
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, ref, watch, type Ref } from 'vue'
-import { ErrorTypes, useRoute } from 'vue-router'
+import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const navStore = useNavStore()
@@ -53,7 +54,10 @@ const setSemanticConditionValue = computed<SemanticConditionValueSetter>(() => {
     contractContentValuesStore.setSemanticConditionValue({ blockId, conditionId, parameterName, parameterValue })
 })
 
-const isManager = computed(() => authStore.user?.roles?.includes('CONTRACT_MANAGER') ?? false)
+
+const isAuditingAuthorized = computed(() => 
+  (['AUDITOR', 'COMPLIANCE_OFFICER', 'SYSTEM_ADMINISTRATOR'] as UserRole[]).some(role => authStore.user?.roles?.includes(role)) ?? false
+)
 
 const tabs = computed(() => contractEditorUiStore.availableTabs(contract.value?.state ?? ContractState.draft))
 
@@ -245,7 +249,7 @@ function applyContractDataToDraft(contractData?: unknown) {
                 </div>
               </div>
 
-              <template v-if="isManager">
+              <template v-if="isAuditingAuthorized">
                 <div v-show="activeTab === 'audit'">
                   <div class="card bg-base-100 border border-base-300 shadow-sm">
                     <div class="card-body">
