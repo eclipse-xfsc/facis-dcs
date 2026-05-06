@@ -275,7 +275,7 @@ func (s *templateRepositorysrvc) Search(ctx context.Context, req *templatereposi
 		State:          state,
 		Name:           req.Name,
 		Description:    req.Description,
-		Filter:         req.Filter,
+		TemplateData:   req.TemplateData,
 	}
 	queryHandler := contracttemplate.GetAllMetaDataByFilterHandler{
 		DB:     s.DB,
