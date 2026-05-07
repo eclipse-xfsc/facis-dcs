@@ -15,3 +15,8 @@ Feature: Search and Retrieve Contract Templates
     When I retrieve template "Standard NDA"
     Then I see the template version and status
     And I see the template provenance
+
+  Scenario: Retrieve unauthorized
+    Given I am authenticated with roles: "Contract Creator"
+    When I retrieve template "Standard NDA"
+    Then the request is denied with an authorization error
