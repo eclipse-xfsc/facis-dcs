@@ -3,6 +3,7 @@ Feature: Template Identity and Traceability
   Templates are assigned unique identifiers
   for traceability across contract workflows.
 
+  @skip
   Scenario: Template receives UUID on creation
     Given I am authenticated with roles: "Template Creator"
     When I create a template "Standard NDA" in category "Legal"

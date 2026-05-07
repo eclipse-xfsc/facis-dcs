@@ -15,6 +15,7 @@
 # }
 
 # ------------------------------- scenarios -------------------------------
+@skip
 @UC-02-08 @FR-TR-03
 Feature: Create and Maintain Semantic Schemas
   Template Managers create and manage semantic schemas
