@@ -69,7 +69,7 @@ jobs:
 
       - name: Publish BDD test report
         if: always() && hashFiles('tests/bdd/.reports/junit/*.xml') != ''
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v3
         with:
           name: BDD Test Results
           path: tests/bdd/.reports/junit/*.xml
