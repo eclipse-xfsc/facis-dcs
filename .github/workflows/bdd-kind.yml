@@ -24,7 +24,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # The kind node loads the heavy DSS demo bundle (~1-2GB) alongside the two
       # DCS images, pdf-core, and the Postgres/Keycloak/IPFS/ORCE/FC base images;
